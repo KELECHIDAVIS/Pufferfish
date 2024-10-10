@@ -24,10 +24,23 @@ class Board
 {
     // the row is the side , the columns is the type of piece 
     // The bb pieces carries all bit boards for pieces  ex: (white , king); row is side, col is piece 
-    // bbside carries all piece info for that side: 0 is white , 1 is black , 2 is both 
+    // bbside carries all piece info for that side: 0 is white , 1 is black 
     public ulong[,] bbPieces = new ulong[2,6];
-    public ulong[] bbSide = new ulong[3];
+    public ulong[] bbSide = new ulong[2];
 
+    public int[] initPieceList ()
+    {
+        ulong bbWhite = getSideBitBoard(Side.White); 
+        ulong bbBlack= getSideBitBoard(Side.Black);
+        int[] pieceList = new int[64]; // 64 squares in a chess board
+
+        for (int i = 0; i < 64; i++)
+        {
+            pieceList[i] = (int) Piece.NONE;  // to represent theres nothing in that square 
+        }
+
+        return pieceList; 
+    }
     // takes in a bit board and prints out its representation
     public void printBitBoard(ulong bb) 
     {
@@ -49,8 +62,15 @@ class Board
         }
     }
 
+    //Returns the corresponding piece's bitboard which contains the postiion of all pieces of that certain type (white pawns for example) 
     public ulong getPieceBitBoard ( Side side , Piece piece)
     {
         return bbPieces[(int)side,(int) piece];
+    }
+
+    //returns the bitboard for all pieces of a certain color ( all black pieces for ex) 
+    public ulong getSideBitBoard (Side side)
+    {
+        return bbSide[(int) side]; 
     }
 }
