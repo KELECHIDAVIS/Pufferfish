@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-public enum Piece
+﻿public enum Piece
 {
    King, 
    Queen, 
@@ -20,20 +14,49 @@ public enum  Side
     Black,
     BOTH,
 }
+
+// Rands for the zobrist tables 
+// for each side , for each piece , on each square, generate a random number 
+// these nums are stored here so that they can be used for lookup later
+public class ZobristRandoms 
+{
+    public const int NUM_CASTLING_PERMISSIONS = 16;
+
+    public static ulong[][][] randPieces = initRandPiecesArray(); // sides , pieces ,squares
+    public static ulong[] randCastling = new ulong[NUM_CASTLING_PERMISSIONS]; 
+    public static ulong[] randSides = new ulong[(int)Side.BOTH]; 
+    public static ulong[] randEnPassant = new ulong[(int)Board.NUM_SQUARES +1 ]; // en passant rules are 65
+
+
+    private static ulong[][][] initRandPiecesArray()
+    {
+        ulong[][][] temp = new ulong[(int) Side.BOTH][][] ;  
+
+        // for each side 
+        for(int i =0; i< (int ) Side.BOTH; i++)
+        {
+            
+        }
+        throw new NotImplementedException();
+    }
+}
 class Board
 {
+    public const int NUM_SQUARES = 64; // number of squares on a chess board 
+    public const int NUM_PIECE_TYPES = 6; // there are six distinct pieces in chess 
+
     // the row is the side , the columns is the type of piece 
     // The bb pieces carries all bit boards for pieces  ex: (white , king); row is side, col is piece 
     // bbside carries all piece info for that side: 0 is white , 1 is black 
     public ulong[][] bbPieces = initBitBoardPiecesArray(); // inits the jagged array
-    public ulong[] bbSide = new ulong[2];
+    public ulong[] bbSide = new ulong[(int) Side.BOTH];
 
-    static ulong[][] initBitBoardPiecesArray()
+    private static ulong[][] initBitBoardPiecesArray()
     {
-        ulong[][] temp = new ulong[2][];
-        for(int i = 0; i< 2; i++)
+        ulong[][] temp = new ulong[(int) Side.BOTH][];
+        for(int i = 0; i< (int) Side.BOTH; i++)
         {
-            temp[i] = new ulong[6] { 0UL, 0UL, 0UL, 0UL, 0UL, 0UL }; 
+            temp[i] = new ulong[NUM_PIECE_TYPES] { 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };  // 1 for each piece 
 
         }
         return temp;
@@ -45,9 +68,9 @@ class Board
         ulong[] bbWhite = bbPieces[(int) Side.White];  // all 6 bitboards for white pieces 
         ulong[] bbBlack= bbPieces[(int)Side.Black];
 
-        int[] pieceList = new int[64]; // 64 squares in a chess board
+        int[] pieceList = new int[NUM_SQUARES]; // 64 squares in a chess board
 
-        for (int i = 0; i < 64; i++)
+        for (int i = 0; i < NUM_SQUARES; i++)
         {
             pieceList[i] = (int) Piece.NONE;  // to represent theres nothing in that square 
         }
@@ -99,7 +122,7 @@ class Board
     // takes in a bit board and prints out its representation
     public void printBitBoard(ulong bb) 
     {
-        int LAST_BIT = 63; // we want to look at the 63rd bit 
+        const int LAST_BIT = 63; // we want to look at the 63rd bit 
 
         for (int rank = 0; rank < 8; rank++)
         {
