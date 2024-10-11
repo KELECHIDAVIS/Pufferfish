@@ -21,23 +21,83 @@ public enum  Side
 public class ZobristRandoms 
 {
     public const int NUM_CASTLING_PERMISSIONS = 16;
+    public const int RAND_SEED = 1; 
 
-    public static ulong[][][] randPieces = initRandPiecesArray(); // sides , pieces ,squares
-    public static ulong[] randCastling = new ulong[NUM_CASTLING_PERMISSIONS]; 
-    public static ulong[] randSides = new ulong[(int)Side.BOTH]; 
-    public static ulong[] randEnPassant = new ulong[(int)Board.NUM_SQUARES +1 ]; // en passant rules are 65
+    private static ulong[][][] randPieces = initRandPiecesArray(); // sides , pieces ,squares
+    private static ulong[] randCastling = initRandCastlingArray();
+    private static ulong[] randSides = initRandSidesArray();
+    private static ulong[] randEnPassant = initRandEnPassantArray();  // en passant rules are 65
 
+    private static Random random = new Random(RAND_SEED);
 
     private static ulong[][][] initRandPiecesArray()
     {
-        ulong[][][] temp = new ulong[(int) Side.BOTH][][] ;  
-
+        ulong[][][] temp = new ulong[(int) Side.BOTH][][] ;
+        
         // for each side 
-        for(int i =0; i< (int ) Side.BOTH; i++)
+        for (int side =0; side < (int ) Side.BOTH; side ++)
         {
-            
+            temp[side]= new ulong[Board.NUM_PIECE_TYPES][]; 
+            //for each piece
+            for (int piece = 0; piece < Board.NUM_PIECE_TYPES; piece++)
+            {
+                temp[side][piece] = new ulong[Board.NUM_SQUARES]; 
+               // for each square
+               for(int square = 0; square < Board.NUM_SQUARES; square ++)
+                {
+                    temp[side][piece][square] = (ulong) random.NextInt64(); 
+                }
+            }
         }
-        throw new NotImplementedException();
+        return temp; 
+    }
+    private static ulong[] initRandSidesArray()
+    {
+        ulong[] temp = new ulong[(int)Side.BOTH]; 
+        for(int i = 0; i< (int)Side.BOTH; i++)
+        {
+            temp[i] = (ulong) random.NextInt64();
+        }
+        return temp; 
+    }
+    private static ulong[] initRandCastlingArray()
+    {
+        ulong[] temp = new ulong[NUM_CASTLING_PERMISSIONS];
+        for (int i = 0; i < NUM_CASTLING_PERMISSIONS; i++)
+        {
+            temp[i] = (ulong)random.NextInt64();
+        }
+        return temp; 
+    }
+    private static ulong[] initRandEnPassantArray()
+    {
+        ulong[] temp = new ulong[Board.NUM_SQUARES +1];
+        for (int i = 0; i < Board.NUM_SQUARES + 1; i++)
+        {
+            temp[i] = (ulong)random.NextInt64();
+        }
+        return temp; 
+    }
+
+    public static ulong piece (Side side , int Piece, int Square)
+    {
+        return randPieces[(int)side][Piece][Square]; 
+    }
+
+    public static ulong castling(int castlingPermission)
+    {
+        return randCastling[castlingPermission]; 
+    }
+    public static ulong side(int Side)
+    {
+        return randSides[Side];
+    }
+    public static ulong enPassant(int? ep)
+    {
+        if(ep != null)
+            return randEnPassant[(int) ep];
+
+        return randEnPassant[Board.NUM_SQUARES];
     }
 }
 class Board
@@ -76,11 +136,10 @@ class Board
         }
 
         // now for each piece put the corresponding piece type into the piece list 
-        for(int i =0; i< bbWhite.Length; i++)
+        for(int pieceType = 0; pieceType < bbWhite.Length; pieceType++)
         {
-            Piece pieceType = (Piece)i; 
-            ulong whitePieces = bbWhite[(int) pieceType]; //white bitBoard of type Piece type 
-            ulong blackPieces = bbBlack[(int) pieceType]; // black bitBoard of type Piece type 
+            ulong whitePieces = bbWhite[pieceType]; //white bitBoard of type Piece type 
+            ulong blackPieces = bbBlack[pieceType]; // black bitBoard of type Piece type 
 
             // now for each of this piece in the pieces bitboard put piece of that type in pieces list at position 
             // get the next bit that is turned on to find at what position the piece is located 
@@ -118,6 +177,65 @@ class Board
         }
 
         return pieceList; 
+    }
+
+    public ulong initZobristKey ()
+    {
+        ulong key = 0UL;
+
+        //get bitboards for both side 
+        ulong[] bbWhite = bbPieces[(int) Side.White]; 
+        ulong[] bbBlack = bbPieces[(int) Side.Black];
+
+        // iterate through all piece types' bitboards , for both white and black ( like done in initializing the piece list) 
+        for (int pieceType = 0; pieceType < bbWhite.Length; pieceType++)
+        {
+            ulong whitePieces = bbWhite[pieceType]; //white bitBoard of type Piece type 
+            ulong blackPieces = bbBlack[pieceType]; // black bitBoard of type Piece type 
+
+            // iterate through all locations of current piece type (like we did in last step) get that square then look up in our zobrist tables; 
+            // then xor that value onto key 
+            int currSquare = 0;
+            while (whitePieces > 0)
+            {
+                while ((whitePieces & 1UL) == 0)
+                {
+                    currSquare++;
+                    whitePieces >>= 1;
+                }
+                // now we have the square use that and all other info to get specific rand num from zorbist and xor it to key
+                key ^= ZobristRandoms.piece(Side.White, pieceType, currSquare); 
+
+                whitePieces >>= 1;
+                currSquare++;
+
+            }
+            // do same for black 
+            currSquare = 0;
+            while (blackPieces > 0)
+            {
+                while ((blackPieces & 1UL) == 0)
+                {
+                    currSquare++;
+                    blackPieces >>= 1;
+                }
+                // now we have the square use that and all other info to get specific rand num from zorbist and xor it to key
+                key ^= ZobristRandoms.piece(Side.Black , pieceType , currSquare);
+
+                blackPieces >>= 1;
+                currSquare++;
+
+            }
+            
+        }
+
+        // hash castling, side to move, and en-passant permissions 
+        //TBD
+        /*key ^= ZobristRandoms.castling(GameState.castling);
+        key ^= ZobristRandoms.side((int) GameState.activeColor);
+        key ^= ZobristRandoms.enPassant(GameState.enPassant); */
+
+        return key; 
     }
     // takes in a bit board and prints out its representation
     public void printBitBoard(ulong bb) 
