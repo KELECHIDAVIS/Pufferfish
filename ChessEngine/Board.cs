@@ -15,10 +15,24 @@ public enum  Side
     BOTH,
 }
 
+/*public struct GameState
+{
+    public byte activeColor;
+    public byte castling;
+    public byte halfMoveClock;
+    public byte? enPassant;
+    public UInt16 fullMoveNumber;
+    public ulong zobristKey;
+    public Int16 phaseValue = Int16.MinValue;
+    public int[] psqtValue= new int[(int)Side.BOTH];
+    public Move nextMove;
+
+}
+*/
 // Rands for the zobrist tables 
 // for each side , for each piece , on each square, generate a random number 
 // these nums are stored here so that they can be used for lookup later
-public class ZobristRandoms 
+public struct ZobristRandoms 
 {
     public const int NUM_CASTLING_PERMISSIONS = 16;
     public const int RAND_SEED = 1; 
@@ -84,7 +98,7 @@ public class ZobristRandoms
         return randPieces[(int)side][Piece][Square]; 
     }
 
-    public static ulong castling(int castlingPermission)
+    public static ulong castling(byte castlingPermission)
     {
         return randCastling[castlingPermission]; 
     }
@@ -92,7 +106,7 @@ public class ZobristRandoms
     {
         return randSides[Side];
     }
-    public static ulong enPassant(int? ep)
+    public static ulong enPassant(byte? ep)
     {
         if(ep != null)
             return randEnPassant[(int) ep];
