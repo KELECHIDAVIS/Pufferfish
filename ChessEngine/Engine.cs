@@ -9,10 +9,25 @@ class Engine
   
     public static void Main(string[] args)
     {
-        int[] arr = { 1, 2, 3, 4, 5, 6, };
         Board board = new Board();
-        
-        Console.Write(board.getPieceBitBoard(Side.White,Piece.King));
+        board.initStandardChess();
+
+
+        foreach (Board.Side side in Enum.GetValues(typeof(Board.Side))) {
+            Console.WriteLine("All " + side + " pieces: ");
+            Board.printBitBoard(board.sideBB[(int)side]); 
+            foreach(Board.Piece piece in Enum.GetValues(typeof(Board.Piece))) {
+                if(piece == Board.Piece.NONE) continue;
+
+                Console.WriteLine(side + " " + piece);
+                Board.printBitBoard(board.piecesBB[(int)side][(int)piece]); 
+            }
+        }
+
+        Console.WriteLine("Board With Piece Values");
+        Board.printPieceList(board.pieceList); 
+
+
     }
 }
 
