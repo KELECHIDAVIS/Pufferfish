@@ -59,7 +59,23 @@ class Board {
         charArrayToBitboards(chessBoard, pieceList, piecesBB, sideBB);
 
     }
+    /// <summary>
+    /// init chess with custom board ; allows for easier debugging and inputting certain boards 
+    /// </summary>
+    public void initCustomChess() {
+        char[][] chessBoard = new char[][]{
+            new char[] { 'r', 'n', 'b', 'q', 'k', 'b', 'n', 'r' },
+            new char[] { 'p', 'p', 'p', 'p', 'p', 'p', 'p', 'p' },
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { 'r', 'r', 'r', 'r', 'r', 'r', 'r', 'r' },
+            new char[] { 'P', 'P', 'P', 'P', 'P', 'P', 'P', 'P' },
+            new char[] { 'R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R' },
+        };
+        charArrayToBitboards(chessBoard, pieceList, piecesBB, sideBB);
 
+    }
     /// <summary>
     /// Print inputted bitboard into 8x8 chess board 
     /// </summary>

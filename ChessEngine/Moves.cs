@@ -17,8 +17,9 @@ class Moves
     public static string possibleMoves( Side side, string history , ulong[][] piecesBB, ulong[] sideBB)
     {
         if(side == Side.White) return possibleMovesWhite(history, piecesBB, sideBB);
-
-        return possibleMovesBlack(history, piecesBB, sideBB);
+        else {
+            return possibleMovesBlack(history, piecesBB, sideBB);
+        }
     }
 
     
@@ -54,15 +55,26 @@ class Moves
     /// <returns></returns>
     private static string possiblePawnWhite(string history, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB)
     {
+        string moveList = ""; 
         // capture right ;white pawn can't be on rank 8 because that'd be a promotion;  shift bits 9 to left ; make sure there is a caputarable piece there and make sure that piece is not on a file (left column wrap around)
-        if ((( (piecesBB[(int)Side.White][(int)Piece.Pawn] & ~RANK_8)<< 9) & (captureBB & ~FILE_A)) > 0)
-        {
-            // we have valid moves 
-            ulong rightCapBB= (((piecesBB[(int)Side.White][(int)Piece.Pawn] & ~RANK_8) << 9) & (captureBB & ~FILE_A)); 
+        ulong rightCapture = ((piecesBB[(int)Side.White][(int)Piece.Pawn] & ~RANK_8) << 9) &(captureBB & ~FILE_A) ;
 
-            // iterate through all bits and see which indexes are on 
+        // now if a bit is on in that bb convert into move notation
+        //x1,y1,x2,y2 
+        int currentIndex = 0;
+        while (rightCapture > 0) {
+            while ((rightCapture & 1) == 0) { rightCapture >>= 1; currentIndex++; } //iterate based on index of bit
+
+            // now translates current index into a move 
+            int y2 = (currentIndex / 8) + 1;  int x2 = (currentIndex % 8)+1;
+            int y1 = y2 - 1; int x1 = x2 - 1; // prev row and col respectively  
+
+            moveList +=""+x1 + "," + y1 + "," + x2 + "," + y2; 
+            currentIndex++;
+            rightCapture >>= 1; 
         }
-        return "";
+        
+        return moveList;
 
     }
 }

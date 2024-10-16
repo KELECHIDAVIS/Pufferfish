@@ -10,17 +10,15 @@ class Engine
     public static void Main(string[] args)
     {
         // test the boards 
-        /*Board board = new Board();
-        board.initStandardChess();
+        Board board = new Board();
+        board.initCustomChess();
 
 
-        foreach (Board.Side side in Enum.GetValues(typeof(Board.Side)))
-        {
+        foreach (Side side in Enum.GetValues(typeof(Side))) {
             Console.WriteLine("All " + side + " pieces: ");
             Board.printBitBoard(board.sideBB[(int)side]);
-            foreach (Board.Piece piece in Enum.GetValues(typeof(Board.Piece)))
-            {
-                if (piece == Board.Piece.NONE) continue;
+            foreach (Piece piece in Enum.GetValues(typeof(Piece))) {
+                if (piece == Piece.NONE) continue;
 
                 Console.WriteLine(side + " " + piece);
                 Board.printBitBoard(board.piecesBB[(int)side][(int)piece]);
@@ -28,11 +26,13 @@ class Engine
         }
 
         Console.WriteLine("Board With Piece Values");
-        Board.printPieceList(board.pieceList);*/
+        Board.printPieceList(board.pieceList);
 
-        Console.WriteLine(Moves.FILE_H);
-        Board.printBitBoard(Moves.FILE_H);
 
+        string possibleWhiteMoves = Moves.possibleMoves(Side.White, "", board.piecesBB, board.sideBB); 
+
+        
+        Console.WriteLine("Possible White Moves (Just pawn right captures for rn): "+ possibleWhiteMoves);
     }
 }
 
