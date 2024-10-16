@@ -16,10 +16,11 @@
     const int NUM_PIECE_TYPES = 6;
     const int NUM_SIDES = 2;
     const int NUM_SQUARES = 64;
-    const string STANDARD_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"; 
 
     public ulong[][] piecesBB = initPiecesBitBoard(); // row is color, col is piece type Ex: [white][king]
     public ulong[] sideBB = new ulong[NUM_SIDES]; // hold all pieces from a certain color Ex: [white] 
+    
+    //PIECE LIST IS LEAST SIG BIT TO MOST SIG; LSB->MSB; 0->63
     public int[] pieceList = new int[NUM_SQUARES]; // rep of the board that holds piece info so we can tell which piece is on which square
 
     /// <summary>
@@ -39,7 +40,7 @@
     }
 
     /// <summary>
-    /// init standard chess 
+    /// init standard chess ; allows for easier debugging and inputting certain boards 
     /// </summary>
     public void initStandardChess () {
         char[][] chessBoard = new char[][]{
@@ -63,9 +64,9 @@
     public static void printBitBoard(ulong board) {
         const int LAST_BIT = 63; // helps with calcs 
 
-        for (int i =0;i<=7; i++) {
-            for(int j = 0; j<=7; j++) {
-                int currentBit = LAST_BIT - (i * 8 + j);
+        for (int rank =0;rank<=7; rank++) {
+            for(int file= 7; file>=0; file++) {
+                int currentBit = LAST_BIT - (rank * 8 + file);
 
                 ulong mask = 1UL;
                 mask <<= currentBit; // shift 1 to current bit 
@@ -143,45 +144,7 @@
     /// </summary>
     /// <param name="fen"> </param>
     public void FEN_TO_BB (string fen) {
-        // starting from top left ending bottom right 
-        int iterator = 63; // topleft iterator 
-
-        for(int i=0; i<fen.Length; i++) {
-
-            switch (fen[i]) {
-                case 'k':
-                    // black king 
-                    
-                break;
-                case 'q':
-                break;
-                case 'r':
-                break;
-                case 'b':
-                break;
-                case 'n':
-                break;
-                case 'p':
-                break;
-                case 'K':
-                break;
-                case 'Q':
-                break;
-                case 'R':
-                break;
-                case 'B':
-                break;
-                case 'N':
-                break;
-                case 'P':
-                break;
-                case '/':
-                break;
-                default:
-                    // number? 
-                break; 
-            }
-        }
+     
     }
 
 

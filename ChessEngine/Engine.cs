@@ -9,7 +9,8 @@ class Engine
   
     public static void Main(string[] args)
     {
-        Board board = new Board();
+        // test the boards 
+        /*Board board = new Board();
         board.initStandardChess();
 
 
@@ -25,8 +26,10 @@ class Engine
         }
 
         Console.WriteLine("Board With Piece Values");
-        Board.printPieceList(board.pieceList); 
+        Board.printPieceList(board.pieceList); */
 
+        Console.WriteLine(Moves.FILE_AB);
+        Board.printBitBoard(Moves.FILE_AB); 
 
     }
 }
