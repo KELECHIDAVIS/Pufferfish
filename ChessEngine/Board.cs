@@ -53,7 +53,7 @@
             new char[] { 'P', 'P', 'P', 'P', 'P', 'P', 'P', 'P' },
             new char[] { 'R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R' },
         };
-        charArrayToBitboards(chessBoard);
+        charArrayToBitboards(chessBoard, pieceList, piecesBB, sideBB);
 
     }
 
@@ -65,7 +65,7 @@
         const int LAST_BIT = 63; // helps with calcs 
 
         for (int rank =0;rank<=7; rank++) {
-            for(int file= 7; file>=0; file++) {
+            for(int file= 7; file>=0; file--) {
                 int currentBit = LAST_BIT - (rank * 8 + file);
 
                 ulong mask = 1UL;
@@ -85,17 +85,19 @@
     /// </summary>
     /// <param name="list"></param>
     public static void printPieceList(int[] list) {
-
-        for (int i = 0; i <= 7; i++) {
-            for (int j = 0; j <= 7; j++) {
-               int currentIndx = (i * 8 + j);
+        const int LAST_BIT = 63; 
+        for (int rank = 0; rank <= 7; rank++)
+        {
+            for (int file = 7; file >= 0; file--)
+            {
+                int currentIndx = LAST_BIT - (rank * 8 +file );
 
                 Console.Write(list[currentIndx]+" ");
             }
             Console.WriteLine();
         }
     }
-    private void charArrayToBitboards(char[][] chessBoard) {
+    private void charArrayToBitboards(char[][] chessBoard, int[] pieceList, ulong[][] piecesBB, ulong[] sidesBB) {
         const int LAST_BIT = 63; // helps with calcs 
 
         for(int i=0; i<=7; i++) {
@@ -103,7 +105,6 @@
             for(int j =0; j<=7; j++) {
                 
                 int pieceVal = (int) Piece.NONE; // current piece val ; 
-                int pieceListSquare = i * 8 + j; // current number square we are at 63->0; right to left; top to bot
                 Side side;  // current side of piece 
 
                 switch (Char.ToLower(chessBoard[i][j])) { // find val of piece 
@@ -115,24 +116,27 @@
                     case 'p': pieceVal = (int) Piece.Pawn; break;
                 }
 
-                pieceList[pieceListSquare] = pieceVal; // info about currentPiece
+                // from left -> right the indexes go 56 57 58... 63
+                int currentIndex = LAST_BIT - (8*i + (7-j) ); // also where bit is going to be 
+
+                pieceList[currentIndex] = pieceVal; // info about currentPiece
 
                 if (pieceVal == (int)Piece.NONE) {
 
                     continue; // skip if there is no piece there 
                 }
 
-                int bitPosition = LAST_BIT - pieceListSquare;  // we want a bit at this position
+                
 
                 side = Char.IsUpper(chessBoard[i][j]) ? Side.White : Side.Black; // if uppercase its white 
                 ulong mask  = 1UL; // initialize mask 
-                mask <<= bitPosition; // now shift the bit to currentPos
+                mask <<= currentIndex; // now shift the bit to currentPos
 
 
                 piecesBB[(int)side][pieceVal] |= mask; // or the mask to bb to preserve data
 
                 // or mask to side specific as well 
-                sideBB[(int)side] |= mask; 
+                sidesBB[(int)side] |= mask; 
             }
         }
     }

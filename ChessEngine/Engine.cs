@@ -14,22 +14,24 @@ class Engine
         board.initStandardChess();
 
 
-        foreach (Board.Side side in Enum.GetValues(typeof(Board.Side))) {
+        foreach (Board.Side side in Enum.GetValues(typeof(Board.Side)))
+        {
             Console.WriteLine("All " + side + " pieces: ");
-            Board.printBitBoard(board.sideBB[(int)side]); 
-            foreach(Board.Piece piece in Enum.GetValues(typeof(Board.Piece))) {
-                if(piece == Board.Piece.NONE) continue;
+            Board.printBitBoard(board.sideBB[(int)side]);
+            foreach (Board.Piece piece in Enum.GetValues(typeof(Board.Piece)))
+            {
+                if (piece == Board.Piece.NONE) continue;
 
                 Console.WriteLine(side + " " + piece);
-                Board.printBitBoard(board.piecesBB[(int)side][(int)piece]); 
+                Board.printBitBoard(board.piecesBB[(int)side][(int)piece]);
             }
         }
 
         Console.WriteLine("Board With Piece Values");
-        Board.printPieceList(board.pieceList); */
+        Board.printPieceList(board.pieceList);*/
 
-        Console.WriteLine(Moves.FILE_AB);
-        Board.printBitBoard(Moves.FILE_AB); 
+        Console.WriteLine(Moves.FILE_H);
+        Board.printBitBoard(Moves.FILE_H);
 
     }
 }
