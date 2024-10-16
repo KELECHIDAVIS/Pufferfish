@@ -62,6 +62,7 @@ class Moves
 
             // iterate through all bits and see which indexes are on 
         }
+        return "";
 
     }
 }
