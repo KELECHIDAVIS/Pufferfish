@@ -6,6 +6,7 @@ class Moves
     public const ulong FILE_H = 0b10000000_10000000_10000000_10000000_10000000_10000000_10000000_10000000; 
     public const ulong RANK_8 = 0b11111111_00000000_00000000_00000000_00000000_00000000_00000000_00000000;
 
+    public static ulong PAWN_MOVES;  // to save on memory we just reassign this variable 
     /// <summary>
     /// Returns all possible moves for that side 
     /// </summary>
@@ -44,37 +45,55 @@ class Moves
     }
 
     /// <summary>
-    /// Returns all possible white pawn moves 
+    /// Returns all possible white pawn moves ; 
+    /// moves are in form: x1,y1,x2,y2x1,y1...
     /// </summary>
-    /// <param name="history"></param>
+    /// <param name="history"> history of moves for en passant</param>
     /// <param name="piecesBB"></param>
     /// <param name="sideBB"></param>
-    /// <param name="nonCaptureBB"></param>
+    /// <param name="nonCaptureBB"> not capturable pieces </param>
     /// <param name="captureBB"></param>
-    /// <param name="emptyBB"></param>
+    /// <param name="emptyBB"> places that are empty</param>
     /// <returns></returns>
     private static string possiblePawnWhite(string history, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB)
     {
-        string moveList = ""; 
+        string moveList = "";
         // capture right ;white pawn can't be on rank 8 because that'd be a promotion;  shift bits 9 to left ; make sure there is a caputarable piece there and make sure that piece is not on a file (left column wrap around)
-        ulong rightCapture = ((piecesBB[(int)Side.White][(int)Piece.Pawn] & ~RANK_8) << 9) &(captureBB & ~FILE_A) ;
+        PAWN_MOVES = ((piecesBB[(int)Side.White][(int)Piece.Pawn] & ~RANK_8) << 9) &(captureBB & ~FILE_A) ;
 
         // now if a bit is on in that bb convert into move notation
         //x1,y1,x2,y2 
-        int currentIndex = 0;
-        while (rightCapture > 0) {
-            while ((rightCapture & 1) == 0) { rightCapture >>= 1; currentIndex++; } //iterate based on index of bit
+        moveList += extractValidMoves(PAWN_MOVES); 
 
-            // now translates current index into a move 
-            int y2 = (currentIndex / 8) + 1;  int x2 = (currentIndex % 8)+1;
-            int y1 = y2 - 1; int x1 = x2 - 1; // prev row and col respectively  
+        // left capture 
+        //wp cant be on rank8; shift left 7; capturable piece has to be at destination and can't be on file h; 
+        PAWN_MOVES = ((piecesBB[(int)Side.White][(int)Piece.Pawn] & ~RANK_8) << 7) & (captureBB & ~FILE_H);
 
-            moveList +=""+x1 + "," + y1 + "," + x2 + "," + y2; 
-            currentIndex++;
-            rightCapture >>= 1; 
-        }
-        
+        moveList += extractValidMoves(PAWN_MOVES); 
+
         return moveList;
 
+    }
+
+    /// <summary>
+    /// extracts valid moves and returns them as a string of x1,y1,x2,y2x1,y1,x2,y2...
+    /// </summary>
+    /// <param name="bb"></param>
+    /// <returns></returns>
+    private static string extractValidMoves(ulong bb) {
+        int currentIndex = 0;
+        string moveList = ""; 
+        while (bb > 0) {
+            while ((bb & 1) == 0) { bb >>= 1; currentIndex++; } //iterate based on index of bit
+
+            // now translates current index into a move 
+            int y2 = (currentIndex / 8) + 1; int x2 = (currentIndex % 8) + 1;
+            int y1 = y2 - 1; int x1 = x2 - 1; // prev row and col respectively  
+
+            moveList += "" + x1 + "," + y1 + "," + x2 + "," + y2;
+            currentIndex++;
+            bb >>= 1;
+        }
+        return moveList;
     }
 }
