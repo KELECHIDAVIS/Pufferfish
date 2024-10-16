@@ -1,17 +1,20 @@
-﻿class Board {
-    public enum Piece{
-        King,
-        Queen,
-        Rook,
-        Bishop,
-        Knight,
-        Pawn,
-        NONE,
-    }; 
-    public enum Side  {
-        White,
-        Black
-    }
+﻿public enum Piece
+{
+    King,
+    Queen,
+    Rook,
+    Bishop,
+    Knight,
+    Pawn,
+    NONE,
+};
+public enum Side
+{
+    White,
+    Black
+}
+class Board {
+   
 
     const int NUM_PIECE_TYPES = 6;
     const int NUM_SIDES = 2;
