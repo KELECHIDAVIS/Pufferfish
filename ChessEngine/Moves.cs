@@ -69,22 +69,26 @@ class Moves
         //wp cant be on rank8; shift left 7; capturable piece has to be at destination and can't be on file h; 
         PAWN_MOVES = ((piecesBB[(int)Side.White][(int)Piece.Pawn] & ~RANK_8) << 7) & (captureBB & ~FILE_H);
 
-        moveList += extractValidMoves(PAWN_MOVES); 
+        moveList += extractValidMoves(PAWN_MOVES);
 
-        return moveList;
+        /*// push pawn 1
+        PAWN_MOVES = ((piecesBB[(int)Side.White][(int)Piece.Pawn] & ~RANK_8) << 8); 
+        */
+
+        return moveList; 
 
     }
 
     /// <summary>
     /// extracts valid moves and returns them as a string of x1,y1,x2,y2x1,y1,x2,y2...
     /// </summary>
-    /// <param name="bb"></param>
+    /// <param name="validMovesBB"></param>
     /// <returns></returns>
-    private static string extractValidMoves(ulong bb) {
+    private static string extractValidMoves(ulong validMovesBB) {
         int currentIndex = 0;
         string moveList = ""; 
-        while (bb > 0) {
-            while ((bb & 1) == 0) { bb >>= 1; currentIndex++; } //iterate based on index of bit
+        while (validMovesBB > 0) {
+            while ((validMovesBB & 1) == 0) { validMovesBB >>= 1; currentIndex++; } //iterate based on index of bit
 
             // now translates current index into a move 
             int y2 = (currentIndex / 8) + 1; int x2 = (currentIndex % 8) + 1;
@@ -92,7 +96,7 @@ class Moves
 
             moveList += "" + x1 + "," + y1 + "," + x2 + "," + y2;
             currentIndex++;
-            bb >>= 1;
+            validMovesBB >>= 1;
         }
         return moveList;
     }

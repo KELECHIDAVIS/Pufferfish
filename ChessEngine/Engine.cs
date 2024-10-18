@@ -32,7 +32,7 @@ class Engine
         string possibleWhiteMoves = Moves.possibleMoves(Side.White, "", board.piecesBB, board.sideBB); 
 
         
-        Console.WriteLine("Possible White Moves (Just pawn right captures for rn): "+ possibleWhiteMoves);
+        Console.WriteLine("Possible White Moves (Just pawn rn): "+ possibleWhiteMoves);
     }
 }
 
