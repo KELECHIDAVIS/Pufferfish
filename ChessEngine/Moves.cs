@@ -5,6 +5,7 @@ class Moves
     public const ulong FILE_AB= 0b11000000_11000000_11000000_11000000_11000000_11000000_11000000_11000000;
     public const ulong FILE_H = 0b10000000_10000000_10000000_10000000_10000000_10000000_10000000_10000000; 
     public const ulong RANK_8 = 0b11111111_00000000_00000000_00000000_00000000_00000000_00000000_00000000;
+    public const ulong RANK_2 = 0b00000000_00000000_00000000_00000000_00000000_00000000_11111111_00000000;
 
     public static ulong PAWN_MOVES;  // to save on memory we just reassign this variable 
     /// <summary>
@@ -71,9 +72,13 @@ class Moves
 
         moveList += extractValidMoves(PAWN_MOVES);
 
-        /*// push pawn 1
-        PAWN_MOVES = ((piecesBB[(int)Side.White][(int)Piece.Pawn] & ~RANK_8) << 8); 
-        */
+        // push pawn 1 ; that spot has to be empty
+        PAWN_MOVES = ((piecesBB[(int)Side.White][(int)Piece.Pawn] & ~RANK_8) << 8) & emptyBB;
+        moveList += extractValidMoves(PAWN_MOVES);
+
+        /*//push pawn 2 ;  pawn has to be on rank2 ; both spot in front and destination has to be empty 
+        PAWN_MOVES = ((piecesBB[(int)Side.White][(int)Piece.Pawn] & RANK_2) << 16) & emptyBB;*/
+
 
         return moveList; 
 
