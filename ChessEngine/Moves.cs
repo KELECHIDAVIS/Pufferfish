@@ -47,7 +47,9 @@ class Moves
 
     /// <summary>
     /// Returns all possible white pawn moves ; 
-    /// moves are in form: x1,y1,x2,y2x1,y1...
+    /// Each move is 4 characters: x1y1x2y2
+    /// Same for promotions: x1x2TP; Ex: 45QP
+    /// moves are in form: x1y1x2y2x1,y1...
     /// </summary>
     /// <param name="history"> history of moves for en passant</param>
     /// <param name="piecesBB"></param>
@@ -74,7 +76,7 @@ class Moves
             y2 = (currentIndex / 8) + 1;  x2 = (currentIndex % 8) + 1;
             y1 = y2 - 1; x1 = x2 - 1; // prev row and col respectively  
 
-            moveList += "" + x1 + "," + y1 + "," + x2 + "," + y2;
+            moveList += "" + x1 + "" + y1 + "" + x2 + "" + y2;
             currentIndex++;
             PAWN_MOVES >>= 1;
         }
@@ -93,7 +95,7 @@ class Moves
             y2 = (currentIndex / 8) + 1; x2 = (currentIndex % 8) + 1;
             y1 = y2 - 1; x1 = x2 + 1; // prev row, next col 
 
-            moveList += "" + x1 + "," + y1 + "," + x2 + "," + y2;
+            moveList += "" + x1 + "" + y1 + "" + x2 + "" + y2;
             currentIndex++;
             PAWN_MOVES >>= 1;
         }
@@ -110,44 +112,91 @@ class Moves
             y2 = (currentIndex / 8) + 1; x2 = (currentIndex % 8) + 1;
             y1 = y2 - 1; x1 = x2 ; // prev row, same col ; 
 
-            moveList += "" + x1 + "," + y1 + "," + x2 + "," + y2;
+            moveList += "" + x1 + "" + y1 + "" + x2 + "" + y2;
             currentIndex++;
             PAWN_MOVES >>= 1;
         }
 
+
+
+        currentIndex = 0;
+
         //push pawn 2 ; both spot in front and destination has to be empty ; destination has to be on rank 4
-        PAWN_MOVES = (piecesBB[(int)Side.White][(int)Piece.Pawn] << 16) & emptyBB & (emptyBB<<8) & RANK_4;
-        
+        PAWN_MOVES = (piecesBB[(int)Side.White][(int)Piece.Pawn] << 16) & RANK_4 & emptyBB & (emptyBB << 8);
+
         while (PAWN_MOVES > 0) { // EXTRACT VALID MOVES 
             while ((PAWN_MOVES & 1) == 0) { PAWN_MOVES >>= 1; currentIndex++; } //iterate based on index of bit
 
             // now translates current index into a move 
             y2 = (currentIndex / 8) + 1; x2 = (currentIndex % 8) + 1;
-            y1 = y2 - 2; x1 = x2; // prev row, same col ; 
+            y1 = y2 - 2; x1 = x2; // prev 2 row, same col ; 
 
-            moveList += "" + x1 + "," + y1 + "," + x2 + "," + y2;
+            moveList += "" + x1 + "" + y1 + "" + x2 + "" + y2;
             currentIndex++;
             PAWN_MOVES >>= 1;
         }
 
 
         //PROMOTIONS 
+        
 
         // capture right promotion
         //destination has to be capturable, on rank 8, and can't be on file a (wrap around) 
         PAWN_MOVES = (piecesBB[(int)Side.White][(int)Piece.Pawn] << 9) & captureBB & RANK_8 & (~FILE_A);
 
         // extract valid promotions 
+        // in form of x1,x2,PromoType,'P'  ; Ex: 45QP: a pawn in col 4 captures right and promotes to queen
+
+        currentIndex = 0; 
+        while (PAWN_MOVES > 0) { // EXTRACT VALID MOVES 
+            while ((PAWN_MOVES & 1) == 0) { PAWN_MOVES >>= 1; currentIndex++; } //iterate based on index of bit
+
+            // now translates current index into a move 
+            // no need for y anymore since we know we go from rank 7 to 8
+            x2 = (currentIndex % 8) + 1;
+            x1 = x2 - 1; // prev col  
+            // can promote into either queen, rook, bishop, or knight
+            moveList +=""+x1 +""+ x2 + "QP" + x1 + "" + x2 + "RP" + x1 + "" + x2 + "BP" + x1 + "" + x2 + "NP";
+            currentIndex++;
+            PAWN_MOVES >>= 1;
+        }
+
 
         // capture left promo 
         PAWN_MOVES = (piecesBB[(int)Side.White][(int)Piece.Pawn] << 7) & captureBB & RANK_8 & (~FILE_H);
+       
+        currentIndex = 0;
+        while (PAWN_MOVES > 0) { // EXTRACT VALID MOVES 
+            while ((PAWN_MOVES & 1) == 0) { PAWN_MOVES >>= 1; currentIndex++; } //iterate based on index of bit
 
-        // extract valid promotions 
+            // now translates current index into a move 
+            // no need for y anymore since we know we go from rank 7 to 8
+            x2 = (currentIndex % 8) + 1;
+            x1 = x2 +1; // next col  
+            // can promote into either queen, rook, bishop, or knight
+            moveList += "" + x1 + "" + x2 + "QP" + x1 + "" + x2 + "RP" + x1 + "" + x2 + "BP" + x1 + "" + x2 + "NP";
+            currentIndex++;
+            PAWN_MOVES >>= 1;
+        }
+        
 
         // push 1 promo 
         PAWN_MOVES = (piecesBB[(int)Side.White][(int)Piece.Pawn] << 8) & emptyBB & RANK_8;
 
         // extract valid promos 
+        currentIndex = 0;
+        while (PAWN_MOVES > 0) { // EXTRACT VALID MOVES 
+            while ((PAWN_MOVES & 1) == 0) { PAWN_MOVES >>= 1; currentIndex++; } //iterate based on index of bit
+
+            // now translates current index into a move 
+            // no need for y anymore since we know we go from rank 7 to 8
+            x2 = (currentIndex % 8) + 1;
+            x1 = x2; // prev col  
+            // can promote into either queen, rook, bishop, or knight
+            moveList += "" + x1 + "" + x2 + "QP" + x1 + "" + x2 + "RP" + x1 + "" + x2 + "BP" + x1 + "" + x2 + "NP";
+            currentIndex++;
+            PAWN_MOVES >>= 1;
+        }
         return moveList; 
 
     }

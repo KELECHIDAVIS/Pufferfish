@@ -64,14 +64,14 @@ class Board {
     /// </summary>
     public void initCustomChess() {
         char[][] chessBoard = new char[][]{
-            new char[] { 'r', 'n', 'b', 'q', 'k', 'b', 'n', 'r' },
-            new char[] { 'p', 'p', 'p', 'p', 'p', 'p', 'p', 'p' },
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
-            new char[] { 'r', 'r', 'r', 'r', 'r', 'r', 'r', 'r' },
-            new char[] { 'P', 'P', 'P', 'P', 'P', 'P', 'P', 'P' },
-            new char[] { 'R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R' },
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', 'r', 'r', 'P', 'r', 'r', 'r', ' ' },
+            new char[] { 'P', ' ', ' ', 'P', 'P', ' ', ' ', 'P' },
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
         };
         charArrayToBitboards(chessBoard, pieceList, piecesBB, sideBB);
 

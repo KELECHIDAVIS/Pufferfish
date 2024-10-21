@@ -14,7 +14,7 @@ class Engine
         board.initCustomChess();
 
 
-        foreach (Side side in Enum.GetValues(typeof(Side))) {
+        /*foreach (Side side in Enum.GetValues(typeof(Side))) {
             Console.WriteLine("All " + side + " pieces: ");
             Board.printBitBoard(board.sideBB[(int)side]);
             foreach (Piece piece in Enum.GetValues(typeof(Piece))) {
@@ -23,7 +23,7 @@ class Engine
                 Console.WriteLine(side + " " + piece);
                 Board.printBitBoard(board.piecesBB[(int)side][(int)piece]);
             }
-        }
+        }*/
 
         Console.WriteLine("Board With Piece Values");
         Board.printPieceList(board.pieceList);
