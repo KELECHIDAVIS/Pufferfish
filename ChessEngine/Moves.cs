@@ -65,13 +65,14 @@ class Moves
         // now if a bit is on in that bb convert into move notation
         //x1,y1,x2,y2 
         int currentIndex = 0;
-        
+        int x1, y1, x2, y2; 
+
         while (PAWN_MOVES > 0) { // EXTRACT VALID MOVES 
             while ((PAWN_MOVES & 1) == 0) { PAWN_MOVES >>= 1; currentIndex++; } //iterate based on index of bit
 
             // now translates current index into a move 
-            int y2 = (currentIndex / 8) + 1; int x2 = (currentIndex % 8) + 1;
-            int y1 = y2 - 1; int x1 = x2 - 1; // prev row and col respectively  
+            y2 = (currentIndex / 8) + 1;  x2 = (currentIndex % 8) + 1;
+            y1 = y2 - 1; x1 = x2 - 1; // prev row and col respectively  
 
             moveList += "" + x1 + "," + y1 + "," + x2 + "," + y2;
             currentIndex++;
@@ -89,8 +90,8 @@ class Moves
             while ((PAWN_MOVES & 1) == 0) { PAWN_MOVES >>= 1; currentIndex++; } //iterate based on index of bit
 
             // now translates current index into a move 
-            int y2 = (currentIndex / 8) + 1; int x2 = (currentIndex % 8) -1; // minus 1 bc its left 
-            int y1 = y2 - 1; int x1 = x2 - 1; // prev row and col respectively  
+            y2 = (currentIndex / 8) + 1; x2 = (currentIndex % 8) + 1;
+            y1 = y2 - 1; x1 = x2 + 1; // prev row, next col 
 
             moveList += "" + x1 + "," + y1 + "," + x2 + "," + y2;
             currentIndex++;
@@ -106,8 +107,8 @@ class Moves
             while ((PAWN_MOVES & 1) == 0) { PAWN_MOVES >>= 1; currentIndex++; } //iterate based on index of bit
 
             // now translates current index into a move 
-            int y2 = (currentIndex / 8) + 1; int x2 = (currentIndex % 8) + 1;
-            int y1 = y2 - 1; int x1 = x2 ; // prev row and col respectively  
+            y2 = (currentIndex / 8) + 1; x2 = (currentIndex % 8) + 1;
+            y1 = y2 - 1; x1 = x2 ; // prev row, same col ; 
 
             moveList += "" + x1 + "," + y1 + "," + x2 + "," + y2;
             currentIndex++;
@@ -116,11 +117,37 @@ class Moves
 
         //push pawn 2 ; both spot in front and destination has to be empty ; destination has to be on rank 4
         PAWN_MOVES = (piecesBB[(int)Side.White][(int)Piece.Pawn] << 16) & emptyBB & (emptyBB<<8) & RANK_4;
-        moveList += extractValidMoves(PAWN_MOVES);
+        
+        while (PAWN_MOVES > 0) { // EXTRACT VALID MOVES 
+            while ((PAWN_MOVES & 1) == 0) { PAWN_MOVES >>= 1; currentIndex++; } //iterate based on index of bit
+
+            // now translates current index into a move 
+            y2 = (currentIndex / 8) + 1; x2 = (currentIndex % 8) + 1;
+            y1 = y2 - 2; x1 = x2; // prev row, same col ; 
+
+            moveList += "" + x1 + "," + y1 + "," + x2 + "," + y2;
+            currentIndex++;
+            PAWN_MOVES >>= 1;
+        }
+
 
         //PROMOTIONS 
-        
 
+        // capture right promotion
+        //destination has to be capturable, on rank 8, and can't be on file a (wrap around) 
+        PAWN_MOVES = (piecesBB[(int)Side.White][(int)Piece.Pawn] << 9) & captureBB & RANK_8 & (~FILE_A);
+
+        // extract valid promotions 
+
+        // capture left promo 
+        PAWN_MOVES = (piecesBB[(int)Side.White][(int)Piece.Pawn] << 7) & captureBB & RANK_8 & (~FILE_H);
+
+        // extract valid promotions 
+
+        // push 1 promo 
+        PAWN_MOVES = (piecesBB[(int)Side.White][(int)Piece.Pawn] << 8) & emptyBB & RANK_8;
+
+        // extract valid promos 
         return moveList; 
 
     }
