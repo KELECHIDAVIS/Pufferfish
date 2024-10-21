@@ -5,7 +5,7 @@ class Moves
     public const ulong FILE_AB= 0b11000000_11000000_11000000_11000000_11000000_11000000_11000000_11000000;
     public const ulong FILE_H = 0b10000000_10000000_10000000_10000000_10000000_10000000_10000000_10000000; 
     public const ulong RANK_8 = 0b11111111_00000000_00000000_00000000_00000000_00000000_00000000_00000000;
-    public const ulong RANK_2 = 0b00000000_00000000_00000000_00000000_00000000_00000000_11111111_00000000;
+    public const ulong RANK_4 = 0b00000000_00000000_00000000_00000000_11111111_00000000_00000000_00000000;
 
     public static ulong PAWN_MOVES;  // to save on memory we just reassign this variable 
     /// <summary>
@@ -64,36 +64,10 @@ class Moves
 
         // now if a bit is on in that bb convert into move notation
         //x1,y1,x2,y2 
-        moveList += extractValidMoves(PAWN_MOVES); 
-
-        // left capture 
-        //wp cant be on rank8; shift left 7; capturable piece has to be at destination and can't be on file h; 
-        PAWN_MOVES = ((piecesBB[(int)Side.White][(int)Piece.Pawn] & ~RANK_8) << 7) & (captureBB & ~FILE_H);
-
-        moveList += extractValidMoves(PAWN_MOVES);
-
-        // push pawn 1 ; that spot has to be empty
-        PAWN_MOVES = ((piecesBB[(int)Side.White][(int)Piece.Pawn] & ~RANK_8) << 8) & emptyBB;
-        moveList += extractValidMoves(PAWN_MOVES);
-
-        /*//push pawn 2 ;  pawn has to be on rank2 ; both spot in front and destination has to be empty 
-        PAWN_MOVES = ((piecesBB[(int)Side.White][(int)Piece.Pawn] & RANK_2) << 16) & emptyBB;*/
-
-
-        return moveList; 
-
-    }
-
-    /// <summary>
-    /// extracts valid moves and returns them as a string of x1,y1,x2,y2x1,y1,x2,y2...
-    /// </summary>
-    /// <param name="validMovesBB"></param>
-    /// <returns></returns>
-    private static string extractValidMoves(ulong validMovesBB) {
         int currentIndex = 0;
-        string moveList = ""; 
-        while (validMovesBB > 0) {
-            while ((validMovesBB & 1) == 0) { validMovesBB >>= 1; currentIndex++; } //iterate based on index of bit
+        
+        while (PAWN_MOVES > 0) { // EXTRACT VALID MOVES 
+            while ((PAWN_MOVES & 1) == 0) { PAWN_MOVES >>= 1; currentIndex++; } //iterate based on index of bit
 
             // now translates current index into a move 
             int y2 = (currentIndex / 8) + 1; int x2 = (currentIndex % 8) + 1;
@@ -101,8 +75,55 @@ class Moves
 
             moveList += "" + x1 + "," + y1 + "," + x2 + "," + y2;
             currentIndex++;
-            validMovesBB >>= 1;
+            PAWN_MOVES >>= 1;
         }
-        return moveList;
+        
+
+        // left capture 
+        //wp cant be on rank8; shift left 7; capturable piece has to be at destination and can't be on file h; 
+        PAWN_MOVES = ((piecesBB[(int)Side.White][(int)Piece.Pawn] & ~RANK_8) << 7) & (captureBB & ~FILE_H);
+
+        currentIndex = 0;
+
+        while (PAWN_MOVES > 0) { // EXTRACT VALID MOVES 
+            while ((PAWN_MOVES & 1) == 0) { PAWN_MOVES >>= 1; currentIndex++; } //iterate based on index of bit
+
+            // now translates current index into a move 
+            int y2 = (currentIndex / 8) + 1; int x2 = (currentIndex % 8) -1; // minus 1 bc its left 
+            int y1 = y2 - 1; int x1 = x2 - 1; // prev row and col respectively  
+
+            moveList += "" + x1 + "," + y1 + "," + x2 + "," + y2;
+            currentIndex++;
+            PAWN_MOVES >>= 1;
+        }
+
+        // push pawn 1 ; that spot has to be empty
+        PAWN_MOVES = ((piecesBB[(int)Side.White][(int)Piece.Pawn] & ~RANK_8) << 8) & emptyBB;
+
+        currentIndex = 0;
+
+        while (PAWN_MOVES > 0) { // EXTRACT VALID MOVES 
+            while ((PAWN_MOVES & 1) == 0) { PAWN_MOVES >>= 1; currentIndex++; } //iterate based on index of bit
+
+            // now translates current index into a move 
+            int y2 = (currentIndex / 8) + 1; int x2 = (currentIndex % 8) + 1;
+            int y1 = y2 - 1; int x1 = x2 ; // prev row and col respectively  
+
+            moveList += "" + x1 + "," + y1 + "," + x2 + "," + y2;
+            currentIndex++;
+            PAWN_MOVES >>= 1;
+        }
+
+        //push pawn 2 ; both spot in front and destination has to be empty ; destination has to be on rank 4
+        PAWN_MOVES = (piecesBB[(int)Side.White][(int)Piece.Pawn] << 16) & emptyBB & (emptyBB<<8) & RANK_4;
+        moveList += extractValidMoves(PAWN_MOVES);
+
+        //PROMOTIONS 
+        
+
+        return moveList; 
+
     }
+
+    
 }
