@@ -64,7 +64,7 @@ class Board {
     /// </summary>
     public void initCustomChess() {
         char[][] chessBoard = new char[][]{
-            new char[] { 'r', ' ', ' ', ' ', ' ', ' ', 'r', ' ' },
+            new char[] { 'r', 'r', ' ', ' ', ' ', ' ', 'r', ' ' },
             new char[] { 'P', ' ', ' ', 'P', ' ', ' ', ' ', 'P' },
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
