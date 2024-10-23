@@ -236,7 +236,7 @@ class Moves {
                     currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
                     // so our destination is the currIndex ; do calcs 
                     x2 = (currentIndex % 8) + 1;
-                    x1 = x2; // prev row and col respectively  
+                    x1 = x2+1;  
 
                     moveList += "" + x1 + "" + x2 + "EE"; // to make 4 total characters ; y's can be inferred bc always 5->6 for wps 
 

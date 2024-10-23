@@ -54,7 +54,7 @@ class Engine
         Board.printBitBoard(board.piecesBB[(int)(Side.Black)][(int)Piece.Pawn]);
 
         Console.WriteLine("White Pawn Locations: ");
-        Board.printBitBoard(board.piecesBB[(int)(Side.Black)][(int)Piece.Pawn]);
+        Board.printBitBoard(board.piecesBB[(int)(Side.White)][(int)Piece.Pawn]);
 
         Console.WriteLine("All pawn locations: ");
         Board.printBitBoard(board.piecesBB[(int)(Side.Black)][(int)Piece.Pawn] | board.piecesBB[(int)(Side.White)][(int)Piece.Pawn]);
