@@ -1,14 +1,26 @@
 ﻿
 using System.Numerics;
 
-class Moves
-{
+class Moves {
     public const ulong FILE_A = 0b00000001_00000001_00000001_00000001_00000001_00000001_00000001_00000001;
-    public const ulong FILE_AB= 0b11000000_11000000_11000000_11000000_11000000_11000000_11000000_11000000;
-    public const ulong FILE_H = 0b10000000_10000000_10000000_10000000_10000000_10000000_10000000_10000000; 
+    public const ulong FILE_AB = 0b11000000_11000000_11000000_11000000_11000000_11000000_11000000_11000000;
+    public const ulong FILE_H = 0b10000000_10000000_10000000_10000000_10000000_10000000_10000000_10000000;
     public const ulong RANK_8 = 0b11111111_00000000_00000000_00000000_00000000_00000000_00000000_00000000;
     public const ulong RANK_4 = 0b00000000_00000000_00000000_00000000_11111111_00000000_00000000_00000000;
+    public const ulong RANK_5 = 0b00000000_00000000_00000000_11111111_00000000_00000000_00000000_00000000;
     
+    // files go from 0-7 : A-H
+    public static readonly ulong[] FILES = {
+                0b00000001_00000001_00000001_00000001_00000001_00000001_00000001_00000001,
+                0b00000010_00000010_00000010_00000010_00000010_00000010_00000010_00000010,
+                0b00000100_00000100_00000100_00000100_00000100_00000100_00000100_00000100,
+                0b00001000_00001000_00001000_00001000_00001000_00001000_00001000_00001000,
+                0b00010000_00010000_00010000_00010000_00010000_00010000_00010000_00010000,
+                0b00100000_00100000_00100000_00100000_00100000_00100000_00100000_00100000,
+                0b01000000_01000000_01000000_01000000_01000000_01000000_01000000_01000000,
+                0b10000000_10000000_10000000_10000000_10000000_10000000_10000000_10000000,
+    }; 
+
     public static ulong PAWN_MOVES;  // to save on memory we just reassign this variable 
     /// <summary>
     /// Returns all possible moves for that side 
@@ -182,7 +194,65 @@ class Moves
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
         }
+
+
+        //EN PASSANT 
+
+        //history has to at least have a move and history's last move has to be a valid black pawn two move 
+        if (history.Length >= 4 ) {
+
+            //check two move validity 
+            y2 = history[history.Length - 1] -'0';
+            x2 = history[history.Length - 2] -'0';
+            y1 = history[history.Length - 3] -'0';
+            x1 = history[history.Length - 4] -'0';
+
+            // x1 has to equal x2 and y1 has to be 2 greater than y2 (black pawn moving two down), y2 has to equal rank 5 
+            if(x1==x2 && y2==5&& y1== y2+2) {
+
+                // right capture 
+                // wp has to be left of bp that just moved, they both have to be on rank 5, move wp to space above 
+                PAWN_MOVES = ((piecesBB[(int)Side.White][(int)Piece.Pawn] << 1) & piecesBB[(int)Side.Black][(int)Piece.Pawn] & FILES[x1-1] & RANK_5 ) << 8;
+
+                // we know there is only going to be one 
+                if (PAWN_MOVES > 0 ) {
+                    currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
+                    // so our destination is the currIndex ; do calcs 
+                    x2 = (currentIndex % 8) + 1;
+                    x1 = x2-1; 
+
+                    moveList += "" + x1 + "" + x2 + "EE"; // to make 4 total characters ; y's can be inferred bc always 5->6 for wps 
+
+                    mask = ~(1UL << currentIndex);
+                    PAWN_MOVES &= mask;
+                }
+
+                //left capture 
+
+                PAWN_MOVES = ((piecesBB[(int)Side.White][(int)Piece.Pawn] >> 1) & piecesBB[(int)Side.Black][(int)Piece.Pawn] & FILES[x1 - 1] & RANK_5) << 8;
+
+                // we know there is only going to be one 
+                if (PAWN_MOVES > 0) {
+                    currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
+                    // so our destination is the currIndex ; do calcs 
+                    x2 = (currentIndex % 8) + 1;
+                    x1 = x2; // prev row and col respectively  
+
+                    moveList += "" + x1 + "" + x2 + "EE"; // to make 4 total characters ; y's can be inferred bc always 5->6 for wps 
+
+                    mask = ~(1UL << currentIndex);
+                    PAWN_MOVES &= mask;
+                }
+
+            }
+
+
+
+        }
         return moveList; 
+
+        
+       
 
     }
 

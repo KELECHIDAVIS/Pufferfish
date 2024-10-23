@@ -37,7 +37,7 @@ class Engine
          Console.WriteLine("Possible White Moves (Just pawn rn): "+ possibleWhiteMoves);*/
 
         Board board = new Board();
-        board.initStandardChess(); 
+        board.initStandardChess();
 
         // testing concept 
         string moveList = "";
@@ -47,26 +47,29 @@ class Engine
 
         // now if a bit is on in that bb convert into move notation
         //x1,y1,x2,y2 
-        int currentIndex ;
+        int currentIndex;
         int x1, y1, x2, y2;
 
-        Console.WriteLine("Black Pawn Locations: "); 
-        Board.printBitBoard(board.piecesBB[(int)(Side.Black)][(int) Piece.Pawn]);
+        Console.WriteLine("Black Pawn Locations: ");
+        Board.printBitBoard(board.piecesBB[(int)(Side.Black)][(int)Piece.Pawn]);
 
         Console.WriteLine("White Pawn Locations: ");
         Board.printBitBoard(board.piecesBB[(int)(Side.Black)][(int)Piece.Pawn]);
 
         Console.WriteLine("All pawn locations: ");
-        Board.printBitBoard(board.piecesBB[(int)(Side.Black)][(int)Piece.Pawn]| board.piecesBB[(int)(Side.White)][(int)Piece.Pawn]);
+        Board.printBitBoard(board.piecesBB[(int)(Side.Black)][(int)Piece.Pawn] | board.piecesBB[(int)(Side.White)][(int)Piece.Pawn]);
 
 
-        Console.WriteLine("Possible White Pawn Moves (x,y) (1->8): "); 
-        moveList = Moves.possibleMoves(Side.White, "", board.piecesBB, board.sideBB); 
-        
-        for ( int i =0; i<moveList.Length; i ++) {
+        Console.WriteLine("Possible White Pawn Moves (x,y) (1->8): ");
+        moveList = Moves.possibleMoves(Side.White, "", board.piecesBB, board.sideBB);
+
+        for (int i = 0; i < moveList.Length; i++) {
             if (i % 4 == 0) Console.WriteLine();
-            Console.Write(moveList[i]); 
+            Console.Write(moveList[i]);
         }
+
+
+
     }
 }
 
