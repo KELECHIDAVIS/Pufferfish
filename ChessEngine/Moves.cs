@@ -65,4 +65,55 @@ class Moves
         return "";
 
     }
+
+
+    // sliding moves and magic bitboards 
+
+    struct MagicInfo
+    {
+        ulong blockerMask;
+        ulong magicNum;
+        uint indexShift; 
+    }
+
+    // for each 64 squares
+    ulong[] RookMovementMasks; // the masks that determines where a rook can go on an empty board for each square
+    ulong[] BishopMoveMasks; 
+    MagicInfo[] RookMagicInfo = initRookMagicInfo(); //TODO
+    MagicInfo[] BishopMagicInfo = initBishopMagicInfo(); //TODO
+    ulong[][] RookAttackHashTable = initRookAttackHashTable(); //TODO
+    ulong[][] BishopAttackHashTable = initBishopAttackHashTable(); //TODO
+
+
+    private static ulong[] initRookMovementMasks()
+    {
+        ulong[] rookMasks = new ulong[64];
+        for (int i = 0; i < 64; i++) {
+            // if i is less than 8 it is in the first rank
+            // if i%8=0 its on the first file; and so on for each rank and file 
+            
+        }
+        return rookMasks; 
+    }
+    private static MagicInfo[] initRookMagicInfo()
+    {
+        
+
+        throw new NotImplementedException();
+    }
+    private static MagicInfo[] initBishopMagicInfo()
+    {
+        throw new NotImplementedException();
+    }
+    private static ulong[][] initRookAttackHashTable()
+    {
+        throw new NotImplementedException();
+    }
+    private static ulong[][] initBishopAttackHashTable()
+    {
+        throw new NotImplementedException();
+    }
+
+
+
 }
