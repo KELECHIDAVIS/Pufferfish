@@ -12,7 +12,7 @@ class Engine
         Board board = new Board();
         board.initStandardChess();
 
-        // test that the pawn moves still work
+        /*// test that the pawn moves still work
         Console.WriteLine("Current Board");
         Board.printBitBoard(board.sideBB[(int)Side.White] | board.sideBB[(int)Side.Black]); 
         string pawnMoves = Moves.possibleMoves(Side.White, "2725", board.piecesBB, board.sideBB);
@@ -25,7 +25,13 @@ class Engine
             }
             currentMove += pawnMoves[i]; 
         }
-        Console.WriteLine(currentMove);
+        Console.WriteLine(currentMove);*/
+
+        // test rook movement masks 
+        for(int i= 0; i<64; i++) {
+            Board.printBitBoard(Moves.getRookMovementMask(i));
+            Console.WriteLine(); 
+        }
     }
 }
 

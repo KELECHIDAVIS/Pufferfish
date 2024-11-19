@@ -264,10 +264,11 @@ class Moves {
     /// Returns the movement mask of a rook on the inputted square 
     /// </summary>
     /// <param name="square" > current square </param>
-    private static ulong getRookMovementMask(int square) {
-        /*ulong rank = RANKS;
-        ulong file; */
-        return 0 ; 
+    public static ulong getRookMovementMask(int square) {
+        ulong rank = RANKS[square/8];
+        ulong file = FILES[square%8];
+
+        return (rank|file) ^ (1UL << square) ; 
     }
 
 }
