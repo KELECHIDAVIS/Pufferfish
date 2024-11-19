@@ -323,4 +323,35 @@ class Moves {
     }
 
     
+    // magic bitboards 
+
+    /// <summary>
+    /// Holds movement mask, magic num, and index shift wal for given square
+    /// </summary>
+    struct MagicInfo {
+        public ulong movementMask;
+        public ulong magicNum;
+        public int indexShift; 
+    }
+
+    MagicInfo[] RookInfoTable; // TODO
+    MagicInfo[] BishopInfoTable; //  initBishopInfo(); // TODO 
+
+    
+
+    /*private static MagicInfo[] initRookInfo() {
+        MagicInfo[] table = new MagicInfo[64];
+        for(int i = 0; i< table.Length; i++) {
+            table[i] = new MagicInfo();
+
+            // get movement mask 
+            table[i].movementMask = getRookMovementMask(i);
+
+            // magic num 
+            table[i].magicNum = 
+        }
+        return table;
+    }*/
+
+
 }
