@@ -30,8 +30,16 @@ class Engine
         Console.WriteLine("Board With Piece Values");
         Board.printPieceList(board.pieceList);*/
 
-        Console.WriteLine(Moves.FILE_H);
-        Board.printBitBoard(Moves.FILE_H);
+
+        string fileNames = "ABCDEFGH"; 
+        for(int i =0; i< Moves.FILES.Length; i++) {
+            Console.WriteLine("File " + fileNames[i]);
+            Board.printBitBoard(Moves.FILES[i]); 
+        }
+        for (int i = 0; i < Moves.RANKS.Length; i++) {
+            Console.WriteLine("Rank " + (i+1));
+            Board.printBitBoard(Moves.RANKS[i]);
+        }
 
     }
 }
