@@ -9,38 +9,23 @@ class Engine
   
     public static void Main(string[] args)
     {
-        // test the boards 
-        /*Board board = new Board();
+        Board board = new Board();
         board.initStandardChess();
 
+        // test that the pawn moves still work
+        Console.WriteLine("Current Board");
+        Board.printBitBoard(board.sideBB[(int)Side.White] | board.sideBB[(int)Side.Black]); 
+        string pawnMoves = Moves.possibleMoves(Side.White, "2725", board.piecesBB, board.sideBB);
 
-        foreach (Board.Side side in Enum.GetValues(typeof(Board.Side)))
-        {
-            Console.WriteLine("All " + side + " pieces: ");
-            Board.printBitBoard(board.sideBB[(int)side]);
-            foreach (Board.Piece piece in Enum.GetValues(typeof(Board.Piece)))
-            {
-                if (piece == Board.Piece.NONE) continue;
-
-                Console.WriteLine(side + " " + piece);
-                Board.printBitBoard(board.piecesBB[(int)side][(int)piece]);
+        string currentMove = ""; 
+        for(int i =0; i<pawnMoves.Length; i++) {
+            if(i%4==0) {
+                Console.WriteLine(currentMove);
+                currentMove = ""; 
             }
+            currentMove += pawnMoves[i]; 
         }
-
-        Console.WriteLine("Board With Piece Values");
-        Board.printPieceList(board.pieceList);*/
-
-
-        string fileNames = "ABCDEFGH"; 
-        for(int i =0; i< Moves.FILES.Length; i++) {
-            Console.WriteLine("File " + fileNames[i]);
-            Board.printBitBoard(Moves.FILES[i]); 
-        }
-        for (int i = 0; i < Moves.RANKS.Length; i++) {
-            Console.WriteLine("Rank " + (i+1));
-            Board.printBitBoard(Moves.RANKS[i]);
-        }
-
+        Console.WriteLine(currentMove);
     }
 }
 
