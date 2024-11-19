@@ -27,9 +27,9 @@ class Engine
         }
         Console.WriteLine(currentMove);*/
 
-        // test rook movement masks 
+        // test bishop movement masks 
         for(int i= 0; i<64; i++) {
-            Board.printBitBoard(Moves.getRookMovementMask(i));
+            Board.printBitBoard(Moves.getBishopMovementMasks(i));
             Console.WriteLine(); 
         }
     }

@@ -271,4 +271,40 @@ class Moves {
         return (rank|file) ^ (1UL << square) ; 
     }
 
+    /// <summary>
+    /// return movement masks for bishops on inputted square
+    /// </summary>
+    /// <param name="square">current square</param>
+    /// <returns></returns>
+    public static ulong getBishopMovementMasks(int square) {
+        ulong movementMask = 0; 
+        
+        int rankAbove = (square/8), rankBelow = (square/8);
+        int fileRight= (square%8), fileLeft= (square%8);
+
+        for(int it=0; it< 8; it++) {
+            rankAbove ++; rankBelow --; 
+            fileRight++; fileLeft --;
+
+            if (rankAbove < 8) {
+                if(fileRight <8)
+                    movementMask |= 1UL << (rankAbove*8 +fileRight);
+                if (fileLeft >=0)
+                    movementMask |= 1UL << (rankAbove * 8 + fileLeft);
+            }
+            if (rankBelow >=0) {
+                if (fileRight < 8)
+                    movementMask |= 1UL << (rankBelow * 8 + fileRight);
+                if (fileLeft >= 0)
+                    movementMask |= 1UL << (rankBelow * 8 + fileLeft);
+            }
+            if ((rankBelow < 0 && rankAbove > 8) || (fileLeft < 0 && fileRight > 8))
+                break; 
+        }
+
+        return movementMask; 
+       
+    }
+
+    
 }
