@@ -265,10 +265,25 @@ class Moves {
     /// </summary>
     /// <param name="square" > current square </param>
     public static ulong getRookMovementMask(int square) {
-        ulong rank = RANKS[square/8];
-        ulong file = FILES[square%8];
+        ulong movementMask = 0;
+        int rank = square / 8; 
+        int file = square % 8;
 
-        return (rank|file) ^ (1UL << square) ; 
+        // add all the rook relavant blocking squares  (possible moves on empty board excluding borders)
+        for (int rankAbove =rank+1; rankAbove < 7; rankAbove++) {
+            movementMask |= 1UL << (rankAbove * 8 + file) ; 
+        }
+        for (int fileRight = file + 1; fileRight < 7; fileRight++) {
+            movementMask |= 1UL << (rank * 8 + fileRight);
+        }
+
+        for (int rankBelow = rank -1; rankBelow >= 1; rankBelow--) {
+            movementMask |= 1UL << (rankBelow * 8 + file);
+        }
+        for (int fileLeft = file - 1; fileLeft >=1; fileLeft--) {
+            movementMask |= 1UL << (rank * 8 + fileLeft);
+        }
+        return movementMask; 
     }
 
     /// <summary>
@@ -282,23 +297,24 @@ class Moves {
         int rankAbove = (square/8), rankBelow = (square/8);
         int fileRight= (square%8), fileLeft= (square%8);
 
-        for(int it=0; it< 8; it++) {
+        // should only go 7 because it shouldn't get the edge pieces 
+        for(int it=0; it< 7; it++) {
             rankAbove ++; rankBelow --; 
             fileRight++; fileLeft --;
 
-            if (rankAbove < 8) {
-                if(fileRight <8)
+            if (rankAbove < 7) {
+                if(fileRight <7)
                     movementMask |= 1UL << (rankAbove*8 +fileRight);
-                if (fileLeft >=0)
+                if (fileLeft >=1)
                     movementMask |= 1UL << (rankAbove * 8 + fileLeft);
             }
-            if (rankBelow >=0) {
-                if (fileRight < 8)
+            if (rankBelow >=1) {
+                if (fileRight < 7)
                     movementMask |= 1UL << (rankBelow * 8 + fileRight);
-                if (fileLeft >= 0)
+                if (fileLeft >= 1)
                     movementMask |= 1UL << (rankBelow * 8 + fileLeft);
             }
-            if ((rankBelow < 0 && rankAbove > 8) || (fileLeft < 0 && fileRight > 8))
+            if ((rankBelow < 1 && rankAbove > 7) || (fileLeft < 1 && fileRight > 7))
                 break; 
         }
 

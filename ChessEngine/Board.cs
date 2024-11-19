@@ -75,8 +75,8 @@ class Board {
                 mask <<= currentBit; // shift 1 to current bit 
 
                 if((board & mask) > 0) { // check if there is a piece at the current piece 
-                    Console.Write("1 ");
-                } else { Console.Write("0 "); } 
+                    Console.Write("X ");
+                } else { Console.Write(". "); } 
 
             }
             Console.WriteLine(); 
