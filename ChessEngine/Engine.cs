@@ -27,10 +27,20 @@ class Engine
         }
         Console.WriteLine(currentMove);*/
 
-        // test bishop movement masks 
-        for(int i= 0; i<64; i++) {
-            Board.printBitBoard(Moves.getBishopMovementMasks(i));
-            Console.WriteLine(); 
+
+        //Testing relevant occupancy masks 
+        Console.WriteLine("_________ROOKS__________");
+        for (int i = 0; i < 64; i++)
+        {
+            ulong movementMask = Moves.getRookMovementMask(i); 
+            Board.printBitBoard(movementMask);
+            Console.WriteLine("On bits: "+ Moves.getIndexShiftVal(movementMask));
+        }
+        Console.WriteLine("_________BISHOP__________"); 
+        for (int i= 0; i<64; i++) {
+            ulong movementMask = Moves.getBishopMovementMasks(i);
+            Board.printBitBoard(movementMask);
+            Console.WriteLine("On bits: " + Moves.getIndexShiftVal(movementMask)); 
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿
 using System.Numerics;
+using System.Threading.Tasks;
 
 class Moves {
 
@@ -331,7 +332,7 @@ class Moves {
     struct MagicInfo {
         public ulong movementMask;
         public ulong magicNum;
-        public int indexShift; 
+        public int indexShift; // amount to shift; apparently for bishop is just 9 
     }
 
     static MagicInfo[] RookInfoTable; // TODO
@@ -349,35 +350,86 @@ class Moves {
     /// </summary>
     /// <param name="entry"></param>
     /// <param name="blockingMask"></param>
-    /// <returns></returns>
-    private static int getMagicIndex(MagicInfo entry , ulong blockingMask) {
-        int key =0; 
-        return key; 
+    /// <returns>ulong but should be an int since perfect hash</returns>
+    private static ulong getMagicIndex(MagicInfo entry , ulong blockingMask) {
+        blockingMask &= entry.movementMask; // combines the actual occupied squares and the movement mask into a bb
+        blockingMask *= entry.magicNum; // multiply blocking mask by magic num 
+        blockingMask >>= 64 - entry.indexShift;// shift bits by index shift
+        return blockingMask; 
     }
 
 
     private static ulong getRookMoves(int square, ulong blockingMask) {
-        int key = getMagicIndex(RookInfoTable[square], blockingMask); 
+        int key = (int) getMagicIndex(RookInfoTable[square], blockingMask); 
         return RookMoveHashTable[square][key] ; 
     }
-    private static ulong getBishopMove(int square, ulong blockingMask) {
-        int key = getMagicIndex(BishopInfoTable[square], blockingMask);
-        return RookMoveHashTable[square][key];
-    }
 
-    /*private static MagicInfo[] initRookInfo() {
+    // for bishop move table could just use wikipedia's version instead of having variable shift 
+    private static ulong getBishopMove(int square, ulong blockingMask) {
+        int key = (int) getMagicIndex(BishopInfoTable[square], blockingMask);
+        return BishopMoveHashTable[square][key];
+    }
+    
+    /// <summary>
+    /// Return the number of relevant bits in this movement mask; returns the number of bits that are on. 
+    /// </summary>
+    /// <param name="i"></param>
+    /// <returns></returns>
+    /// <exception cref="NotImplementedException"></exception>
+    public static int getIndexShiftVal(ulong movementMask)
+    {
+        int shift = 0;
+        while (movementMask > 0)
+        {
+            shift++;
+            movementMask &= ~(1UL << BitOperations.TrailingZeroCount(movementMask));
+        }
+        return shift; 
+    }
+    ///TODO 
+    private static ulong getMagicNum(int i)
+    {
+        throw new NotImplementedException();
+    }
+    private static MagicInfo[] initRookInfo()
+    {
         MagicInfo[] table = new MagicInfo[64];
-        for(int i = 0; i< table.Length; i++) {
+        for (int i = 0; i < table.Length; i++)
+        {
             table[i] = new MagicInfo();
 
             // get movement mask 
             table[i].movementMask = getRookMovementMask(i);
 
             // magic num 
-            table[i].magicNum = 
+            table[i].magicNum = getMagicNum(i); // find's square's specific magic num
+
+            // get index shift
+            table[i].indexShift = getIndexShiftVal(table[i].movementMask); // relevant bits in this square's movement mask  
         }
         return table;
-    }*/
+    }
+
+    
+
+    private static MagicInfo[] initBishipInfo()
+    {
+        MagicInfo[] table = new MagicInfo[64];
+        for (int i = 0; i < table.Length; i++)
+        {
+            table[i] = new MagicInfo();
+
+            // get movement mask 
+            table[i].movementMask = getRookMovementMask(i);
+
+            // magic num 
+            table[i].magicNum = getMagicNum(i); // find's square's specific magic num
+
+            // get index shift
+            table[i].indexShift = getIndexShiftVal(table[i].movementMask); // apparently its just the number of relevant bit's in this squares movement mask
+        }
+        return table;
+    }
 
 
 }
