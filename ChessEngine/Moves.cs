@@ -334,10 +334,36 @@ class Moves {
         public int indexShift; 
     }
 
-    MagicInfo[] RookInfoTable; // TODO
-    MagicInfo[] BishopInfoTable; //  initBishopInfo(); // TODO 
+    static MagicInfo[] RookInfoTable; // TODO
+    static MagicInfo[] BishopInfoTable; //  initBishopInfo(); // TODO 
 
-    
+    /// <summary>
+    /// this is the lookup table for all sliding piece move patterns for each square 
+    /// </summary>
+    static ulong[][] RookMoveHashTable; // TODO [64][4096]
+    static ulong[][] BishopMoveHashTable;//TODO [64][512] 
+
+
+    /// <summary>
+    /// multiply blocking mask with magic number then index shift to get key
+    /// </summary>
+    /// <param name="entry"></param>
+    /// <param name="blockingMask"></param>
+    /// <returns></returns>
+    private static int getMagicIndex(MagicInfo entry , ulong blockingMask) {
+        int key =0; 
+        return key; 
+    }
+
+
+    private static ulong getRookMoves(int square, ulong blockingMask) {
+        int key = getMagicIndex(RookInfoTable[square], blockingMask); 
+        return RookMoveHashTable[square][key] ; 
+    }
+    private static ulong getBishopMove(int square, ulong blockingMask) {
+        int key = getMagicIndex(BishopInfoTable[square], blockingMask);
+        return RookMoveHashTable[square][key];
+    }
 
     /*private static MagicInfo[] initRookInfo() {
         MagicInfo[] table = new MagicInfo[64];
