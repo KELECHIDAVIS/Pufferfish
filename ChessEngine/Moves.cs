@@ -346,27 +346,27 @@ class Moves {
 
 
     /// <summary>
-    /// multiply blocking mask with magic number then index shift to get key
+    /// and occupied with the movementmask then multiply by magic num then shift to get key for table 
     /// </summary>
     /// <param name="entry"></param>
-    /// <param name="blockingMask"></param>
+    /// <param name="occupied"></param>
     /// <returns>ulong but should be an int since perfect hash</returns>
-    private static ulong getMagicIndex(MagicInfo entry , ulong blockingMask) {
-        blockingMask &= entry.movementMask; // combines the actual occupied squares and the movement mask into a bb
-        blockingMask *= entry.magicNum; // multiply blocking mask by magic num 
-        blockingMask >>= 64 - entry.indexShift;// shift bits by index shift
-        return blockingMask; 
+    private static ulong getMagicIndex(MagicInfo entry , ulong occupied) {
+        occupied &= entry.movementMask; // combines the actual occupied squares and the movement mask into a bb
+        occupied *= entry.magicNum; // multiply blocking mask by magic num 
+        occupied >>= 64 - entry.indexShift;// shift bits by index shift
+        return occupied; 
     }
 
 
-    private static ulong getRookMoves(int square, ulong blockingMask) {
-        int key = (int) getMagicIndex(RookInfoTable[square], blockingMask); 
+    private static ulong getRookMoves(int square, ulong occupied) {
+        int key = (int) getMagicIndex(RookInfoTable[square], occupied); 
         return RookMoveHashTable[square][key] ; 
     }
 
     // for bishop move table could just use wikipedia's version instead of having variable shift 
-    private static ulong getBishopMove(int square, ulong blockingMask) {
-        int key = (int) getMagicIndex(BishopInfoTable[square], blockingMask);
+    private static ulong getBishopMove(int square, ulong occupied) {
+        int key = (int) getMagicIndex(BishopInfoTable[square], occupied);
         return BishopMoveHashTable[square][key];
     }
     
@@ -386,7 +386,14 @@ class Moves {
         }
         return shift; 
     }
-    ///TODO 
+    
+    
+    /// <summary>
+    /// Return this squares specific magic number found through trial and error 
+    /// </summary>
+    /// <param name="i"></param>
+    /// <returns></returns>
+    /// <exception cref="NotImplementedException"></exception>
     private static ulong getMagicNum(int i)
     {
         throw new NotImplementedException();
@@ -399,7 +406,7 @@ class Moves {
             table[i] = new MagicInfo();
 
             // get movement mask 
-            table[i].movementMask = getRookMovementMask(i);
+            table[i].movementMask = getRookMovementMask(i); // vanilla movement masks 
 
             // magic num 
             table[i].magicNum = getMagicNum(i); // find's square's specific magic num
