@@ -257,6 +257,22 @@ class SlidingMoves
             if ((blocker & mask) != 0)// stop loop if current square has a blocker 
                 break;
         }
+        for (int fileRight = file + 1; fileRight < 8; fileRight++) {
+            mask = 1UL << (rank * 8 + fileRight);
+
+            moveBB |= mask; // add move to moveBB
+
+            if ((blocker & mask) != 0)// stop loop if current square has a blocker 
+                break;
+        }
+        for (int fileLeft = file + 1; fileLeft >= 0; fileLeft--) {
+            mask = 1UL << (rank * 8 + fileLeft);
+
+            moveBB |= mask; // add move to moveBB
+
+            if ((blocker & mask) != 0)// stop loop if current square has a blocker 
+                break;
+        }
         return moveBB; 
     }
 
