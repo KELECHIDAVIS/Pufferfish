@@ -66,8 +66,10 @@ class Board {
     /// <param name="board"></param>
     public static void printBitBoard(ulong board) {
         const int LAST_BIT = 63; // helps with calcs 
+        string rankString = ""; 
 
         for (int rank =0;rank<=7; rank++) {
+            rankString = (8-rank) + " "; 
             for(int file= 7; file>=0; file--) {
                 int currentBit = LAST_BIT - (rank * 8 + file);
 
@@ -75,12 +77,20 @@ class Board {
                 mask <<= currentBit; // shift 1 to current bit 
 
                 if((board & mask) > 0) { // check if there is a piece at the current piece 
-                    Console.Write("X ");
-                } else { Console.Write(". "); } 
+                    rankString += "X ";
+                } else { rankString += ". "; } 
 
             }
-            Console.WriteLine(); 
+            Console.WriteLine(rankString); 
         }
+        string fileNames = "abcdefgh";
+        rankString = "  "; 
+        for (int i = 0; i < 8; i++)
+        {
+            rankString+= fileNames[i] + " ";
+        }
+        Console.WriteLine(rankString);
+
     }
 
     /// <summary>

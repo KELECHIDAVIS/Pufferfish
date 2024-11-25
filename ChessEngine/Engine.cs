@@ -32,15 +32,15 @@ class Engine
         Console.WriteLine("_________ROOKS__________");
         for (int i = 0; i < 64; i++)
         {
-            ulong movementMask = Moves.getRookMovementMask(i); 
+            ulong movementMask = SlidingMoves.getRookMovementMask(i); 
             Board.printBitBoard(movementMask);
-            Console.WriteLine("On bits: "+ Moves.getIndexShiftVal(movementMask));
+            Console.WriteLine("On bits: "+ SlidingMoves.getNumberOnBits(movementMask));
         }
         Console.WriteLine("_________BISHOP__________"); 
         for (int i= 0; i<64; i++) {
-            ulong movementMask = Moves.getBishopMovementMasks(i);
+            ulong movementMask = SlidingMoves.getBishopMovementMasks(i);
             Board.printBitBoard(movementMask);
-            Console.WriteLine("On bits: " + Moves.getIndexShiftVal(movementMask)); 
+            Console.WriteLine("On bits: " + SlidingMoves.getNumberOnBits(movementMask)); 
         }
     }
 }
