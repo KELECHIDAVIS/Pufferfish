@@ -82,7 +82,7 @@ class SlidingMoves
     /// <summary>
     /// Holds movement mask, magic num, and index shift wal for given square
     /// </summary>
-    struct MagicInfo
+    public struct MagicInfo
     {
         public ulong movementMask;
         public ulong magicNum;
@@ -91,11 +91,11 @@ class SlidingMoves
     /// <summary>
     /// this is the lookup table for all sliding piece move patterns for each square 
     /// </summary>
-    static ulong[][] RookMoveHashTable = new ulong[64][];  //  [64][4096]
-    static ulong[][] BishopMoveHashTable = new ulong[64][]; //[64][512] 
+    public static ulong[][] RookMoveHashTable = new ulong[64][];  //  [64][4096]
+    public static ulong[][] BishopMoveHashTable = new ulong[64][]; //[64][512] 
 
-    static MagicInfo[] RookInfoTable = initMoveTables(false, RookMoveHashTable);
-    static MagicInfo[] BishopInfoTable = initMoveTables(true, BishopMoveHashTable);
+    public static MagicInfo[] RookInfoTable = initMoveTables(false, RookMoveHashTable);
+    public static MagicInfo[] BishopInfoTable = initMoveTables(true, BishopMoveHashTable);
 
 
 
@@ -105,28 +105,15 @@ class SlidingMoves
     /// <param name="entry"></param>
     /// <param name="occupied"></param>
     /// <returns>ulong but should be an int since perfect hash</returns>
-    private static ulong getMagicIndex(MagicInfo entry, ulong occupied)
+    public static ulong getMagicIndex(MagicInfo entry, ulong occupied)
     {
-        occupied &= entry.movementMask; // combines the actual occupied squares and the movement mask into a bb
+        occupied &= entry.movementMask; // combines the actual occupied squares and the movement mask into a bb // might be unnessecary
         occupied *= entry.magicNum; // multiply blocking mask by magic num 
         occupied >>= 64 - entry.indexShift;// shift bits by index shift
         return occupied;
     }
 
-
-    private static ulong getRookMoves(int square, ulong occupied)
-    {
-        int key = (int)getMagicIndex(RookInfoTable[square], occupied);
-        return RookMoveHashTable[square][key];
-    }
-
-    // for bishop move table could just use wikipedia's version instead of having variable shift 
-    private static ulong getBishopMove(int square, ulong occupied)
-    {
-        int key = (int)getMagicIndex(BishopInfoTable[square], occupied);
-        return BishopMoveHashTable[square][key];
-    }
-
+    
     /// <summary>
     /// generate random ulong in a specific way for magic num generation 
     /// </summary>
@@ -209,13 +196,104 @@ class SlidingMoves
     {
         ulong[] hashTable = new ulong[1 << magicInfo.indexShift]; // max for rooks: 4096 or 2^12 
 
+        for (int i = 0; i < hashTable.Length; i++)
+            hashTable[i] = ulong.MaxValue; // what well use to determine if it has been changed or not ; since we know this can't possibly be the moveset 
+
         // for each configuartion of blockers for this position and piece 
-        // get moves possible bb from current blocker config
-        // get key from hashing blocker config using magic num 
-        // if value at hashTable[key] is empty : set moves there 
-        // else if value == move : good do nothing (constructive collision
-        // else if value !=move: return null (magic num was a failure) 
-        return null;
+        foreach(ulong blocker in getBlockerSubsets(magicInfo.movementMask, magicInfo.indexShift)) {
+            // get moves possible bb from current blocker config
+            ulong moveBB = bishop ? getMoveFromBlockerBishop(blocker, square):  getMoveFromBlockerRook(blocker,  square);
+
+            // get key from hashing blocker config using magic num 
+            int key = (int) getMagicIndex(magicInfo, blocker ); // max 4096 for rook 
+
+            // if value at hashTable[key] is empty : set moves there 
+            if (hashTable[key] == ulong.MaxValue)
+            {
+                hashTable[key] = moveBB;
+            }// else if value == move : good do nothing (constructive collision
+            // else if value != maxval or move: return null (magic num was a failure ; unconstructive collision) 
+            else if (hashTable[key] != moveBB)
+            {
+                return null; 
+            }
+        }
+        return hashTable;
+    }
+
+    private static ulong getMoveFromBlockerBishop(ulong blocker, int square)
+    {
+        throw new NotImplementedException();
+    }
+
+    /// <summary>
+    /// get possible moveBitBoard through iteration during magic number trials 
+    /// </summary>
+    /// <param name="blocker"></param>
+    /// <returns></returns>
+    /// <exception cref="NotImplementedException"></exception>
+    private static ulong getMoveFromBlockerRook(ulong blocker, int square)
+    {
+        ulong moveBB=0;
+        ulong mask = 0; 
+        // vertical above
+        int rank = square / 8; int file = square % 8;
+
+        for(int rankAbove =rank +1; rankAbove< 8; rankAbove ++)
+        {
+            mask = 1UL << (rankAbove * 8 + file);
+
+            moveBB |= mask; // add move to moveBB
+
+            if ((blocker & mask) != 0)// stop loop if current square has a blocker 
+                break; 
+        }
+        for (int rankBelow = rank - 1; rankBelow >= 0; rankBelow--)
+        {
+            mask = 1UL << (rankBelow * 8 + file);
+
+            moveBB |= mask; // add move to moveBB
+
+            if ((blocker & mask) != 0)// stop loop if current square has a blocker 
+                break;
+        }
+        return moveBB; 
+    }
+
+    /// <summary>
+    /// return all possible configurations of blockers within this movement mask
+    /// (thank you Sebastian league :))
+    /// </summary>
+    /// <param name="movementMask"></param>
+    /// <param name="relevantBits"></param>
+    /// <returns></returns>
+    /// <exception cref="NotImplementedException"></exception>
+    private static ulong[] getBlockerSubsets(ulong movementMask, int relevantBits)
+    {
+        int[] moveSquareIndices = new int[relevantBits] ;
+        int it = 0; 
+        //create a list of indicies of bits that are set in the movement mask 
+        for(int i = 0; i< 64; i++)
+        {
+            if (((movementMask >> i) & 1) == 1) {
+                moveSquareIndices[it] = i;
+                it++; 
+            }
+        }
+        //possible config of blocker bitboards 
+        int possibleConfigurations = 1 << relevantBits; 
+
+        ulong[] blockerBitBoards = new ulong[possibleConfigurations];
+
+        for (int patternIndex = 0; patternIndex < possibleConfigurations; patternIndex++)
+        {
+            for(int bitIndex = 0; bitIndex<moveSquareIndices.Length; bitIndex++)
+            {
+                int bit = (patternIndex >> bitIndex) & 1;
+                blockerBitBoards[patternIndex] |= (ulong)bit << moveSquareIndices[bitIndex]; 
+            }
+        }
+        return blockerBitBoards; 
     }
 
     private static MagicInfo[] initMoveTables(bool bishop, ulong[][] moveLookupTable)

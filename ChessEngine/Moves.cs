@@ -258,6 +258,25 @@ class Moves {
 
     }
 
+    /// <summary>
+    /// Takes in the square the rook is on and the occupiedbb ****THAT DOES NOT INCLUDE THE ROOK/BISHOP ITSELF***
+    /// </summary>
+    /// <param name="square"></param>
+    /// <param name="occupied"></param>
+    /// <returns></returns>
+    private static ulong getRookMoves(int square, ulong occupied)
+    {
+        int key = (int)SlidingMoves.getMagicIndex(SlidingMoves.RookInfoTable[square], occupied);
+        return SlidingMoves.RookMoveHashTable[square][key];
+    }
+
+    private static ulong getBishopMove(int square, ulong occupied)
+    {
+        int key = (int)SlidingMoves.getMagicIndex(SlidingMoves.BishopInfoTable[square], occupied);
+        return SlidingMoves.BishopMoveHashTable[square][key];
+    }
+
+
 
 
 }
