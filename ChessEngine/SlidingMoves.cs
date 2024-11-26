@@ -9,7 +9,7 @@ class SlidingMoves
     /// Returns the relevant blocker mask of a rook on the inputted square 
     /// </summary>
     /// <param name="square" > current square </param>
-    public static ulong getRookMovementMask(int square)
+    public static ulong getRookRelevantBlockerMask(int square)
     {
         ulong movementMask = 0;
         int rank = square / 8;
@@ -41,7 +41,7 @@ class SlidingMoves
     /// </summary>
     /// <param name="square">current square</param>
     /// <returns></returns>
-    public static ulong getBishopMovementMasks(int square)
+    public static ulong getBishopRelevantBlockerMasks(int square)
     {
         ulong movementMask = 0;
 
@@ -84,7 +84,7 @@ class SlidingMoves
     /// </summary>
     public struct MagicInfo
     {
-        public ulong movementMask;
+        public ulong relevantBlockerMask;
         public ulong magicNum;
         public int indexShift; // amount to shift; apparently for bishop is just 9 
     }
@@ -107,7 +107,7 @@ class SlidingMoves
     /// <returns>ulong but should be an int since perfect hash</returns>
     public static ulong getMagicIndex(MagicInfo entry, ulong occupied)
     {
-        occupied &= entry.movementMask; // combines the actual occupied squares and the movement mask into a bb // might be unnessecary
+        occupied &= entry.relevantBlockerMask; // combines the actual occupied squares and the movement mask into a bb // might be unnessecary
         occupied *= entry.magicNum; // multiply blocking mask by magic num 
         occupied >>= 64 - entry.indexShift;// shift bits by index shift
         return occupied;
@@ -157,7 +157,8 @@ class SlidingMoves
     private static (MagicInfo entry, ulong[] hashTable) findMagicNum(bool bishop, int square)
     {
         // get sliders relevant blocker mask 
-        ulong relevantBlockerMask = bishop ? getBishopMovementMasks(square) : getRookMovementMask(square);
+
+        ulong relevantBlockerMask = bishop ? getBishopRelevantBlockerMasks(square) : getRookRelevantBlockerMask(square);
 
 
         // while valid magic num hasn't been found (could do a for loop of 100000000 like wikipedia) 
@@ -173,7 +174,7 @@ class SlidingMoves
             {
                 indexShift = (int)getNumberOnBits(relevantBlockerMask),
                 magicNum = magicNum,
-                movementMask = relevantBlockerMask,
+                relevantBlockerMask = relevantBlockerMask,
             };
             ulong[] hashTable = tryMakeTable(bishop, square, magicInfo);
 
@@ -200,7 +201,7 @@ class SlidingMoves
             hashTable[i] = ulong.MaxValue; // what well use to determine if it has been changed or not ; since we know this can't possibly be the moveset 
 
         // for each configuartion of blockers for this position and piece 
-        foreach(ulong blocker in getBlockerSubsets(magicInfo.movementMask, magicInfo.indexShift)) {
+        foreach(ulong blocker in getBlockerSubsets(magicInfo.relevantBlockerMask, magicInfo.indexShift)) {
             // get moves possible bb from current blocker config
             ulong moveBB = bishop ? getMoveFromBlockerBishop(blocker, square):  getMoveFromBlockerRook(blocker,  square);
 
