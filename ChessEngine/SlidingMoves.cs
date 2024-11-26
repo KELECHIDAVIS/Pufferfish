@@ -221,56 +221,104 @@ class SlidingMoves
         return hashTable;
     }
 
-    private static ulong getMoveFromBlockerBishop(ulong blocker, int square)
+    public static ulong getMoveFromBlockerBishop(ulong blockers, int square)
     {
-        throw new NotImplementedException();
+        ulong moveBB = 0;
+        ulong mask = 0;
+
+        int rank = square / 8; int file = square % 8;
+
+        // northeast diag
+        for(int rankAbove =rank+1, fileRight = file+1; rankAbove<8 &&fileRight<8; rankAbove++, fileRight++) {
+            // add move 
+            mask = (1UL << (rankAbove * 8 + fileRight));
+
+            moveBB |= mask;
+
+            // check if current space is a blocker 
+            if ((blockers & mask) != 0)
+                break; // there is a blocker in this pos 
+        }
+        // southeast diag
+        for (int rankBelow = rank -1, fileRight = file + 1; rankBelow >=0 && fileRight < 8; rankBelow--, fileRight++) {
+            // add move 
+            mask = (1UL << (rankBelow * 8 + fileRight));
+
+            moveBB |= mask;
+
+            // check if current space is a blocker 
+            if ((blockers & mask) != 0)
+                break; // there is a blocker in this pos 
+        }
+        //southwest
+        for (int rankBelow = rank - 1, fileLeft = file -1; rankBelow >= 0 && fileLeft >=0; rankBelow--, fileLeft--) {
+            // add move 
+            mask = (1UL << (rankBelow * 8 + fileLeft));
+
+            moveBB |= mask;
+
+            // check if current space is a blocker 
+            if ((blockers & mask) != 0)
+                break; // there is a blocker in this pos 
+        }
+        for (int rankAbove = rank - 1, fileLeft = file - 1; rankAbove < 8 && fileLeft >= 0; rankAbove++, fileLeft--) {
+            // add move 
+            mask = (1UL << (rankAbove * 8 + fileLeft));
+
+            moveBB |= mask;
+
+            // check if current space is a blocker 
+            if ((blockers & mask) != 0)
+                break; // there is a blocker in this pos 
+        }
+        return moveBB; 
     }
 
     /// <summary>
     /// get possible moveBitBoard through iteration during magic number trials 
     /// </summary>
-    /// <param name="blocker"></param>
+    /// <param name="blockers"></param>
     /// <returns></returns>
     /// <exception cref="NotImplementedException"></exception>
-    private static ulong getMoveFromBlockerRook(ulong blocker, int square)
+    private static ulong getMoveFromBlockerRook(ulong blockers, int square)
     {
         ulong moveBB=0;
         ulong mask = 0; 
         // vertical above
         int rank = square / 8; int file = square % 8;
 
-        for(int rankAbove =rank +1; rankAbove< 8; rankAbove ++)
+        for(int rankAbove =rank +1; rankAbove< 8; rankAbove ++) //north
         {
             mask = 1UL << (rankAbove * 8 + file);
 
             moveBB |= mask; // add move to moveBB
 
-            if ((blocker & mask) != 0)// stop loop if current square has a blocker 
+            if ((blockers & mask) != 0)// stop loop if current square has a blocker 
                 break; 
         }
-        for (int rankBelow = rank - 1; rankBelow >= 0; rankBelow--)
+        for (int rankBelow = rank - 1; rankBelow >= 0; rankBelow--)//south
         {
             mask = 1UL << (rankBelow * 8 + file);
 
             moveBB |= mask; // add move to moveBB
 
-            if ((blocker & mask) != 0)// stop loop if current square has a blocker 
+            if ((blockers & mask) != 0)// stop loop if current square has a blocker 
                 break;
         }
-        for (int fileRight = file + 1; fileRight < 8; fileRight++) {
+        for (int fileRight = file + 1; fileRight < 8; fileRight++) { // right
             mask = 1UL << (rank * 8 + fileRight);
 
             moveBB |= mask; // add move to moveBB
 
-            if ((blocker & mask) != 0)// stop loop if current square has a blocker 
+            if ((blockers & mask) != 0)// stop loop if current square has a blocker 
                 break;
         }
-        for (int fileLeft = file + 1; fileLeft >= 0; fileLeft--) {
+        for (int fileLeft = file + 1; fileLeft >= 0; fileLeft--) {//left
             mask = 1UL << (rank * 8 + fileLeft);
 
             moveBB |= mask; // add move to moveBB
 
-            if ((blocker & mask) != 0)// stop loop if current square has a blocker 
+            if ((blockers & mask) != 0)// stop loop if current square has a blocker 
                 break;
         }
         return moveBB; 

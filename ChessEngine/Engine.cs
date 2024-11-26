@@ -28,7 +28,7 @@ class Engine
         Console.WriteLine(currentMove);*/
 
 
-        //Testing relevant occupancy masks 
+        /*//Testing relevant occupancy masks 
         Console.WriteLine("_________ROOKS__________");
         for (int i = 0; i < 64; i++)
         {
@@ -41,7 +41,9 @@ class Engine
             ulong movementMask = SlidingMoves.getBishopMovementMasks(i);
             Board.printBitBoard(movementMask);
             Console.WriteLine("On bits: " + SlidingMoves.getNumberOnBits(movementMask)); 
-        }
+        }*/
+
+        SlidingMoves.getMoveFromBlockerBishop(0, 30); 
     }
 }
 
