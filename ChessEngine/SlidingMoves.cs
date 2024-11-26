@@ -154,7 +154,7 @@ class SlidingMoves
     /// <param name="square">current square</param>
     /// <returns></returns>
     /// <exception cref="NotImplementedException"></exception>
-    private static (MagicInfo entry, ulong[] hashTable) findMagicNum(bool bishop, int square)
+    public static (MagicInfo entry, ulong[] hashTable) findMagicNum(bool bishop, int square)
     {
         // get sliders relevant blocker mask 
 
@@ -197,8 +197,8 @@ class SlidingMoves
     {
         ulong[] hashTable = new ulong[1 << magicInfo.indexShift]; // max for rooks: 4096 or 2^12 
 
-        for (int i = 0; i < hashTable.Length; i++)
-            hashTable[i] = ulong.MaxValue; // what well use to determine if it has been changed or not ; since we know this can't possibly be the moveset 
+        for (int i = 0; i < hashTable.Length; i++)// init hash table as empty
+            hashTable[i] = ulong.MaxValue; // what we will use to determine if it has been changed or not ; since we know this can't possibly be the moveset 
 
         // for each configuartion of blockers for this position and piece 
         foreach(ulong blocker in getBlockerSubsets(magicInfo.relevantBlockerMask, magicInfo.indexShift)) {
@@ -219,7 +219,9 @@ class SlidingMoves
                 return null; 
             }
         }
-        return hashTable;
+        //this is a valid magic num and hash table if you reach end of loop
+        return hashTable; // every possible move for this square and sliding piece is in this table
+
     }
 
     public static ulong getMoveFromBlockerBishop(ulong blockers, int square)

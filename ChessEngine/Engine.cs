@@ -43,7 +43,63 @@ class Engine
             Console.WriteLine("On bits: " + SlidingMoves.getNumberOnBits(movementMask)); 
         }*/
 
-        SlidingMoves.getMoveFromBlockerBishop(0, 30); 
+
+
+
+        // testing magicNumber generation
+        /*Console.WriteLine("Generating Magic Numbers for each Square (Time in ms)... ");
+
+        for (int rank = 0; rank <= 7; rank++) {
+            for (int file = 7; file >= 0; file--) {
+                int currentSquare = 63 - (rank * 8 + file);
+
+                var watch = System.Diagnostics.Stopwatch.StartNew();
+
+                var magicResult = SlidingMoves.findMagicNum(false, currentSquare);
+
+                watch.Stop();
+                var elapsedMs = watch.ElapsedMilliseconds;
+
+                Console.Write(elapsedMs + " ");
+
+            }
+            Console.WriteLine(); 
+        }*/
+
+        // these two blocking configs should hash to the same position given a magic num
+        char[][] chessBoard1 = new char[][]{
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { 'p', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { 'R', 'p', ' ', ' ', ' ', ' ', ' ', ' ' },
+
+        };
+        char[][] chessBoard2 = new char[][]{
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { 'p', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { 'p', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { 'R', 'p', 'p', ' ', ' ', ' ', ' ', ' ' },
+
+        };
+
+        Board board1 = new Board(), board2 = new Board();
+        Board.charArrayToBitboards(chessBoard1, board1.pieceList, board1.piecesBB, board1.sideBB); 
+        Board.charArrayToBitboards(chessBoard2, board2.pieceList, board2.piecesBB, board2.sideBB);
+
+        Console.WriteLine("Rook is on a1 for both boards"); 
+        Console.WriteLine("First Board"); 
+        Board.printBitBoard((board1.sideBB[0] | board1.sideBB[1]) & ~board1.piecesBB[(int)Side.White][(int)Piece.Rook]); 
+        Console.WriteLine("Second Board");
+        Board.printBitBoard((board2.sideBB[0] | board2.sideBB[1]) & ~board2.piecesBB[(int)Side.White][(int)Piece.Rook]); 
+
     }
 }
 

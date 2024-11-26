@@ -59,6 +59,7 @@ class Board {
         charArrayToBitboards(chessBoard, pieceList, piecesBB, sideBB);
 
     }
+    
 
     /// <summary>
     /// Print inputted bitboard into 8x8 chess board 
@@ -110,7 +111,7 @@ class Board {
             Console.WriteLine();
         }
     }
-    private void charArrayToBitboards(char[][] chessBoard, int[] pieceList, ulong[][] piecesBB, ulong[] sidesBB) {
+    public static void charArrayToBitboards(char[][] chessBoard, int[] pieceList, ulong[][] piecesBB, ulong[] sidesBB) {
         const int LAST_BIT = 63; // helps with calcs 
 
         for(int i=0; i<=7; i++) {
