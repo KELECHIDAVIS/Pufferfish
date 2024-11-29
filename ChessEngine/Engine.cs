@@ -69,24 +69,24 @@ class Engine
         // these two blocking configs should hash to the same position given a magic num
         char[][] chessBoard1 = new char[][]{
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', 'p', ' ' },
+            new char[] { ' ', 'p', ' ', ' ', ' ', 'p', ' ', ' ' },
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
-            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
-            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
-            new char[] { ' ', ' ', 'P', 'R', ' ', ' ', ' ', ' ' },
-            new char[] { ' ', ' ', ' ', 'P', ' ', ' ', ' ', ' ' },
-            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
-            new char[] { ' ', 'p', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', 'P', 'B', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', 'P', 'p', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', ' ', ' ', 'p', ' ', ' ' },
+            new char[] { 'p', 'p', ' ', ' ', ' ', ' ', ' ', ' ' },
 
         };
         char[][] chessBoard2 = new char[][]{
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
-            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
             new char[] { 'p', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { 'p', 'p', ' ', ' ', ' ', 'p', ' ', ' ' },
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
-            new char[] { 'p', ' ', 'p', 'R', ' ', ' ', ' ', ' ' },
-            new char[] { ' ', ' ', ' ', 'p', ' ', ' ', ' ', ' ' },
+            new char[] { 'p', ' ', 'p', 'B', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', 'p', 'p', ' ', ' ', ' ' },
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
-            new char[] { ' ', 'p', 'p', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { 'p', 'p', 'p', ' ', ' ', ' ', ' ', ' ' },
 
         };
 
@@ -94,22 +94,22 @@ class Engine
         Board.charArrayToBitboards(chessBoard1, board1.pieceList, board1.piecesBB, board1.sideBB); 
         Board.charArrayToBitboards(chessBoard2, board2.pieceList, board2.piecesBB, board2.sideBB);
 
-        Console.WriteLine("Rook is on a1 for both boards"); 
+        Console.WriteLine("Bishop is on d4 for both boards"); 
         Console.WriteLine("First Board");
-        ulong occ1 = (board1.sideBB[0] | board1.sideBB[1]) & ~board1.piecesBB[(int)Side.White][(int)Piece.Rook]; // all occupied cept the rook
-        ulong occ2 = (board2.sideBB[0] | board2.sideBB[1]) & ~board2.piecesBB[(int)Side.White][(int)Piece.Rook]; 
+        ulong occ1 = (board1.sideBB[0] | board1.sideBB[1]) & ~board1.piecesBB[(int)Side.White][(int)Piece.Bishop]; // all occupied cept the rook
+        ulong occ2 = (board2.sideBB[0] | board2.sideBB[1]) & ~board2.piecesBB[(int)Side.White][(int)Piece.Bishop]; 
         Board.printBitBoard(occ1); 
         Console.WriteLine("Second Board");
         Board.printBitBoard(occ2);
 
         int rookPos = 27; // d4
 
-        var magicResult = SlidingMoves.findMagicNum(false, rookPos);
+        var magicResult = SlidingMoves.findMagicNum(true, rookPos);
 
         // when multiplied by this number both boards should give the same result 
         // they should both hash to the same moveset 
 
-        Console.WriteLine("A1's magic entry: ");
+        Console.WriteLine("D4's magic entry: ");
         Console.WriteLine("Decimal magic Number: "+ magicResult.entry.magicNum); 
         Console.WriteLine("Index Shift: "+ magicResult.entry.indexShift);
         Console.WriteLine("Relevant Blocker Mask: ");
