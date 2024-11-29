@@ -95,10 +95,42 @@ class Engine
         Board.charArrayToBitboards(chessBoard2, board2.pieceList, board2.piecesBB, board2.sideBB);
 
         Console.WriteLine("Rook is on a1 for both boards"); 
-        Console.WriteLine("First Board"); 
-        Board.printBitBoard((board1.sideBB[0] | board1.sideBB[1]) & ~board1.piecesBB[(int)Side.White][(int)Piece.Rook]); 
+        Console.WriteLine("First Board");
+        ulong occ1 = (board1.sideBB[0] | board1.sideBB[1]) & ~board1.piecesBB[(int)Side.White][(int)Piece.Rook]; // all occupied cept the rook
+        ulong occ2 = (board2.sideBB[0] | board2.sideBB[1]) & ~board2.piecesBB[(int)Side.White][(int)Piece.Rook]; 
+        Board.printBitBoard(occ1); 
         Console.WriteLine("Second Board");
-        Board.printBitBoard((board2.sideBB[0] | board2.sideBB[1]) & ~board2.piecesBB[(int)Side.White][(int)Piece.Rook]); 
+        Board.printBitBoard(occ2);
+
+        int rookPos = 0; // a1
+
+        var magicResult = SlidingMoves.findMagicNum(false, rookPos);
+
+        // when multiplied by this number both boards should give the same result 
+        // they should both hash to the same moveset 
+
+        Console.WriteLine("A1's magic entry: ");
+        Console.WriteLine("Decimal magic Number: "+ magicResult.entry.magicNum); 
+        Console.WriteLine("Index Shift: "+ magicResult.entry.indexShift);
+        Console.WriteLine("Relevant Blocker Mask: ");
+        Board.printBitBoard(magicResult.entry.relevantBlockerMask);
+
+        Console.WriteLine("Magic number bb representation: "); 
+        Board.printBitBoard(magicResult.entry.magicNum);
+
+        // now both boards should get the same moveset from the table if they don't have the same exact key 
+        int firstKey = (int) SlidingMoves.getMagicIndex(magicResult.entry, occ1);
+        int secondKey = (int)SlidingMoves.getMagicIndex(magicResult.entry, occ2); 
+        Console.WriteLine("\n Board 1's key when entered into getMagicIndex: " + firstKey); 
+        Console.WriteLine("\n Board 2's key when entered into getMagicIndex: " + secondKey);
+
+        //print each board's moveset, should be the same 
+        Console.WriteLine("\n First Moveset: ");
+        Board.printBitBoard(magicResult.hashTable[firstKey]);
+
+        Console.WriteLine("\n Second Moveset: ");
+        Board.printBitBoard(magicResult.hashTable[secondKey]);
+
 
     }
 }
