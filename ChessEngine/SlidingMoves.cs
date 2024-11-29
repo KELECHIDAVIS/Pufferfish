@@ -264,7 +264,7 @@ class SlidingMoves
             if ((blockers & mask) != 0)
                 break; // there is a blocker in this pos 
         }
-        for (int rankAbove = rank - 1, fileLeft = file - 1; rankAbove < 8 && fileLeft >= 0; rankAbove++, fileLeft--) {
+        for (int rankAbove = rank + 1, fileLeft = file - 1; rankAbove < 8 && fileLeft >= 0; rankAbove++, fileLeft--) {
             // add move 
             mask = (1UL << (rankAbove * 8 + fileLeft));
 
@@ -316,7 +316,7 @@ class SlidingMoves
             if ((blockers & mask) != 0)// stop loop if current square has a blocker 
                 break;
         }
-        for (int fileLeft = file + 1; fileLeft >= 0; fileLeft--) {//left
+        for (int fileLeft = file - 1; fileLeft >= 0; fileLeft--) {//left
             mask = 1UL << (rank * 8 + fileLeft);
 
             moveBB |= mask; // add move to moveBB

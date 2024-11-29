@@ -72,10 +72,10 @@ class Engine
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
-            new char[] { 'p', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', 'P', 'R', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', 'P', ' ', ' ', ' ', ' ' },
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
-            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
-            new char[] { 'R', 'p', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', 'p', ' ', ' ', ' ', ' ', ' ', ' ' },
 
         };
         char[][] chessBoard2 = new char[][]{
@@ -83,10 +83,10 @@ class Engine
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
             new char[] { 'p', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
-            new char[] { 'p', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { 'p', ' ', 'p', 'R', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', 'p', ' ', ' ', ' ', ' ' },
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
-            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
-            new char[] { 'R', 'p', 'p', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', 'p', 'p', ' ', ' ', ' ', ' ', ' ' },
 
         };
 
@@ -102,7 +102,7 @@ class Engine
         Console.WriteLine("Second Board");
         Board.printBitBoard(occ2);
 
-        int rookPos = 0; // a1
+        int rookPos = 27; // d4
 
         var magicResult = SlidingMoves.findMagicNum(false, rookPos);
 
