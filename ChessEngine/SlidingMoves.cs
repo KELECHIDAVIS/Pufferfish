@@ -1,9 +1,38 @@
 ﻿using System.Numerics;
+using System;
+using System.IO; 
 
 class SlidingMoves
 {
+    // magic bitboards 
+
+    /// <summary>
+    /// Holds movement mask, magic num, and index shift wal for given square
+    /// </summary>
+    public struct MagicInfo {
+        public ulong relevantBlockerMask;
+        public ulong magicNum;
+        public int indexShift; // amount to shift; apparently for bishop is just 9 
+    }
+    /// <summary>
+    /// this is the lookup table for all sliding piece move patterns for each square 
+    /// </summary>
+    public static ulong[][] RookMoveHashTable = new ulong[64][];  //  [64][4096]
+    public static ulong[][] BishopMoveHashTable = new ulong[64][]; //[64][512] 
+
+    public static MagicInfo[] RookInfoTable = initMoveTables(false, RookMoveHashTable);
+    public static MagicInfo[] BishopInfoTable = initMoveTables(true, BishopMoveHashTable);
 
     // starting on implementing the sliding moves 
+    private static MagicInfo[] initMoveTables(bool bishop, ulong[][] moveLookupTable) {
+        MagicInfo[] table = new MagicInfo[64];
+        for (int i = 0; i < table.Length; i++) {
+            var magicData = findMagicNum(bishop, i);
+            table[i] = magicData.entry;
+            moveLookupTable[i] = magicData.hashTable;
+        }
+        return table;
+    }
 
     /// <summary>
     /// Returns the relevant blocker mask of a rook on the inputted square 
@@ -77,25 +106,7 @@ class SlidingMoves
     }
 
 
-    // magic bitboards 
-
-    /// <summary>
-    /// Holds movement mask, magic num, and index shift wal for given square
-    /// </summary>
-    public struct MagicInfo
-    {
-        public ulong relevantBlockerMask;
-        public ulong magicNum;
-        public int indexShift; // amount to shift; apparently for bishop is just 9 
-    }
-    /// <summary>
-    /// this is the lookup table for all sliding piece move patterns for each square 
-    /// </summary>
-    public static ulong[][] RookMoveHashTable = new ulong[64][];  //  [64][4096]
-    public static ulong[][] BishopMoveHashTable = new ulong[64][]; //[64][512] 
-
-    public static MagicInfo[] RookInfoTable = initMoveTables(false, RookMoveHashTable);
-    public static MagicInfo[] BishopInfoTable = initMoveTables(true, BishopMoveHashTable);
+   
 
 
 
@@ -363,15 +374,56 @@ class SlidingMoves
         return blockerBitBoards; 
     }
 
-    private static MagicInfo[] initMoveTables(bool bishop, ulong[][] moveLookupTable)
-    {
-        MagicInfo[] table = new MagicInfo[64];
-        for (int i = 0; i < table.Length; i++)
-        {
-            var magicData = findMagicNum(bishop, i);
-            table[i] = magicData.entry;
-            moveLookupTable[i] = magicData.hashTable;
+    /// <summary>
+    /// saves the info found through magic number generation for loading later to save on startup time 
+    /// </summary>
+    public static void SaveMagicInfoAndLookupTables() {
+
+        
+        string slidingFolderPath = System.IO.Path.GetFullPath(@"..\..\..\SlidingMoveLookupTables\SlidingPieceInfoandLookups.txt");
+
+        string[] fileString = new string[64 * 4]; // each table has 64 lines 
+        int iterator = 0; 
+        // first is save rook magic info; file goes from square 0=>63 top to bottom 
+        for (int i = 0; i < RookInfoTable.Length; i++) {
+            fileString[iterator]= ("" + RookInfoTable[i].relevantBlockerMask + "," + RookInfoTable[i].magicNum + "," + RookInfoTable[i].indexShift);
+
+            iterator++; 
         }
-        return table;
+
+        // save bishop magic info 
+        for (int i = 0; i < BishopInfoTable.Length; i++) {
+            fileString[iterator] = ("" + BishopInfoTable[i].relevantBlockerMask + "," + BishopInfoTable[i].magicNum + "," + BishopInfoTable[i].indexShift);
+            iterator++;
+        }
+
+        // save rook lookup table: square 0->63 top to bottom; each line has all moves 0->4096 in ulong form separated by commas 
+
+        for (int i = 0; i < RookMoveHashTable.Length; i++) {
+            fileString[iterator] = "";
+
+            for (int j = 0; j < RookMoveHashTable[i].Length; j++) {
+                fileString[iterator] += ("" + RookMoveHashTable[i][j] );
+
+                if (i <=RookMoveHashTable[i].Length - 1) // for comma separation
+                    fileString[iterator] += ","; 
+            }
+            iterator++; 
+        }
+
+        for (int i = 0; i < BishopMoveHashTable.Length; i++) {
+            fileString[iterator] = "";
+
+            for (int j = 0; j < BishopMoveHashTable[i].Length; j++) {
+                fileString[iterator] += ("" + BishopMoveHashTable[i][j]);
+
+                if (i <=BishopMoveHashTable[i].Length - 1) // for comma separation
+                    fileString[iterator] += ",";
+            }
+            iterator++;
+        }
+
+        File.WriteAllLines(slidingFolderPath, fileString);
     }
+    
 }
