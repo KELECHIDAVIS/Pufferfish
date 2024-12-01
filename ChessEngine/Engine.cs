@@ -50,8 +50,10 @@ class Engine
         /*Console.WriteLine("Generating Magic Numbers for each Square (Time in ms)... ");
         var globalwatch = System.Diagnostics.Stopwatch.StartNew(); ;
 
-        for (int rank = 0; rank <= 7; rank++) {
-            for (int file = 7; file >= 0; file--) {
+        for (int rank = 0; rank <= 7; rank++)
+        {
+            for (int file = 7; file >= 0; file--)
+            {
                 int currentSquare = 63 - (rank * 8 + file);
 
                 var watch = System.Diagnostics.Stopwatch.StartNew();
@@ -69,12 +71,12 @@ class Engine
         Console.WriteLine("Global Time: " + globalwatch.ElapsedMilliseconds + "ms");
 
         //test magic num saving 
-        
-        SlidingMoves.SaveMoveTables();
-*/
 
-        // testing loading of move tables 
-        SlidingMoves.LoadMoveTables();
+        SlidingMoves.SaveMoveTables();*/
+
+
+        SlidingMoves.initInfoandMoveTables();
+
 
         // these two blocking configs should hash to the same position given a magic num
         /*char[][] chessBoard1 = new char[][]{

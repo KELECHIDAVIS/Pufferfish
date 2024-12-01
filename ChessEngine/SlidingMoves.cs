@@ -17,21 +17,38 @@ class SlidingMoves
     /// <summary>
     /// this is the lookup table for all sliding piece move patterns for each square 
     /// </summary>
-    public static ulong[][] RookMoveHashTable = new ulong[64][];  //  [64][4096]
-    public static ulong[][] BishopMoveHashTable = new ulong[64][]; //[64][512] 
+    public static ulong[][] RookMoveHashTable = new ulong[64][];  //  [64][4096 (max length )]
+    public static ulong[][] BishopMoveHashTable = new ulong[64][]; //[64][512 (max length) ] 
 
-    public static MagicInfo[] RookInfoTable = initMoveTables(false, RookMoveHashTable);
-    public static MagicInfo[] BishopInfoTable = initMoveTables(true, BishopMoveHashTable);
+    public static MagicInfo[] RookInfoTable = new MagicInfo[64];
+    public static MagicInfo[] BishopInfoTable = new MagicInfo[64];
 
     // starting on implementing the sliding moves 
-    private static MagicInfo[] initMoveTables(bool bishop, ulong[][] moveLookupTable) {
-        MagicInfo[] table = new MagicInfo[64];
-        for (int i = 0; i < table.Length; i++) {
-            var magicData = findMagicNum(bishop, i);
-            table[i] = magicData.entry;
-            moveLookupTable[i] = magicData.hashTable;
+    
+    //init info and move tables for bishop and rooks 
+    public static void initInfoandMoveTables() {
+        Console.WriteLine("Generating info and movetables..."); 
+        var bishoTimer = new Stopwatch();
+        bishoTimer.Start();
+
+        for (int i = 0; i < BishopInfoTable.Length; i++)
+        {
+            var magicData = findMagicNum(true, i);
+            BishopInfoTable[i] = magicData.entry;
+            BishopMoveHashTable[i] = magicData.hashTable;
         }
-        return table;
+        Console.WriteLine("Bishop magic Table Generation time taken: " + bishoTimer.Elapsed.ToString(@"m\:ss\.fff")); 
+
+        var rookTimer = new Stopwatch();
+        rookTimer.Start();
+        for (int i = 0; i < RookInfoTable.Length; i++) {
+            var magicData = findMagicNum(false, i);
+            RookInfoTable[i] = magicData.entry;
+            RookMoveHashTable[i] = magicData.hashTable;
+        }
+
+        rookTimer.Stop();
+        Console.WriteLine("Rook magic Table Generation time taken: " + rookTimer.Elapsed.ToString(@"m\:ss\.fff"));
     }
 
     /// <summary>
