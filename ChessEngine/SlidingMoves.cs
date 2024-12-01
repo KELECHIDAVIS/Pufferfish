@@ -1,7 +1,7 @@
 ﻿using System.Numerics;
 using System;
-using System.IO; 
-
+using System.IO;
+using System.Diagnostics; 
 class SlidingMoves
 {
     // magic bitboards 
@@ -425,5 +425,125 @@ class SlidingMoves
 
         File.WriteAllLines(slidingFolderPath, fileString);
     }
-    
+
+    /// <summary>
+    /// Saves Rook and Bishop Move tables to binary files after they were hashed to 
+    /// </summary>
+    /// <returns>the amount of time in milliseconds this function took </returns>
+    public static void SaveMoveTables()
+    {
+        Stopwatch timer = Stopwatch.StartNew();
+
+        string slidingFolderPath = System.IO.Path.GetFullPath(@"..\..\..\SlidingMoveLookupTables\SlidingPieceMoveTables.bin");
+        // Write array to a binary file
+        using (var fs = new FileStream("SlidingPieceMoveTables.bin", FileMode.Create))
+        using (var writer = new BinaryWriter(fs))
+        {
+            //rook
+            // write the number of the outer loop, rows in current lookup table  (64) 
+            writer.Write(RookMoveHashTable.Length);
+
+            //now for each squares move Table write info (64) 
+            foreach (ulong[] squareHashtable in RookMoveHashTable)
+            {
+                // write this tables length (4096) 
+                writer.Write(squareHashtable.Length);
+
+                foreach (ulong moveSet in squareHashtable) 
+                {
+                    // write specific moveset (64 bit number) 
+                    writer.Write(moveSet);
+                }
+            }
+
+            //bishop 
+            // write the number of the outer loop, rows in current lookup table  (64) 
+            writer.Write(BishopMoveHashTable.Length);
+
+            //now for each squares move Table write info (64) 
+            foreach (ulong[] squareHashtable in BishopMoveHashTable)
+            {
+                // write this tables length (4096) 
+                writer.Write(squareHashtable.Length);
+
+                foreach (ulong moveSet in squareHashtable)
+                {
+                    // write specific moveset (64 bit number) 
+                    writer.Write(moveSet);
+                }
+            }
+        }
+
+        timer.Stop();
+        TimeSpan timespan = timer.Elapsed;
+        Console.WriteLine("Saving MoveTables to Binary took: " + timer.Elapsed.TotalMinutes.ToString("#.## "));
+    }
+
+    /// <summary>
+    /// loads move table from binary file 
+    /// </summary>
+    public static void LoadMoveTables()
+    {
+        Stopwatch timer = Stopwatch.StartNew();
+
+        
+        // read from file 
+        using (var fs = new FileStream("SlidingPieceMoveTables.bin", FileMode.Open))
+        using (var reader = new BinaryReader(fs))
+        {
+            //rook
+            
+            // the first num is the row length of the rook table 
+            
+            int rookRowLength = reader.ReadInt32(); // this number should equal the rook row length
+            
+            if (rookRowLength != RookMoveHashTable.Length)
+                throw new Exception("Rook Row Length's dont match up: \nGot from reading: " + rookRowLength + " \nSupposed to be: " + RookMoveHashTable.Length);
+
+            for (int i = 0; i < rookRowLength; i++)
+            {
+                // how long the move hash table is for this current square 
+                int squareHashTableLength  = reader.ReadInt32();
+                if (squareHashTableLength > 4096) //4096 is max for rooks 
+                    throw new Exception("Rook Square table Length's dont match up: \nGot from reading: " + squareHashTableLength + " \nSupposed to be: " + "CHECK INDEX SHIFT VAL MIGHT BE JAGGED ARRAY");
+
+                RookMoveHashTable[i] = new ulong[squareHashTableLength]; 
+
+                for(int j = 0;  j < squareHashTableLength; j++)
+                {
+                    RookMoveHashTable[i][j] = reader.ReadUInt64(); // read the move into current place 
+                }
+            }
+
+            //bishop
+
+            // the first num is the row length of the rook table 
+
+            int bishopRowLength = reader.ReadInt32(); // this number should equal the rook row length
+
+            if (bishopRowLength != BishopMoveHashTable.Length)
+                throw new Exception("Rook Row Length's dont match up: \nGot from reading: " + bishopRowLength + " \nSupposed to be: " + BishopMoveHashTable.Length);
+
+            for (int i = 0; i < bishopRowLength; i++)
+            {
+                // how long the move hash table is for this current square 
+                int squareHashTableLength = reader.ReadInt32();
+
+                if (squareHashTableLength > 512) //512 is max for BISHOPS 
+                    throw new Exception("Rook Square table Length's dont match up: \nGot from reading: " + squareHashTableLength + " \nSupposed to be: " + "CHECK INDEX SHIFT VAL MIGHT BE JAGGED ARRAY");
+
+                BishopMoveHashTable[i] = new ulong[squareHashTableLength];
+
+                for (int j = 0; j < squareHashTableLength; j++)
+                {
+                    BishopMoveHashTable[i][j] = reader.ReadUInt64(); // read the move into current place 
+                }
+            }
+
+        }
+
+        timer.Stop();
+        TimeSpan timespan = timer.Elapsed;
+        Console.WriteLine("Saving MoveTables to Binary took: " + timer.Elapsed.TotalMinutes.ToString("#.## "));
+    }
 }
