@@ -75,7 +75,11 @@ class Engine
         SlidingMoves.SaveMoveTables();*/
 
 
-        SlidingMoves.initInfoandMoveTables();
+        Console.WriteLine(SlidingMoves.RookMoveHashTable);
+        Console.WriteLine(SlidingMoves.BishopMoveHashTable);
+        Console.WriteLine(SlidingMoves.RookInfoTable);
+        Console.WriteLine(SlidingMoves.BishopInfoTable);
+
 
 
         // these two blocking configs should hash to the same position given a magic num
