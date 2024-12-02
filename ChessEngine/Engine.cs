@@ -75,10 +75,7 @@ class Engine
         SlidingMoves.SaveMoveTables();*/
 
 
-        Console.WriteLine(SlidingMoves.RookMoveHashTable);
-        Console.WriteLine(SlidingMoves.BishopMoveHashTable);
-        Console.WriteLine(SlidingMoves.RookInfoTable);
-        Console.WriteLine(SlidingMoves.BishopInfoTable);
+
 
 
 
@@ -148,6 +145,39 @@ class Engine
         Board.printBitBoard(magicResult.hashTable[secondKey]);
 */
 
+
+        // testing hardcoded copy and paste of tables works with each square 
+        Random random = new Random();
+        string fileNames = "abcdefgh"; 
+
+        for (int i =0; i< 64;i++) {
+            Console.WriteLine("******** Square " + fileNames[i%8]+""+(i/8 +1) +" ********");
+
+            Console.WriteLine("Random Blocker Config: "); 
+            // generate random blocker config
+            ulong randBlockerConfig =(ulong) random.NextInt64();
+
+            //remove current square bit if on 
+            randBlockerConfig &= ~(1UL << i);
+
+            Board.printBitBoard(randBlockerConfig); 
+
+            // for both types 
+            int rookKey = (int)SlidingMoves.getMagicIndex(SlidingMoves.RookInfoTable[i], randBlockerConfig); 
+            int bishopKey = (int)SlidingMoves.getMagicIndex(SlidingMoves.BishopInfoTable[i], randBlockerConfig);
+
+
+            ulong rookMoves= SlidingMoves.RookMoveHashTable[i][rookKey];
+            ulong bishopMoves= SlidingMoves.BishopMoveHashTable[i][bishopKey];
+
+            Console.WriteLine("Rook Moves (Key "+rookKey+"): ");
+            Board.printBitBoard(rookMoves);
+
+            Console.WriteLine("Bishop Moves (Key " + bishopKey + "): ");
+            Board.printBitBoard(bishopMoves);
+            Console.WriteLine("******** ***** ********\n");
+
+        }
     }
 }
 
