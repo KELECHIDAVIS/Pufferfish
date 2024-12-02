@@ -28,6 +28,7 @@ class Moves {
     };
 
     public static ulong PAWN_MOVES;  // to save on memory we just reassign this variable 
+    public static ulong ROOK_MOVES; 
     /// <summary>
     /// Returns all possible moves for that side 
     /// </summary>
@@ -258,25 +259,36 @@ class Moves {
 
     }
 
+    private static string possibleRookWhite( ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB) {
+        string moveList = "";
+
+        // iterate through all the rooks 
+        ulong rookBB = piecesBB[(int)Side.White][(int)Piece.Rook]; 
+
+        while(rookBB > 0 ) {// for every rook 
+            int square = BitOperations.TrailingZeroCount(rookBB);
+
+
+            // get sliding moves 
+            //first or all piece boards then remove the current space so we can get blocker board 
+
+
+            // turn off the current index
+            rookBB &= ~(1UL<<square);
+        }
+        return moveList; 
+    }
+
+
     /// <summary>
-    /// Takes in the square the rook is on and the occupiedbb ****THAT DOES NOT INCLUDE THE ROOK/BISHOP ITSELF***
+    /// returns rook moves as a ulong 
     /// </summary>
-    /// <param name="square"></param>
-    /// <param name="occupied"></param>
     /// <returns></returns>
-    private static ulong getRookMoves(int square, ulong occupied)
-    {
-        int key = (int)SlidingMoves.getMagicIndex(SlidingMoves.RookInfoTable[square], occupied);
-        return SlidingMoves.RookMoveHashTable[square][key];
+    private static ulong getRookMoves(ulong blockerConfig , int square ) {
+        int rookKey = (int)SlidingMoves.getMagicIndex(SlidingMoves.RookInfoTable[square], blockerConfig);
+
+        return SlidingMoves.RookMoveHashTable[square][rookKey];
     }
-
-    private static ulong getBishopMove(int square, ulong occupied)
-    {
-        int key = (int)SlidingMoves.getMagicIndex(SlidingMoves.BishopInfoTable[square], occupied);
-        return SlidingMoves.BishopMoveHashTable[square][key];
-    }
-
-
 
 
 }
