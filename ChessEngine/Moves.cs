@@ -45,6 +45,10 @@ class Moves {
         }
     }
 
+    public static string possibleMoves ( Side side, string history, Board board) {
+        return possibleMoves(side , history , board.piecesBB, board.sideBB);
+    }
+
 
     private static string possibleMovesBlack(string history, ulong[][] piecesBB, ulong[] sideBB) {
         throw new NotImplementedException();
@@ -58,7 +62,7 @@ class Moves {
         // get all empty squares as well 
         ulong emptyBB = ~(sideBB[(int)(Side.White)] | sideBB[(int)Side.Black]); // bb of squares with no pieces on them 
 
-        string moveList = possiblePawnWhite(history, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB); // eventually add other pieces possible moves 
+        string moveList = possiblePawnWhite(history, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB) + possibleRookWhite(piecesBB,sideBB,nonCaptureBB,captureBB,emptyBB); // eventually add other pieces possible moves 
 
         return moveList;
 
@@ -272,11 +276,11 @@ class Moves {
 
             // get sliding moves 
             //first or all piece boards then remove the current space so we can get blocker board 
-            ROOK_MOVES = (sideBB[0] | sideBB[1]) & ~(1UL << square) ; // get blocker board 
+            ROOK_MOVES = (~emptyBB) & ~(1UL << square) ; // get blocker board 
 
             ROOK_MOVES = getRookMoves(ROOK_MOVES, square); // get possible rook moves from function 
 
-            ROOK_MOVES &= captureBB; // make sure that moves are only on capturable pieces by anding 
+            ROOK_MOVES &= (captureBB | emptyBB); // make sure that moves are only on capturable pieces and empty spaces by anding 
 
 
             // parse moves from ROOK MOVES 
@@ -284,7 +288,8 @@ class Moves {
                 int index = BitOperations.TrailingZeroCount(ROOK_MOVES);
 
                 //ex: a1b1
-                moveList += (fileNames[square % 8] + "" + (square / 8 + 1)) + (fileNames[index % 8] + "" + (index / 8 + 1)); 
+                moveList += (fileNames[square % 8] + "" + (square / 8 + 1)) + (fileNames[index % 8] + "" + (index / 8 + 1));
+                ROOK_MOVES &= ~(1UL << index); 
             }
             // turn off the current index
             rookBB &= ~(1UL<<square);

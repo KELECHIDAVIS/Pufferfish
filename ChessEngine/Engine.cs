@@ -6,13 +6,17 @@ using System.Threading.Tasks;
 
 class Engine
 {
-  
-    public static void Main(string[] args)
-    {
-        Board board = new Board();
+
+    public static void Main(string[] args) {
+        /*Board board = new Board();
         board.initStandardChess();
 
-        /*// test that the pawn moves still work
+
+
+
+
+
+        // test that the pawn moves still work
         Console.WriteLine("Current Board");
         Board.printBitBoard(board.sideBB[(int)Side.White] | board.sideBB[(int)Side.Black]); 
         string pawnMoves = Moves.possibleMoves(Side.White, "2725", board.piecesBB, board.sideBB);
@@ -146,7 +150,7 @@ class Engine
 */
 
 
-        // testing hardcoded copy and paste of tables works with each square 
+        /*// testing hardcoded copy and paste of tables works with each square 
         Random random = new Random();
         string fileNames = "abcdefgh"; 
 
@@ -177,8 +181,24 @@ class Engine
             Board.printBitBoard(bishopMoves);
             Console.WriteLine("******** ***** ********\n");
 
+        }*/
+
+        // testing possible moves for rooks and sliding pieces 
+        Board board = new Board();
+
+        board.initStandardChess();
+        Board.printBitBoard(board.sideBB[0]| board.sideBB[1]);
+
+        Console.WriteLine("Possible Moves:\n"); 
+        string moves=  Moves.possibleMoves(Side.White, "", board); 
+
+        for (int i =0; i< moves.Length; i++) {
+            if (i % 4 == 0 && i > 0)
+                Console.Write("  ");
+            Console.Write(moves[i]);    
         }
     }
 }
 
-    
+
+

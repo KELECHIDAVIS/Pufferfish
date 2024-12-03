@@ -48,9 +48,9 @@ class Board {
     public void initStandardChess () {
         char[][] chessBoard = new char[][]{
             new char[] { 'r', 'n', 'b', 'q', 'k', 'b', 'n', 'r' },
-            new char[] { 'p', ' ', 'p', 'p', 'p', 'p', 'p', 'p' },
+            new char[] { 'p', 'p', 'p', 'p', 'p', 'p', 'p', 'p' },
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
-            new char[] { 'P', 'p', 'P', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
             new char[] { 'P', 'P', 'P', 'P', 'P', 'P', 'P', 'P' },
