@@ -147,8 +147,8 @@ class Engine
 
         Console.WriteLine("\n Second Moveset: ");
         Board.printBitBoard(magicResult.hashTable[secondKey]);
-*/
 
+*/
 
         /*// testing hardcoded copy and paste of tables works with each square 
         Random random = new Random();
@@ -184,13 +184,14 @@ class Engine
         }*/
 
         // testing possible moves for rooks and sliding pieces 
-        Board board = new Board();
+        
 
-        board.initStandardChess();
+        Board board= Board.charArrayToBitboards
+       
         Board.printBitBoard(board.sideBB[0] | board.sideBB[1]);
 
-        Console.WriteLine("Possible Moves:\n");
         string moves = Moves.possibleMoves(Side.White, "", board);
+        Console.WriteLine("\n"+ moves.Length / 4 + " Possible Moves :");
 
         for (int i = 0; i < moves.Length; i++) {
             if (i % 4 == 0 && i > 0)

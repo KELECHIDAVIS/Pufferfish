@@ -154,6 +154,9 @@ class Board {
             }
         }
     }
+    public void printBoard() {
+        Board.printBitBoard(sideBB[(int)Side.White] | sideBB[(int)Side.Black]); 
+    }
 
     /// <summary>
     /// Translates fen string to our board representation

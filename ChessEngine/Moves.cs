@@ -348,4 +348,6 @@ class Moves {
 
         return SlidingMoves.BishopMoveHashTable[square][bishopKey];
     }
+
+
 }
