@@ -53,7 +53,7 @@ class Board {
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
-            new char[] { 'P', 'P', 'P', 'P', 'P', 'P', 'P', 'P' },
+            new char[] { 'P', ' ', 'P', ' ', ' ', 'P', ' ', 'P' },
             new char[] { 'R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R' },
         };
         charArrayToBitboards(chessBoard, pieceList, piecesBB, sideBB);

@@ -29,7 +29,8 @@ class Moves {
     };
 
     public static ulong PAWN_MOVES;  // to save on memory we just reassign this variable 
-    public static ulong ROOK_MOVES; 
+    public static ulong ROOK_MOVES;
+    public static ulong BISHOP_MOVES; 
     /// <summary>
     /// Returns all possible moves for that side 
     /// </summary>
@@ -62,7 +63,7 @@ class Moves {
         // get all empty squares as well 
         ulong emptyBB = ~(sideBB[(int)(Side.White)] | sideBB[(int)Side.Black]); // bb of squares with no pieces on them 
 
-        string moveList = possiblePawnWhite(history, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB) + possibleRookWhite(piecesBB,sideBB,nonCaptureBB,captureBB,emptyBB); // eventually add other pieces possible moves 
+        string moveList = possiblePawnWhite(history, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB) + possibleRookWhite(piecesBB,sideBB,nonCaptureBB,captureBB,emptyBB)+ possibleBishopWhite(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB); // eventually add other pieces possible moves 
 
         return moveList;
 
@@ -309,4 +310,42 @@ class Moves {
     }
 
 
+    private static string possibleBishopWhite(ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB) {
+        string moveList = "";
+
+        // iterate through all the bishops 
+        ulong bishopBB = piecesBB[(int)Side.White][(int)Piece.Bishop];
+
+        while (bishopBB > 0) {// for every rook 
+            int square = BitOperations.TrailingZeroCount(bishopBB);
+
+
+            // get sliding moves 
+            //first or all piece boards then remove the current space so we can get blocker board 
+            BISHOP_MOVES = (~emptyBB) & ~(1UL << square); // get blocker board 
+
+            BISHOP_MOVES = getBishopMoves(BISHOP_MOVES, square); // get possible bishop moves from function 
+
+            BISHOP_MOVES &= (captureBB | emptyBB); // make sure that moves are only on capturable pieces and empty spaces by anding 
+
+
+            // parse moves from ROOK MOVES 
+            while (BISHOP_MOVES > 0) {
+                int index = BitOperations.TrailingZeroCount(BISHOP_MOVES);
+
+                //ex: a1b1
+                moveList += (fileNames[square % 8] + "" + (square / 8 + 1)) + (fileNames[index % 8] + "" + (index / 8 + 1));
+                BISHOP_MOVES &= ~(1UL << index);
+            }
+            // turn off the current index
+            bishopBB &= ~(1UL << square);
+        }
+        return moveList;
+    }
+
+    private static ulong getBishopMoves(ulong blockerConfig, int square) {
+        int bishopKey = (int)SlidingMoves.getMagicIndex(SlidingMoves.BishopInfoTable[square], blockerConfig);
+
+        return SlidingMoves.BishopMoveHashTable[square][bishopKey];
+    }
 }

@@ -187,15 +187,15 @@ class Engine
         Board board = new Board();
 
         board.initStandardChess();
-        Board.printBitBoard(board.sideBB[0]| board.sideBB[1]);
+        Board.printBitBoard(board.sideBB[0] | board.sideBB[1]);
 
-        Console.WriteLine("Possible Moves:\n"); 
-        string moves=  Moves.possibleMoves(Side.White, "", board); 
+        Console.WriteLine("Possible Moves:\n");
+        string moves = Moves.possibleMoves(Side.White, "", board);
 
-        for (int i =0; i< moves.Length; i++) {
+        for (int i = 0; i < moves.Length; i++) {
             if (i % 4 == 0 && i > 0)
                 Console.Write("  ");
-            Console.Write(moves[i]);    
+            Console.Write(moves[i]);
         }
     }
 }
