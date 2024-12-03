@@ -3,6 +3,7 @@ using System.Numerics;
 
 class Moves {
 
+    public static string fileNames = "abcdefgh" ;
     // ranks go from 0-7 : 1-8
     public static readonly ulong[] RANKS = {
                 0b00000000_00000000_00000000_00000000_00000000_00000000_00000000_11111111,
@@ -90,10 +91,10 @@ class Moves {
         while (PAWN_MOVES > 0) {
             currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
             // so our destination is the currIndex ; do calcs 
-            y2 = (currentIndex / 8) + 1; x2 = (currentIndex % 8) + 1;
+            y2 = (currentIndex / 8)+1 ; x2 = (currentIndex % 8) ;
             y1 = y2 - 1; x1 = x2 - 1; // prev row and col respectively  
 
-            moveList += "" + x1 + "" + y1 + "" + x2 + "" + y2;
+            moveList += "" + fileNames[x1] + "" + y1 + "" + fileNames[x2] + "" + y2;
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
         }
@@ -106,10 +107,10 @@ class Moves {
         while (PAWN_MOVES > 0) {
             currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
             // so our destination is the currIndex ; do calcs 
-            y2 = (currentIndex / 8) + 1; x2 = (currentIndex % 8) + 1;
+            y2 = (currentIndex / 8) + 1; x2 = (currentIndex % 8) ;
             y1 = y2 - 1; x1 = x2 + 1; // prev row and col respectively  
 
-            moveList += "" + x1 + "" + y1 + "" + x2 + "" + y2;
+            moveList += "" + fileNames[x1] + "" + y1 + "" + fileNames[x2] + "" + y2;
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
         }
@@ -120,10 +121,10 @@ class Moves {
         while (PAWN_MOVES > 0) {
             currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
             // so our destination is the currIndex ; do calcs 
-            y2 = (currentIndex / 8) + 1; x2 = (currentIndex % 8) + 1;
+            y2 = (currentIndex / 8) + 1; x2 = (currentIndex % 8) ;
             y1 = y2 - 1; x1 = x2; // prev row and col respectively  
 
-            moveList += "" + x1 + "" + y1 + "" + x2 + "" + y2;
+            moveList += "" + fileNames[x1] + "" + y1 + "" + fileNames[x2] + "" + y2;
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
         }
@@ -138,10 +139,10 @@ class Moves {
         while (PAWN_MOVES > 0) {
             currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
             // so our destination is the currIndex ; do calcs 
-            y2 = (currentIndex / 8) + 1; x2 = (currentIndex % 8) + 1;
+            y2 = (currentIndex / 8) + 1; x2 = (currentIndex % 8) ;
             y1 = y2 - 2; x1 = x2; // prev row and col respectively  
 
-            moveList += "" + x1 + "" + y1 + "" + x2 + "" + y2;
+            moveList += "" + fileNames[x1] + "" + y1 + "" + fileNames[x2] + "" + y2;
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
         }
@@ -159,10 +160,10 @@ class Moves {
         while (PAWN_MOVES > 0) {
             currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
             // so our destination is the currIndex ; do calcs 
-            x2 = (currentIndex % 8) + 1;
+            x2 = (currentIndex % 8) ;
             x1 = x2 - 1; // prev row and col respectively  
 
-            moveList += "" + x1 + "" + x2 + "QP" + x1 + "" + x2 + "RP" + x1 + "" + x2 + "BP" + x1 + "" + x2 + "NP";
+            moveList += "" + fileNames[x1] + "" + fileNames[x2] + "QP" + fileNames[x1] + "" + fileNames[x2] + "RP" + fileNames[x1] + "" + fileNames[x2] + "BP" + fileNames[x1] + "" + fileNames[x2] + "NP";
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
         }
@@ -174,10 +175,10 @@ class Moves {
         while (PAWN_MOVES > 0) {
             currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
             // so our destination is the currIndex ; do calcs 
-            x2 = (currentIndex % 8) + 1;
+            x2 = (currentIndex % 8) ;
             x1 = x2 + 1; // prev row and col respectively  
 
-            moveList += "" + x1 + "" + x2 + "QP" + x1 + "" + x2 + "RP" + x1 + "" + x2 + "BP" + x1 + "" + x2 + "NP";
+            moveList += "" + fileNames[x1] + "" + fileNames[x2] + "QP" + fileNames[x1]   + "" + fileNames[x2] + "RP" + fileNames[x1] + "" + fileNames[x2] + "BP" + fileNames[x1] + "" + fileNames[x2] + "NP";
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
         }
@@ -190,10 +191,10 @@ class Moves {
         while (PAWN_MOVES > 0) {
             currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
             // so our destination is the currIndex ; do calcs 
-            x2 = (currentIndex % 8) + 1;
+            x2 = (currentIndex % 8) ;
             x1 = x2; // prev row and col respectively  
 
-            moveList += "" + x1 + "" + x2 + "QP" + x1 + "" + x2 + "RP" + x1 + "" + x2 + "BP" + x1 + "" + x2 + "NP";
+            moveList += "" + fileNames[x1] + "" + fileNames[x2] + "QP" + fileNames[x1] + "" + fileNames[x2] + "RP" + fileNames[x1] + "" + fileNames[x2] + "BP" + fileNames[x1] + "" + fileNames[x2] + "NP";
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
         }
@@ -215,16 +216,16 @@ class Moves {
 
                 // right capture 
                 // wp has to be left of bp that just moved, they both have to be on rank 5, move wp to space above 
-                PAWN_MOVES = ((piecesBB[(int)Side.White][(int)Piece.Pawn] << 1) & piecesBB[(int)Side.Black][(int)Piece.Pawn] & FILES[x1 - 1] & RANKS[4]) << 8;
+                PAWN_MOVES = ((piecesBB[(int)Side.White][(int)Piece.Pawn] << 1) & piecesBB[(int)Side.Black][(int)Piece.Pawn] & FILES[x1 ] & RANKS[4]) << 8;
 
                 // we know there is only going to be one 
                 if (PAWN_MOVES > 0) {
                     currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
                     // so our destination is the currIndex ; do calcs 
-                    x2 = (currentIndex % 8) + 1;
+                    x2 = (currentIndex % 8) ;
                     x1 = x2 - 1;
 
-                    moveList += "" + x1 + "" + x2 + "EE"; // to make 4 total characters ; y's can be inferred bc always 5->6 for wps 
+                    moveList += "" + fileNames[x1] + "" + fileNames[x2] + "EE"; // to make 4 total characters ; y's can be inferred bc always 5->6 for wps 
 
                     mask = ~(1UL << currentIndex);
                     PAWN_MOVES &= mask;
@@ -232,16 +233,16 @@ class Moves {
 
                 //left capture 
 
-                PAWN_MOVES = ((piecesBB[(int)Side.White][(int)Piece.Pawn] >> 1) & piecesBB[(int)Side.Black][(int)Piece.Pawn] & FILES[x1 - 1] & RANKS[4]) << 8;
+                PAWN_MOVES = ((piecesBB[(int)Side.White][(int)Piece.Pawn] >> 1) & piecesBB[(int)Side.Black][(int)Piece.Pawn] & FILES[x1 ] & RANKS[4]) << 8;
 
                 // we know there is only going to be one 
                 if (PAWN_MOVES > 0) {
                     currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
                     // so our destination is the currIndex ; do calcs 
-                    x2 = (currentIndex % 8) + 1;
+                    x2 = (currentIndex % 8) ;
                     x1 = x2 + 1;
 
-                    moveList += "" + x1 + "" + x2 + "EE"; // to make 4 total characters ; y's can be inferred bc always 5->6 for wps 
+                    moveList += "" + fileNames[x1] + "" + fileNames[x2] + "EE"; // to make 4 total characters ; y's can be inferred bc always 5->6 for wps 
 
                     mask = ~(1UL << currentIndex);
                     PAWN_MOVES &= mask;
@@ -271,8 +272,20 @@ class Moves {
 
             // get sliding moves 
             //first or all piece boards then remove the current space so we can get blocker board 
+            ROOK_MOVES = (sideBB[0] | sideBB[1]) & ~(1UL << square) ; // get blocker board 
+
+            ROOK_MOVES = getRookMoves(ROOK_MOVES, square); // get possible rook moves from function 
+
+            ROOK_MOVES &= captureBB; // make sure that moves are only on capturable pieces by anding 
 
 
+            // parse moves from ROOK MOVES 
+            while(ROOK_MOVES > 0) {
+                int index = BitOperations.TrailingZeroCount(ROOK_MOVES);
+
+                //ex: a1b1
+                moveList += (fileNames[square % 8] + "" + (square / 8 + 1)) + (fileNames[index % 8] + "" + (index / 8 + 1)); 
+            }
             // turn off the current index
             rookBB &= ~(1UL<<square);
         }
