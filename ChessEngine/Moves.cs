@@ -63,7 +63,7 @@ class Moves {
         // get all empty squares as well 
         ulong emptyBB = ~(sideBB[(int)(Side.White)] | sideBB[(int)Side.Black]); // bb of squares with no pieces on them 
 
-        string moveList = possiblePawnWhite(history, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB) + possibleRookWhite(piecesBB,sideBB,nonCaptureBB,captureBB,emptyBB)+ possibleBishopWhite(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB); // eventually add other pieces possible moves 
+        string moveList = possiblePawnWhite(history, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB) + possibleRook(piecesBB,sideBB,nonCaptureBB,captureBB,emptyBB)+ possibleBishop(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB)+ possibleQueen(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB) ; // eventually add other pieces possible moves 
 
         return moveList;
 
@@ -265,7 +265,7 @@ class Moves {
 
     }
 
-    private static string possibleRookWhite( ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB) {
+    private static string possibleRook( ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB) {
         string moveList = "";
 
         // iterate through all the rooks 
@@ -310,7 +310,7 @@ class Moves {
     }
 
 
-    private static string possibleBishopWhite(ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB) {
+    private static string possibleBishop(ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB) {
         string moveList = "";
 
         // iterate through all the bishops 
@@ -343,11 +343,27 @@ class Moves {
         return moveList;
     }
 
+
     private static ulong getBishopMoves(ulong blockerConfig, int square) {
         int bishopKey = (int)SlidingMoves.getMagicIndex(SlidingMoves.BishopInfoTable[square], blockerConfig);
 
         return SlidingMoves.BishopMoveHashTable[square][bishopKey];
     }
 
+
+    /// <summary>
+    /// To get queen moves just add the rook's and bishop's protocol into one bb; 
+    /// </summary>
+    /// <param name="piecesBB"></param>
+    /// <param name="sideBB"></param>
+    /// <param name="nonCaptureBB"></param>
+    /// <param name="captureBB"></param>
+    /// <param name="emptyBB"></param>
+    /// <returns></returns>
+    private static string possibleQueen(ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB) {
+        string moveList=  possibleBishop(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB) + possibleRook(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB);
+        
+        return moveList; 
+    }
 
 }

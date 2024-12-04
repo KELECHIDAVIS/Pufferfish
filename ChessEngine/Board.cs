@@ -111,6 +111,53 @@ class Board {
             Console.WriteLine();
         }
     }
+    public static Board charArrayToBitboards(char[][] chessBoard) {
+        const int LAST_BIT = 63; // helps with calcs 
+
+        Board board = new Board();
+
+        for (int i = 0; i <= 7; i++) {
+
+            for (int j = 0; j <= 7; j++) {
+
+                int pieceVal = (int)Piece.NONE; // current piece val ; 
+                Side side;  // current side of piece 
+
+                switch (Char.ToLower(chessBoard[i][j])) { // find val of piece 
+                    case 'r': pieceVal = (int)Piece.Rook; break;
+                    case 'n': pieceVal = (int)Piece.Knight; break;
+                    case 'b': pieceVal = (int)Piece.Bishop; break;
+                    case 'q': pieceVal = (int)Piece.Queen; break;
+                    case 'k': pieceVal = (int)Piece.King; break;
+                    case 'p': pieceVal = (int)Piece.Pawn; break;
+                }
+
+                // from left -> right the indexes go 56 57 58... 63
+                int currentIndex = LAST_BIT - (8 * i + (7 - j)); // also where bit is going to be 
+
+                board.pieceList[currentIndex] = pieceVal; // info about currentPiece
+
+                if (pieceVal == (int)Piece.NONE) {
+
+                    continue; // skip if there is no piece there 
+                }
+
+
+
+                side = Char.IsUpper(chessBoard[i][j]) ? Side.White : Side.Black; // if uppercase its white 
+                ulong mask = 1UL; // initialize mask 
+                mask <<= currentIndex; // now shift the bit to currentPos
+
+
+                board.piecesBB[(int)side][pieceVal] |= mask; // or the mask to bb to preserve data
+
+                // or mask to side specific as well 
+                board.sideBB[(int)side] |= mask;
+            }
+        }
+
+        return board;
+    }
     public static void charArrayToBitboards(char[][] chessBoard, int[] pieceList, ulong[][] piecesBB, ulong[] sidesBB) {
         const int LAST_BIT = 63; // helps with calcs 
 

@@ -184,9 +184,31 @@ class Engine
         }*/
 
         // testing possible moves for rooks and sliding pieces 
-        
 
-        Board board= Board.charArrayToBitboards
+
+        char[][] chessBoard1 = new char[][]{
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', 'p', ' ' },
+            new char[] { ' ', 'p', ' ', ' ', ' ', 'p', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', 'p', 'Q', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', 'p', 'p', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', ' ', ' ', 'p', ' ', ' ' },
+            new char[] { 'p', 'p', ' ', ' ', ' ', ' ', ' ', ' ' },
+
+        };
+        char[][] chessBoard2 = new char[][]{
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { 'p', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { 'p', 'p', ' ', ' ', ' ', 'p', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { 'p', ' ', 'p', 'B', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', 'p', 'p', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { 'p', 'p', 'p', ' ', ' ', ' ', ' ', ' ' },
+
+        }; 
+        Board board = Board.charArrayToBitboards(chessBoard1); 
        
         Board.printBitBoard(board.sideBB[0] | board.sideBB[1]);
 
