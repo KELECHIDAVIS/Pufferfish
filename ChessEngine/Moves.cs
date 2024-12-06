@@ -31,6 +31,7 @@ class Moves {
     public static ulong PAWN_MOVES;  // to save on memory we just reassign this variable 
     public static ulong ROOK_MOVES;
     public static ulong BISHOP_MOVES; 
+    public static ulong QUEEN_MOVES;
     /// <summary>
     /// Returns all possible moves for that side 
     /// </summary>
@@ -361,8 +362,36 @@ class Moves {
     /// <param name="emptyBB"></param>
     /// <returns></returns>
     private static string possibleQueen(ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB) {
-        string moveList=  possibleBishop(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB) + possibleRook(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB);
-        
+        string moveList = "";
+
+        // get all queen positions 
+        ulong queenBB = piecesBB[(int)Side.White][(int)Piece.Queen];
+
+        while (queenBB > 0) {// for every rook 
+            int square = BitOperations.TrailingZeroCount(queenBB);
+
+
+            // get sliding moves 
+            //first or all piece boards then remove the current space so we can get blocker board 
+            QUEEN_MOVES = (~emptyBB) & ~(1UL << square); // get blocker board 
+
+            // or rook moves and bishop moves to get all possible queens moves 
+            QUEEN_MOVES = getRookMoves(QUEEN_MOVES, square) | getBishopMoves(QUEEN_MOVES,square) ; 
+
+            QUEEN_MOVES &= (captureBB | emptyBB); // make sure that moves are only on capturable pieces and empty spaces by anding 
+
+
+            // parse moves from ROOK MOVES 
+            while (QUEEN_MOVES > 0) {
+                int index = BitOperations.TrailingZeroCount(QUEEN_MOVES);
+
+                //ex: a1b1
+                moveList += (fileNames[square % 8] + "" + (square / 8 + 1)) + (fileNames[index % 8] + "" + (index / 8 + 1));
+                QUEEN_MOVES &= ~(1UL << index);
+            }
+            // turn off the current index
+            queenBB &= ~(1UL << square);
+        }
         return moveList; 
     }
 
