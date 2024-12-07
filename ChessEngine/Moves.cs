@@ -64,7 +64,11 @@ class Moves {
         // get all empty squares as well 
         ulong emptyBB = ~(sideBB[(int)(Side.White)] | sideBB[(int)Side.Black]); // bb of squares with no pieces on them 
 
-        string moveList = possiblePawnWhite(history, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB) + possibleRook(piecesBB,sideBB,nonCaptureBB,captureBB,emptyBB)+ possibleBishop(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB)+ possibleQueen(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB) ; // eventually add other pieces possible moves 
+        // get all the moves from each piece on this side 
+        string moveList = possiblePawnWhite(history, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB) 
+            + possibleRook(piecesBB,sideBB,nonCaptureBB,captureBB,emptyBB, Side.White)
+            + possibleBishop(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White)
+            + possibleQueen(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White) ;  
 
         return moveList;
 
@@ -266,11 +270,11 @@ class Moves {
 
     }
 
-    private static string possibleRook( ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB) {
+    private static string possibleRook( ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB , Side side) {
         string moveList = "";
 
         // iterate through all the rooks 
-        ulong rookBB = piecesBB[(int)Side.White][(int)Piece.Rook]; 
+        ulong rookBB = piecesBB[(int)side][(int)Piece.Rook]; 
 
         while(rookBB > 0 ) {// for every rook 
             int square = BitOperations.TrailingZeroCount(rookBB);
@@ -311,11 +315,11 @@ class Moves {
     }
 
 
-    private static string possibleBishop(ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB) {
+    private static string possibleBishop(ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side) {
         string moveList = "";
 
         // iterate through all the bishops 
-        ulong bishopBB = piecesBB[(int)Side.White][(int)Piece.Bishop];
+        ulong bishopBB = piecesBB[(int)side][(int)Piece.Bishop];
 
         while (bishopBB > 0) {// for every rook 
             int square = BitOperations.TrailingZeroCount(bishopBB);
@@ -361,11 +365,11 @@ class Moves {
     /// <param name="captureBB"></param>
     /// <param name="emptyBB"></param>
     /// <returns></returns>
-    private static string possibleQueen(ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB) {
+    private static string possibleQueen(ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side) {
         string moveList = "";
 
         // get all queen positions 
-        ulong queenBB = piecesBB[(int)Side.White][(int)Piece.Queen];
+        ulong queenBB = piecesBB[(int)side][(int)Piece.Queen];
 
         while (queenBB > 0) {// for every rook 
             int square = BitOperations.TrailingZeroCount(queenBB);
@@ -395,4 +399,32 @@ class Moves {
         return moveList; 
     }
 
+    //KNIGHT MOVES 
+    ulong northWestWest(ulong bb) {
+        return (bb << 6) & ~(FILES[6]|FILES[7]);  //shift left 6 and make sure result isn't on file g or h (wrap around) 
+    }
+    ulong northEastEast(ulong bb) {
+        return (bb << 10) & ~(FILES[0] | FILES[1]); // make sure result not on a or b 
+    }
+    ulong northNorthWest(ulong bb) {
+        return (bb << 15) & ~(FILES[7] ); // make sure result not on h
+    }
+    ulong northNorthEast(ulong bb) {
+        return (bb << 17) & ~(FILES[0]); // make sure result not on h
+    }
+    ulong southEastEast (ulong bb) {
+        return (bb >> 6) & ~(FILES[0] | FILES[1]);  
+    }
+    ulong southWestWest(ulong bb) {
+        return (bb >> 10) & ~(FILES[6] | FILES[7]);
+    }
+    ulong southSouthEast(ulong bb) {
+        return (bb >> 15) & ~(FILES[0]);
+    }
+    ulong southSouthWest(ulong bb) {
+        return (bb >> 17) & ~(FILES[7]);
+    }
+    //KNIGHT MOVES 
+
 }
+
