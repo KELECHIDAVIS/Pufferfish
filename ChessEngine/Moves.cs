@@ -29,6 +29,7 @@ class Moves {
     };
 
     public static ulong PAWN_MOVES;  // to save on memory we just reassign this variable 
+    public static ulong KNIGHT_MOVES;
     public static ulong ROOK_MOVES;
     public static ulong BISHOP_MOVES; 
     public static ulong QUEEN_MOVES;
@@ -68,7 +69,8 @@ class Moves {
         string moveList = possiblePawnWhite(history, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB) 
             + possibleRook(piecesBB,sideBB,nonCaptureBB,captureBB,emptyBB, Side.White)
             + possibleBishop(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White)
-            + possibleQueen(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White) ;  
+            + possibleQueen(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White) 
+            + possibleKnight(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White);  
 
         return moveList;
 
@@ -385,7 +387,7 @@ class Moves {
             QUEEN_MOVES &= (captureBB | emptyBB); // make sure that moves are only on capturable pieces and empty spaces by anding 
 
 
-            // parse moves from ROOK MOVES 
+            // parse moves from QUEEN MOVES 
             while (QUEEN_MOVES > 0) {
                 int index = BitOperations.TrailingZeroCount(QUEEN_MOVES);
 
@@ -400,29 +402,144 @@ class Moves {
     }
 
     //KNIGHT MOVES 
-    ulong northWestWest(ulong bb) {
+    static ulong northWestWest(ulong bb) {
         return (bb << 6) & ~(FILES[6]|FILES[7]);  //shift left 6 and make sure result isn't on file g or h (wrap around) 
     }
-    ulong northEastEast(ulong bb) {
+    static ulong northEastEast(ulong bb) {
         return (bb << 10) & ~(FILES[0] | FILES[1]); // make sure result not on a or b 
     }
-    ulong northNorthWest(ulong bb) {
+    static ulong northNorthWest(ulong bb) {
         return (bb << 15) & ~(FILES[7] ); // make sure result not on h
     }
-    ulong northNorthEast(ulong bb) {
+    static ulong northNorthEast(ulong bb) {
         return (bb << 17) & ~(FILES[0]); // make sure result not on h
     }
-    ulong southEastEast (ulong bb) {
+    static ulong southEastEast (ulong bb) {
         return (bb >> 6) & ~(FILES[0] | FILES[1]);  
     }
-    ulong southWestWest(ulong bb) {
+    static ulong southWestWest(ulong bb) {
         return (bb >> 10) & ~(FILES[6] | FILES[7]);
     }
-    ulong southSouthEast(ulong bb) {
+    static ulong southSouthEast(ulong bb) {
         return (bb >> 15) & ~(FILES[0]);
     }
-    ulong southSouthWest(ulong bb) {
+    static ulong southSouthWest(ulong bb) {
         return (bb >> 17) & ~(FILES[7]);
+    }
+
+    private static string possibleKnight(ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side) {
+        string moveList = "";
+
+        
+
+        // make sure the move is either on empty or capturable square 
+
+        KNIGHT_MOVES = northEastEast(piecesBB[(int)side][(int)Piece.Knight]) & (captureBB |emptyBB); // north east east 
+
+        // parse moves for current moveset 
+        while (KNIGHT_MOVES > 0) {
+            int index = BitOperations.TrailingZeroCount(KNIGHT_MOVES);
+
+            int destRank = index / 8; int destFile = index % 8; 
+            int startRank = destRank-1 , startFile=destFile-2; 
+            //ex: a1b1
+            moveList += (fileNames[startFile] + "" + (startRank + 1)) + (fileNames[destFile] + "" + (destRank+ 1));
+            KNIGHT_MOVES &= ~(1UL << index);
+        }
+
+        // make sure the move is either on empty or capturable square 
+
+        KNIGHT_MOVES = northNorthEast(piecesBB[(int)side][(int)Piece.Knight]) & (captureBB | emptyBB); 
+
+        // parse moves for current moveset 
+        while (KNIGHT_MOVES > 0) {
+            int index = BitOperations.TrailingZeroCount(KNIGHT_MOVES);
+
+            int destRank = index / 8; int destFile = index % 8;
+            int startRank = destRank - 2, startFile = destFile - 1;
+            //ex: a1b1
+            moveList += (fileNames[startFile] + "" + (startRank + 1)) + (fileNames[destFile] + "" + (destRank + 1));
+            KNIGHT_MOVES &= ~(1UL << index);
+        }
+
+        KNIGHT_MOVES = northWestWest(piecesBB[(int)side][(int)Piece.Knight]) & (captureBB | emptyBB);
+
+        // parse moves for current moveset 
+        while (KNIGHT_MOVES > 0) {
+            int index = BitOperations.TrailingZeroCount(KNIGHT_MOVES);
+
+            int destRank = index / 8; int destFile = index % 8;
+            int startRank = destRank - 1, startFile = destFile + 2;
+            //ex: a1b1
+            moveList += (fileNames[startFile] + "" + (startRank + 1)) + (fileNames[destFile] + "" + (destRank + 1));
+            KNIGHT_MOVES &= ~(1UL << index);
+        }
+
+        KNIGHT_MOVES = northNorthWest(piecesBB[(int)side][(int)Piece.Knight]) & (captureBB | emptyBB);
+
+        // parse moves for current moveset 
+        while (KNIGHT_MOVES > 0) {
+            int index = BitOperations.TrailingZeroCount(KNIGHT_MOVES);
+
+            int destRank = index / 8; int destFile = index % 8;
+            int startRank = destRank - 2, startFile = destFile + 1;
+            //ex: a1b1
+            moveList += (fileNames[startFile] + "" + (startRank + 1)) + (fileNames[destFile] + "" + (destRank + 1));
+            KNIGHT_MOVES &= ~(1UL << index);
+        }
+
+        KNIGHT_MOVES = southEastEast(piecesBB[(int)side][(int)Piece.Knight]) & (captureBB | emptyBB);
+
+        // parse moves for current moveset 
+        while (KNIGHT_MOVES > 0) {
+            int index = BitOperations.TrailingZeroCount(KNIGHT_MOVES);
+
+            int destRank = index / 8; int destFile = index % 8;
+            int startRank = destRank + 1, startFile = destFile -2;
+            //ex: a1b1
+            moveList += (fileNames[startFile] + "" + (startRank + 1)) + (fileNames[destFile] + "" + (destRank + 1));
+            KNIGHT_MOVES &= ~(1UL << index);
+        }
+
+        KNIGHT_MOVES = southSouthEast(piecesBB[(int)side][(int)Piece.Knight]) & (captureBB | emptyBB);
+
+        // parse moves for current moveset 
+        while (KNIGHT_MOVES > 0) {
+            int index = BitOperations.TrailingZeroCount(KNIGHT_MOVES);
+
+            int destRank = index / 8; int destFile = index % 8;
+            int startRank = destRank + 2, startFile = destFile - 1;
+            //ex: a1b1
+            moveList += (fileNames[startFile] + "" + (startRank + 1)) + (fileNames[destFile] + "" + (destRank + 1));
+            KNIGHT_MOVES &= ~(1UL << index);
+        }
+
+        KNIGHT_MOVES = southWestWest(piecesBB[(int)side][(int)Piece.Knight]) & (captureBB | emptyBB);
+
+        // parse moves for current moveset 
+        while (KNIGHT_MOVES > 0) {
+            int index = BitOperations.TrailingZeroCount(KNIGHT_MOVES);
+
+            int destRank = index / 8; int destFile = index % 8;
+            int startRank = destRank + 1, startFile = destFile +2;
+            //ex: a1b1
+            moveList += (fileNames[startFile] + "" + (startRank + 1)) + (fileNames[destFile] + "" + (destRank + 1));
+            KNIGHT_MOVES &= ~(1UL << index);
+        }
+
+        KNIGHT_MOVES = southSouthWest(piecesBB[(int)side][(int)Piece.Knight]) & (captureBB | emptyBB);
+
+        // parse moves for current moveset 
+        while (KNIGHT_MOVES > 0) {
+            int index = BitOperations.TrailingZeroCount(KNIGHT_MOVES);
+
+            int destRank = index / 8; int destFile = index % 8;
+            int startRank = destRank + 2, startFile = destFile + 1;
+            //ex: a1b1
+            moveList += (fileNames[startFile] + "" + (startRank + 1)) + (fileNames[destFile] + "" + (destRank + 1));
+            KNIGHT_MOVES &= ~(1UL << index);
+        }
+        return moveList; 
     }
     //KNIGHT MOVES 
 
