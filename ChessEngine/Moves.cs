@@ -565,13 +565,19 @@ class Moves {
         // up and down ( check not neccessary because bits don't rollover 
         KING_MOVES|= (currentKing <<8 ) | (currentKing >>8 );
 
-        Console.WriteLine("King Moveset: "); 
-        Board.printBitBoard(KING_MOVES); 
+        // now we have to check that these moves are on empty or capturable squares
+        KING_MOVES &= (emptyBB | captureBB);
+
+        // a bb that holds all the square that are in sight of black pieces 
+        ulong unsafeBB = getUnsafeSquares(piecesBB, sideBB, nonCaptureBB , captureBB, emptyBB, side); 
+        // then check that these moves don't put the king in check 
+        // they should be on a square protected by a black piece (UNSAFE SQUARE BB ) 
         return moveList; 
 
     }
 
-
-
+    private static ulong getUnsafeSquares(ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side) {
+        throw new NotImplementedException();
+    }
 }
 
