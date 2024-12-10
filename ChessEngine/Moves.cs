@@ -30,6 +30,7 @@ class Moves {
 
     public static ulong PAWN_MOVES;  // to save on memory we just reassign this variable 
     public static ulong KNIGHT_MOVES;
+    public static ulong KING_MOVES;
     public static ulong ROOK_MOVES;
     public static ulong BISHOP_MOVES; 
     public static ulong QUEEN_MOVES;
@@ -70,7 +71,8 @@ class Moves {
             + possibleRook(piecesBB,sideBB,nonCaptureBB,captureBB,emptyBB, Side.White)
             + possibleBishop(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White)
             + possibleQueen(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White) 
-            + possibleKnight(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White);  
+            + possibleKnight(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White)
+            +possibleKing(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White);  
 
         return moveList;
 
@@ -542,6 +544,34 @@ class Moves {
         return moveList; 
     }
     //KNIGHT MOVES 
+
+
+    // there is always only one king for a side 
+    // a king can only move to a place that won't put it into check 
+    // kings can castle if the rook or king hasn't moved yet nd if the castling isn't blocked 
+    private static string possibleKing(ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side) {
+        string moveList = "";
+
+        // find the kings reg attack pattern
+        ulong currentKing = piecesBB[(int)side][(int)Piece.King];
+
+        // left moves; the result can't be on file h 
+        // left, left up , left down ; check they aren't on file h 
+        KING_MOVES |= (currentKing >> 1 | (currentKing<<7) | (currentKing >>9 )) & ~FILES[7];
+
+        //right , right up , right down; can't be on file a 
+        KING_MOVES |= (currentKing << 1 | (currentKing << 9) | (currentKing >> 7)) & ~FILES[0];
+
+        // up and down ( check not neccessary because bits don't rollover 
+        KING_MOVES|= (currentKing <<8 ) | (currentKing >>8 );
+
+        Console.WriteLine("King Moveset: "); 
+        Board.printBitBoard(KING_MOVES); 
+        return moveList; 
+
+    }
+
+
 
 }
 

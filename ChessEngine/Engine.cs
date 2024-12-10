@@ -202,24 +202,24 @@ class Engine
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
-            new char[] { ' ', ' ', ' ', 'N', ' ', ' ', ' ', ' ' },
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'K' },
 
         }; 
-        Board board = Board.charArrayToBitboards(chessBoard1); 
-       
-        Board.printBitBoard(board.sideBB[0] | board.sideBB[1]);
-
+        Board board = Board.charArrayToBitboards(chessBoard2); 
         string moves = Moves.possibleMoves(Side.White, "", board);
+       
+        /*Board.printBitBoard(board.sideBB[0] | board.sideBB[1]);
+
         Console.WriteLine("\n"+ moves.Length / 4 + " Possible Moves :");
 
         for (int i = 0; i < moves.Length; i++) {
             if (i % 4 == 0 && i > 0)
                 Console.Write("  ");
             Console.Write(moves[i]);
-        }
+        }*/
     }
 }
 
