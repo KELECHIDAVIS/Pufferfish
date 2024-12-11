@@ -569,15 +569,56 @@ class Moves {
         KING_MOVES &= (emptyBB | captureBB);
 
         // a bb that holds all the square that are in sight of black pieces 
-        ulong unsafeBB = getUnsafeSquares(piecesBB, sideBB, nonCaptureBB , captureBB, emptyBB, side); 
+        ulong unsafeBB = getUnsafeSquares(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, side); 
         // then check that these moves don't put the king in check 
         // they should be on a square protected by a black piece (UNSAFE SQUARE BB ) 
         return moveList; 
 
     }
 
+    //this would return the unsafe squares for this sides to help with king safe moves 
     private static ulong getUnsafeSquares(ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side) {
-        throw new NotImplementedException();
+
+        ulong unsafeBB = 0;
+
+        if (side == Side.White)
+        {
+            // find the squares protected by black squares 
+
+            // get black pawns right and left attacks 
+            unsafeBB |= (piecesBB[(int) Side.Black][(int)Piece.Pawn]>>7) & ~FILES[0]; // black pawns right attack; make sure result not on file a  
+            unsafeBB |= (piecesBB[(int) Side.Black][(int)Piece.Pawn]>>9) & ~FILES[7];
+
+            // black knight attacks ; don't have to check if their attacks are empty because if there is a piece on there that means they are protecting it 
+            unsafeBB |= northNorthEast(piecesBB[(int)Side.Black][(int)Piece.Knight])
+                | northEastEast(piecesBB[(int)Side.Black][(int)Piece.Knight])
+                | northNorthWest(piecesBB[(int)Side.Black][(int)Piece.Knight])
+                | northWestWest(piecesBB[(int)Side.Black][(int)Piece.Knight])
+                | southEastEast(piecesBB[(int)Side.Black][(int)Piece.Knight])
+                | southSouthEast(piecesBB[(int)Side.Black][(int)Piece.Knight])
+                | southWestWest(piecesBB[(int)Side.Black][(int)Piece.Knight])
+                | southSouthWest(piecesBB[(int)Side.Black][(int)Piece.Knight]); 
+
+            // Black bishops 
+            // for each black bishop add it's moves to the unsafe 
+            ulong bishopBB = piecesBB[(int)Side.Black][(int) Piece.Bishop];
+            ulong blockerBB; 
+            while (bishopBB> 0)
+            {
+                int square = BitOperations.TrailingZeroCount(bishopBB);
+
+                // get bishop move from current spot; remove current bishop from blocker bb  
+                blockerBB = ~(emptyBB) & ~(1UL<<square) ;  
+                
+                bishopBB &= ~(1UL << square);
+            }
+
+        }
+        else
+        {
+
+        }
+        return unsafeBB; 
     }
 }
 
