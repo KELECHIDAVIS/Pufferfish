@@ -274,6 +274,201 @@ class Moves {
 
     }
 
+
+    private static string possiblePawnBlack(string history, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB)
+    {
+        string moveList = "";
+        // capture right ; current pawn can't be on rank 1 and result must be capturable and can't be on file a 
+        PAWN_MOVES = ((piecesBB[(int)Side.Black][(int)Piece.Pawn] & ~RANKS[0]) >> 7) & (captureBB & ~FILES[0]);
+
+        // now if a bit is on in that bb convert into move notation
+        //x1,y1,x2,y2 
+        int currentIndex;
+        int x1, y1, x2, y2;
+        ulong mask;
+
+        while (PAWN_MOVES > 0)
+        {
+            currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
+            // so our destination is the currIndex ; do calcs 
+            y2 = (currentIndex / 8) + 1; x2 = (currentIndex % 8);
+            y1 = y2 + 1; x1 = x2 - 1; // prev row and col respectively  
+
+            moveList += "" + fileNames[x1] + "" + y1 + "" + fileNames[x2] + "" + y2;
+            mask = ~(1UL << currentIndex);
+            PAWN_MOVES &= mask;
+        }
+
+        // left capture 
+        PAWN_MOVES = ((piecesBB[(int)Side.Black][(int)Piece.Pawn] & ~RANKS[0]) >> 9) & (captureBB & ~FILES[7]);
+
+
+        while (PAWN_MOVES > 0)
+        {
+            currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
+            // so our destination is the currIndex ; do calcs 
+            y2 = (currentIndex / 8) + 1; x2 = (currentIndex % 8);
+            y1 = y2 + 1; x1 = x2 + 1; // prev row and col respectively  
+
+            moveList += "" + fileNames[x1] + "" + y1 + "" + fileNames[x2] + "" + y2;
+            mask = ~(1UL << currentIndex);
+            PAWN_MOVES &= mask;
+        }
+
+        // push pawn 1 ; that spot has to be empty
+        PAWN_MOVES = ((piecesBB[(int)Side.Black][(int)Piece.Pawn] & ~RANKS[0]) >> 8) & emptyBB;
+
+        while (PAWN_MOVES > 0)
+        {
+            currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
+            // so our destination is the currIndex ; do calcs 
+            y2 = (currentIndex / 8) + 1; x2 = (currentIndex % 8);
+            y1 = y2 + 1; x1 = x2; // prev row and col respectively  
+
+            moveList += "" + fileNames[x1] + "" + y1 + "" + fileNames[x2] + "" + y2;
+            mask = ~(1UL << currentIndex);
+            PAWN_MOVES &= mask;
+        }
+
+
+
+
+
+        //push pawn 2 ; both spot in front and destination has to be empty ; destination has to be on rank 5
+        PAWN_MOVES = (piecesBB[(int)Side.Black][(int)Piece.Pawn] >> 16) & RANKS[4] & emptyBB & (emptyBB >> 8);
+
+        while (PAWN_MOVES > 0)
+        {
+            currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
+            // so our destination is the currIndex ; do calcs 
+            y2 = (currentIndex / 8) + 1; x2 = (currentIndex % 8);
+            y1 = y2 + 2; x1 = x2; // prev row and col respectively  
+
+            moveList += "" + fileNames[x1] + "" + y1 + "" + fileNames[x2] + "" + y2;
+            mask = ~(1UL << currentIndex);
+            PAWN_MOVES &= mask;
+        }
+
+        //PROMOTIONS 
+
+
+        // capture right promotion
+        //destination has to be capturable, on rank 1, and can't be on file a (wrap around) 
+        PAWN_MOVES = (piecesBB[(int)Side.Black][(int)Piece.Pawn] >> 7) & captureBB & RANKS[0] & (~FILES[0]);
+
+        // extract valid promotions 
+        // in form of x1,x2,PromoType,'P'  ; Ex: 45QP: a pawn in col 4 captures right and promotes to queen
+
+        while (PAWN_MOVES > 0)
+        {
+            currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
+            // so our destination is the currIndex ; do calcs 
+            x2 = (currentIndex % 8);
+            x1 = x2 - 1; // prev row and col respectively  
+
+            moveList += "" + fileNames[x1] + "" + fileNames[x2] + "QP" + fileNames[x1] + "" + fileNames[x2] + "RP" + fileNames[x1] + "" + fileNames[x2] + "BP" + fileNames[x1] + "" + fileNames[x2] + "NP";
+            mask = ~(1UL << currentIndex);
+            PAWN_MOVES &= mask;
+        }
+
+
+        // capture left promo 
+        PAWN_MOVES = (piecesBB[(int)Side.Black][(int)Piece.Pawn] >> 9) & captureBB & RANKS[0] & (~FILES[7]);
+
+        while (PAWN_MOVES > 0)
+        {
+            currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
+            // so our destination is the currIndex ; do calcs 
+            x2 = (currentIndex % 8);
+            x1 = x2 + 1; // prev row and col respectively  
+
+            moveList += "" + fileNames[x1] + "" + fileNames[x2] + "QP" + fileNames[x1] + "" + fileNames[x2] + "RP" + fileNames[x1] + "" + fileNames[x2] + "BP" + fileNames[x1] + "" + fileNames[x2] + "NP";
+            mask = ~(1UL << currentIndex);
+            PAWN_MOVES &= mask;
+        }
+
+
+        // push 1 promo 
+        PAWN_MOVES = (piecesBB[(int)Side.Black][(int)Piece.Pawn] >> 8) & emptyBB & RANKS[0];
+
+        // extract valid promos 
+        while (PAWN_MOVES > 0)
+        {
+            currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
+            // so our destination is the currIndex ; do calcs 
+            x2 = (currentIndex % 8);
+            x1 = x2; // prev row and col respectively  
+
+            moveList += "" + fileNames[x1] + "" + fileNames[x2] + "QP" + fileNames[x1] + "" + fileNames[x2] + "RP" + fileNames[x1] + "" + fileNames[x2] + "BP" + fileNames[x1] + "" + fileNames[x2] + "NP";
+            mask = ~(1UL << currentIndex);
+            PAWN_MOVES &= mask;
+        }
+
+
+        //EN PASSANT 
+
+        //history has to at least have a move and history's last move has to be a valid black pawn two move 
+        if (history.Length >= 4)
+        {
+
+            //check two move validity 
+            // have to check if the files are letter or not  
+            y2 = history[history.Length - 1] - '0';
+            x2 = history[history.Length - 2] - '0';
+            y1 = history[history.Length - 3] - '0';
+            x1 = history[history.Length - 4] - '0';
+
+            // x1 has to equal x2 and y1 has to be 2 greater than y2 (black pawn moving two down), y2 has to equal rank 5 
+            if (x1 == x2 && y2 == 5 && y1 == y2 + 2)
+            {
+
+                // right capture 
+                // wp has to be left of bp that just moved, they both have to be on rank 5, move wp to space above 
+                PAWN_MOVES = ((piecesBB[(int)Side.White][(int)Piece.Pawn] << 1) & piecesBB[(int)Side.Black][(int)Piece.Pawn] & FILES[x1] & RANKS[4]) << 8;
+
+                // we know there is only going to be one 
+                if (PAWN_MOVES > 0)
+                {
+                    currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
+                    // so our destination is the currIndex ; do calcs 
+                    x2 = (currentIndex % 8);
+                    x1 = x2 - 1;
+
+                    moveList += "" + fileNames[x1] + "" + fileNames[x2] + "EE"; // to make 4 total characters ; y's can be inferred bc always 5->6 for wps 
+
+                    mask = ~(1UL << currentIndex);
+                    PAWN_MOVES &= mask;
+                }
+
+                //left capture 
+
+                PAWN_MOVES = ((piecesBB[(int)Side.White][(int)Piece.Pawn] >> 1) & piecesBB[(int)Side.Black][(int)Piece.Pawn] & FILES[x1] & RANKS[4]) << 8;
+
+                // we know there is only going to be one 
+                if (PAWN_MOVES > 0)
+                {
+                    currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
+                    // so our destination is the currIndex ; do calcs 
+                    x2 = (currentIndex % 8);
+                    x1 = x2 + 1;
+
+                    moveList += "" + fileNames[x1] + "" + fileNames[x2] + "EE"; // to make 4 total characters ; y's can be inferred bc always 5->6 for wps 
+
+                    mask = ~(1UL << currentIndex);
+                    PAWN_MOVES &= mask;
+                }
+
+            }
+
+
+
+        }
+        return moveList;
+
+
+
+
+    }
     private static string possibleRook( ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB , Side side) {
         string moveList = "";
 
@@ -569,7 +764,7 @@ class Moves {
         KING_MOVES &= (emptyBB | captureBB);
 
         // a bb that holds all the square that are in sight of black pieces 
-        ulong unsafeBB = getUnsafeSquares(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black);
+        ulong unsafeBB = getUnsafeSquares(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, side);
         Console.WriteLine("Unsafe Squares for white king "); 
         Board.printBitBoard(unsafeBB);
 
