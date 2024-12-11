@@ -54,8 +54,22 @@ class Moves {
     }
 
 
-    private static string possibleMovesBlack(string history, ulong[][] piecesBB, ulong[] sideBB) {
-        throw new NotImplementedException();
+    private static string possibleMovesBlack(string history, ulong[][] piecesBB, ulong[] sideBB)
+    {
+        ulong nonCaptureBB = sideBB[(int)Side.Black] | piecesBB[(int) Side.White][(int) Piece.King];
+        ulong captureBB = sideBB[(int)Side.White] ^ piecesBB[(int) Side.White] [(int) Piece.King];
+
+        ulong emptyBB = ~(sideBB[(int)Side.Black] | sideBB[(int) Side.White]);
+
+        string moveList = possiblePawnBlack(history, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB)
+            +possibleRook(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black)
+            +possibleBishop(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black)
+            +possibleQueen(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black)
+            +possibleKnight(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black)
+            +possibleKing(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black);
+
+
+        return moveList; 
     }
 
     private static string possibleMovesWhite(string history, ulong[][] piecesBB, ulong[] sideBB) {
@@ -220,10 +234,11 @@ class Moves {
         if (history.Length >= 4) {
 
             //check two move validity 
+            // if the files are letters, then make correct subtraction to get index value 
             y2 = history[history.Length - 1] - '0';
-            x2 = history[history.Length - 2] - '0';
+            x2 = (Char.IsLetter(history[history.Length - 2])) ? history[history.Length - 2] - 'a' : history[history.Length - 2] - '0';
             y1 = history[history.Length - 3] - '0';
-            x1 = history[history.Length - 4] - '0';
+            x1 = (Char.IsLetter(history[history.Length - 4])) ? history[history.Length - 4] - 'a' : history[history.Length - 4] - '0';
 
             // x1 has to equal x2 and y1 has to be 2 greater than y2 (black pawn moving two down), y2 has to equal rank 5 
             if (x1 == x2 && y2 == 5 && y1 == y2 + 2) {
@@ -232,14 +247,15 @@ class Moves {
                 // wp has to be left of bp that just moved, they both have to be on rank 5, move wp to space above 
                 PAWN_MOVES = ((piecesBB[(int)Side.White][(int)Piece.Pawn] << 1) & piecesBB[(int)Side.Black][(int)Piece.Pawn] & FILES[x1 ] & RANKS[4]) << 8;
 
+                int startFile, destFile; 
                 // we know there is only going to be one 
                 if (PAWN_MOVES > 0) {
                     currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
                     // so our destination is the currIndex ; do calcs 
-                    x2 = (currentIndex % 8) ;
-                    x1 = x2 - 1;
+                    destFile = (currentIndex % 8) ;
+                    startFile = destFile - 1;
 
-                    moveList += "" + fileNames[x1] + "" + fileNames[x2] + "EE"; // to make 4 total characters ; y's can be inferred bc always 5->6 for wps 
+                    moveList += "" + fileNames[startFile] + "" + fileNames[destFile] + "EE"; // to make 4 total characters ; y's can be inferred bc always 5->6 for wps 
 
                     mask = ~(1UL << currentIndex);
                     PAWN_MOVES &= mask;
@@ -253,10 +269,10 @@ class Moves {
                 if (PAWN_MOVES > 0) {
                     currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
                     // so our destination is the currIndex ; do calcs 
-                    x2 = (currentIndex % 8) ;
-                    x1 = x2 + 1;
+                    destFile = (currentIndex % 8) ;
+                    startFile = x2 + 1;
 
-                    moveList += "" + fileNames[x1] + "" + fileNames[x2] + "EE"; // to make 4 total characters ; y's can be inferred bc always 5->6 for wps 
+                    moveList += "" + fileNames[startFile] + "" + fileNames[destFile] + "EE"; // to make 4 total characters ; y's can be inferred bc always 5->6 for wps 
 
                     mask = ~(1UL << currentIndex);
                     PAWN_MOVES &= mask;
@@ -412,29 +428,29 @@ class Moves {
         {
 
             //check two move validity 
-            // have to check if the files are letter or not  
+            // if the files are letters, then make correct subtraction to get index value 
             y2 = history[history.Length - 1] - '0';
-            x2 = history[history.Length - 2] - '0';
+            x2 = (Char.IsLetter(history[history.Length - 2])) ? history[history.Length - 2]-'a' : history[history.Length - 2] - '0';
             y1 = history[history.Length - 3] - '0';
-            x1 = history[history.Length - 4] - '0';
+            x1 = (Char.IsLetter(history[history.Length - 4])) ? history[history.Length - 4] - 'a' : history[history.Length - 4] - '0';
 
             // x1 has to equal x2 and y1 has to be 2 greater than y2 (black pawn moving two down), y2 has to equal rank 5 
-            if (x1 == x2 && y2 == 5 && y1 == y2 + 2)
+            if (x1 == x2 && y2 == 4 && y1 == y2 - 2)
             {
 
                 // right capture 
-                // wp has to be left of bp that just moved, they both have to be on rank 5, move wp to space above 
-                PAWN_MOVES = ((piecesBB[(int)Side.White][(int)Piece.Pawn] << 1) & piecesBB[(int)Side.Black][(int)Piece.Pawn] & FILES[x1] & RANKS[4]) << 8;
-
+                // bp has to be left of wp that just moved, they both have to be on rank 4, move bp to space below 
+                PAWN_MOVES = ((piecesBB[(int)Side.Black][(int)Piece.Pawn] << 1) & piecesBB[(int)Side.White][(int)Piece.Pawn] & FILES[x1] & RANKS[y2-1]) >> 8;
+                int startFile, destFile; 
                 // we know there is only going to be one 
                 if (PAWN_MOVES > 0)
                 {
                     currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
                     // so our destination is the currIndex ; do calcs 
-                    x2 = (currentIndex % 8);
-                    x1 = x2 - 1;
+                    destFile = (currentIndex % 8);
+                    startFile = destFile - 1;
 
-                    moveList += "" + fileNames[x1] + "" + fileNames[x2] + "EE"; // to make 4 total characters ; y's can be inferred bc always 5->6 for wps 
+                    moveList += "" + fileNames[startFile] + "" + fileNames[destFile] + "EE"; // to make 4 total characters ; y's can be inferred bc always rank 4->3 for bps
 
                     mask = ~(1UL << currentIndex);
                     PAWN_MOVES &= mask;
@@ -442,17 +458,17 @@ class Moves {
 
                 //left capture 
 
-                PAWN_MOVES = ((piecesBB[(int)Side.White][(int)Piece.Pawn] >> 1) & piecesBB[(int)Side.Black][(int)Piece.Pawn] & FILES[x1] & RANKS[4]) << 8;
+                PAWN_MOVES = ((piecesBB[(int)Side.Black][(int)Piece.Pawn] >> 1) & piecesBB[(int)Side.White][(int)Piece.Pawn] & FILES[x1] & RANKS[y2 - 1]) >> 8;
 
                 // we know there is only going to be one 
                 if (PAWN_MOVES > 0)
                 {
                     currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
                     // so our destination is the currIndex ; do calcs 
-                    x2 = (currentIndex % 8);
-                    x1 = x2 + 1;
+                    destFile = (currentIndex % 8);
+                    startFile = destFile + 1;
 
-                    moveList += "" + fileNames[x1] + "" + fileNames[x2] + "EE"; // to make 4 total characters ; y's can be inferred bc always 5->6 for wps 
+                    moveList += "" + fileNames[startFile] + "" + fileNames[destFile] + "EE"; // to make 4 total characters ; y's can be inferred bc always rank 4->3 for bps
 
                     mask = ~(1UL << currentIndex);
                     PAWN_MOVES &= mask;
@@ -765,8 +781,7 @@ class Moves {
 
         // a bb that holds all the square that are in sight of black pieces 
         ulong unsafeBB = getUnsafeSquares(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, side);
-        Console.WriteLine("Unsafe Squares for white king "); 
-        Board.printBitBoard(unsafeBB);
+        
 
         // then check that these moves don't put the king in check; king can only move where is safe for the king 
         KING_MOVES &= unsafeBB; 
