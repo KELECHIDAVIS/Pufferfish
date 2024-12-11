@@ -198,24 +198,36 @@ class Engine
 
         };
         char[][] chessBoard2 = new char[][]{
-            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
-            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
-            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
-            new char[] { ' ', ' ', 'P', 'p', 'P', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', 'p', ' ', 'p', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', 'P', ' ', ' ', ' ', ' ' },
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', 'p', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', 'P', ' ', 'P', ' ', ' ', ' ' },
 
         };
         
         Board board = Board.charArrayToBitboards(chessBoard2); 
 
-        string moves = Moves.possibleMoves(Side.White, "d7d5", board);
+        string moves = Moves.possibleMoves(Side.White, "", board);
 
         Board.printBitBoard(board.sideBB[0] | board.sideBB[1]);
 
-        Console.WriteLine("\n" + moves.Length / 4 + " Possible Moves :");
+        Console.WriteLine("\n" + moves.Length / 4 + " Possible White Moves :");
+
+        for (int i = 0; i < moves.Length; i++)
+        {
+            if (i % 4 == 0 && i > 0)
+                Console.Write("  ");
+            Console.Write(moves[i]);
+        }
+
+        moves = Moves.possibleMoves(Side.Black, "", board);
+
+
+        Console.WriteLine("\n" + moves.Length / 4 + " Possible Black Moves :");
 
         for (int i = 0; i < moves.Length; i++)
         {

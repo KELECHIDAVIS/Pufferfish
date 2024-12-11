@@ -107,8 +107,8 @@ class Moves {
     /// <returns></returns>
     private static string possiblePawnWhite(string history, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB) {
         string moveList = "";
-        // capture right ;white pawn can't be on rank 8 because that'd be a promotion;  shift bits 9 to left ; make sure there is a caputarable piece there and make sure that piece is not on a file (left column wrap around)
-        PAWN_MOVES = ((piecesBB[(int)Side.White][(int)Piece.Pawn] & ~RANKS[7]) << 9) & (captureBB & ~FILES[0]);
+        // capture right ;white pawn can't be on rank 7 because that'd be a promotion;  shift bits 9 to left ; make sure there is a caputarable piece there and make sure that piece is not on a file (left column wrap around)
+        PAWN_MOVES = ((piecesBB[(int)Side.White][(int)Piece.Pawn] & ~RANKS[6]) << 9) & (captureBB & ~FILES[0]);
 
         // now if a bit is on in that bb convert into move notation
         //x1,y1,x2,y2 
@@ -128,8 +128,8 @@ class Moves {
         }
 
         // left capture 
-        //wp cant be on rank8; shift left 7; capturable piece has to be at destination and can't be on file h; 
-        PAWN_MOVES = ((piecesBB[(int)Side.White][(int)Piece.Pawn] & ~RANKS[7]) << 7) & (captureBB & ~FILES[7]);
+        //wp cant be on rank7; shift left 7; capturable piece has to be at destination and can't be on file h; 
+        PAWN_MOVES = ((piecesBB[(int)Side.White][(int)Piece.Pawn] & ~RANKS[6]) << 7) & (captureBB & ~FILES[7]);
 
 
         while (PAWN_MOVES > 0) {
@@ -144,7 +144,7 @@ class Moves {
         }
 
         // push pawn 1 ; that spot has to be empty
-        PAWN_MOVES = ((piecesBB[(int)Side.White][(int)Piece.Pawn] & ~RANKS[7]) << 8) & emptyBB;
+        PAWN_MOVES = ((piecesBB[(int)Side.White][(int)Piece.Pawn] & ~RANKS[6]) << 8) & emptyBB;
 
         while (PAWN_MOVES > 0) {
             currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
@@ -294,8 +294,8 @@ class Moves {
     private static string possiblePawnBlack(string history, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB)
     {
         string moveList = "";
-        // capture right ; current pawn can't be on rank 1 and result must be capturable and can't be on file a 
-        PAWN_MOVES = ((piecesBB[(int)Side.Black][(int)Piece.Pawn] & ~RANKS[0]) >> 7) & (captureBB & ~FILES[0]);
+        // capture right ; current pawn can't be on rank 2 cus that just promo and result must be capturable and can't be on file a 
+        PAWN_MOVES = ((piecesBB[(int)Side.Black][(int)Piece.Pawn] & ~RANKS[1]) >> 7) & (captureBB & ~FILES[0]);
 
         // now if a bit is on in that bb convert into move notation
         //x1,y1,x2,y2 
@@ -316,7 +316,7 @@ class Moves {
         }
 
         // left capture 
-        PAWN_MOVES = ((piecesBB[(int)Side.Black][(int)Piece.Pawn] & ~RANKS[0]) >> 9) & (captureBB & ~FILES[7]);
+        PAWN_MOVES = ((piecesBB[(int)Side.Black][(int)Piece.Pawn] & ~RANKS[1]) >> 9) & (captureBB & ~FILES[7]);
 
 
         while (PAWN_MOVES > 0)
@@ -332,7 +332,7 @@ class Moves {
         }
 
         // push pawn 1 ; that spot has to be empty
-        PAWN_MOVES = ((piecesBB[(int)Side.Black][(int)Piece.Pawn] & ~RANKS[0]) >> 8) & emptyBB;
+        PAWN_MOVES = ((piecesBB[(int)Side.Black][(int)Piece.Pawn] & ~RANKS[1]) >> 8) & emptyBB;
 
         while (PAWN_MOVES > 0)
         {
@@ -776,16 +776,19 @@ class Moves {
         // up and down ( check not neccessary because bits don't rollover 
         KING_MOVES|= (currentKing <<8 ) | (currentKing >>8 );
 
+        
+
         // now we have to check that these moves are on empty or capturable squares
         KING_MOVES &= (emptyBB | captureBB);
 
+        
         // a bb that holds all the square that are in sight of black pieces 
         ulong unsafeBB = getUnsafeSquares(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, side);
         
 
         // then check that these moves don't put the king in check; king can only move where is safe for the king 
-        KING_MOVES &= unsafeBB; 
-        
+        KING_MOVES &= ~unsafeBB;
+
         
         
         
