@@ -569,9 +569,17 @@ class Moves {
         KING_MOVES &= (emptyBB | captureBB);
 
         // a bb that holds all the square that are in sight of black pieces 
-        ulong unsafeBB = getUnsafeSquares(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, side); 
-        // then check that these moves don't put the king in check 
-        // they should be on a square protected by a black piece (UNSAFE SQUARE BB ) 
+        ulong unsafeBB = getUnsafeSquares(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black);
+        Console.WriteLine("Unsafe Squares for white king "); 
+        Board.printBitBoard(unsafeBB);
+
+        // then check that these moves don't put the king in check; king can only move where is safe for the king 
+        KING_MOVES &= unsafeBB; 
+        
+        
+        
+        
+        
         return moveList; 
 
     }
@@ -580,44 +588,85 @@ class Moves {
     private static ulong getUnsafeSquares(ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side) {
 
         ulong unsafeBB = 0;
+        // if we looking unsafe squares for the white side the opponent would be black 
+        int opponent = (side == Side.White) ? (int) Side.Black : (int) Side.White;
 
-        if (side == Side.White)
-        {
-            // find the squares protected by black squares 
+        // find the squares protected by black squares 
 
+        //for pawn moves 
+        if (side == Side.White) {
             // get black pawns right and left attacks 
-            unsafeBB |= (piecesBB[(int) Side.Black][(int)Piece.Pawn]>>7) & ~FILES[0]; // black pawns right attack; make sure result not on file a  
-            unsafeBB |= (piecesBB[(int) Side.Black][(int)Piece.Pawn]>>9) & ~FILES[7];
-
-            // black knight attacks ; don't have to check if their attacks are empty because if there is a piece on there that means they are protecting it 
-            unsafeBB |= northNorthEast(piecesBB[(int)Side.Black][(int)Piece.Knight])
-                | northEastEast(piecesBB[(int)Side.Black][(int)Piece.Knight])
-                | northNorthWest(piecesBB[(int)Side.Black][(int)Piece.Knight])
-                | northWestWest(piecesBB[(int)Side.Black][(int)Piece.Knight])
-                | southEastEast(piecesBB[(int)Side.Black][(int)Piece.Knight])
-                | southSouthEast(piecesBB[(int)Side.Black][(int)Piece.Knight])
-                | southWestWest(piecesBB[(int)Side.Black][(int)Piece.Knight])
-                | southSouthWest(piecesBB[(int)Side.Black][(int)Piece.Knight]); 
-
-            // Black bishops 
-            // for each black bishop add it's moves to the unsafe 
-            ulong bishopBB = piecesBB[(int)Side.Black][(int) Piece.Bishop];
-            ulong blockerBB; 
-            while (bishopBB> 0)
-            {
-                int square = BitOperations.TrailingZeroCount(bishopBB);
-
-                // get bishop move from current spot; remove current bishop from blocker bb  
-                blockerBB = ~(emptyBB) & ~(1UL<<square) ;  
-                
-                bishopBB &= ~(1UL << square);
-            }
-
+            unsafeBB |= (piecesBB[opponent][(int)Piece.Pawn]>>7) & ~FILES[0]; // black pawns right attack; make sure result not on file a  
+            unsafeBB |= (piecesBB[opponent][(int)Piece.Pawn]>>9) & ~FILES[7];
         }
-        else
+        else{
+            unsafeBB |= (piecesBB[opponent][(int)Piece.Pawn] << 9) & ~FILES[0]; // white pawns right attack; make sure result not on file a  
+            unsafeBB |= (piecesBB[opponent][(int)Piece.Pawn] << 7) & ~FILES[7];
+        }
+
+        // black knight attacks ; don't have to check if their attacks are empty because if there is a piece on there that means they are protecting it 
+        unsafeBB |= northNorthEast(piecesBB[opponent][(int)Piece.Knight])
+            | northEastEast(piecesBB[opponent][(int)Piece.Knight])
+            | northNorthWest(piecesBB[opponent][(int)Piece.Knight])
+            | northWestWest(piecesBB[opponent][(int)Piece.Knight])
+            | southEastEast(piecesBB[opponent][(int)Piece.Knight])
+            | southSouthEast(piecesBB[opponent][(int)Piece.Knight])
+            | southWestWest(piecesBB[opponent][(int)Piece.Knight])
+            | southSouthWest(piecesBB[opponent][(int)Piece.Knight]);
+
+        // Black bishops 
+        // for each black bishop add it's moves to the unsafe 
+        ulong slidingPieceBB = piecesBB[opponent][(int)Piece.Bishop];
+        ulong blockerBB;
+        while (slidingPieceBB > 0)
         {
+            int square = BitOperations.TrailingZeroCount(slidingPieceBB);
 
+            // get bishop move from current spot; remove current bishop from blocker bb  
+            blockerBB = ~(emptyBB) & ~(1UL << square);
+            unsafeBB |= getBishopMoves(blockerBB, square);// extract squares protected by bishop 
+
+
+            slidingPieceBB &= ~(1UL << square);
         }
+
+        // Black rooks 
+
+        slidingPieceBB = piecesBB[opponent][(int)Piece.Rook];
+        while (slidingPieceBB > 0)
+        {
+            int square = BitOperations.TrailingZeroCount(slidingPieceBB);
+
+            blockerBB = ~(emptyBB) & ~(1UL << square);
+            unsafeBB |= getRookMoves(blockerBB, square);
+
+
+            slidingPieceBB &= ~(1UL << square);
+        }
+        // Black queens 
+
+        slidingPieceBB = piecesBB[opponent][(int)Piece.Queen];
+        while (slidingPieceBB > 0)
+        {
+            int square = BitOperations.TrailingZeroCount(slidingPieceBB);
+
+            blockerBB = ~(emptyBB) & ~(1UL << square);
+            unsafeBB |= getBishopMoves(blockerBB, square);
+            unsafeBB |= getRookMoves(blockerBB, square);
+
+            slidingPieceBB &= ~(1UL << square);
+        }
+
+        // black kings attacks 
+        unsafeBB |= (piecesBB[opponent][(int)Piece.King] >> 1 | (piecesBB[opponent][(int)Piece.King] << 7) | (piecesBB[opponent][(int)Piece.King] >> 9)) & ~FILES[7];
+
+        //right , right up , right down; can't be on file a 
+        unsafeBB |= (piecesBB[opponent][(int)Piece.King] << 1 | (piecesBB[opponent][(int)Piece.King] << 9) | (piecesBB[opponent][(int)Piece.King] >> 7)) & ~FILES[0];
+
+        // up and down ( check not neccessary because bits don't rollover 
+        unsafeBB |= (piecesBB[opponent][(int)Piece.King] << 8) | (piecesBB[opponent][(int)Piece.King] >> 8);
+
+
         return unsafeBB; 
     }
 }

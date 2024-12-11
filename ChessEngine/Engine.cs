@@ -208,7 +208,10 @@ class Engine
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'K' },
 
         }; 
-        Board board = Board.charArrayToBitboards(chessBoard2); 
+        //Board board = Board.charArrayToBitboards(chessBoard2); 
+        
+        Board board = new Board();
+        board.initStandardChess();
         string moves = Moves.possibleMoves(Side.White, "", board);
        
         /*Board.printBitBoard(board.sideBB[0] | board.sideBB[1]);
