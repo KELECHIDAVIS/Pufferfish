@@ -209,7 +209,7 @@ class Engine
 
         };
         
-        Board board = Board.charArrayToBitboards(chessBoard2); 
+        /*Board board = Board.charArrayToBitboards(chessBoard2); 
 
         string moves = Moves.possibleMoves(Side.White, "", board);
 
@@ -234,7 +234,10 @@ class Engine
             if (i % 4 == 0 && i > 0)
                 Console.Write("  ");
             Console.Write(moves[i]);
-        }
+        }*/
+        UserInterface ui = new UserInterface();
+
+        ui.newGame(); 
     }
 }
 

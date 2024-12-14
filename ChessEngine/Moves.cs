@@ -1,6 +1,20 @@
 ﻿
 using System.Numerics;
-
+public enum MoveType
+{
+    QUIET, // just moving a piece  
+    CAPTURE, 
+    EVASION, // get out of check
+    ENPASSANT,
+    CASTLE, 
+}
+public struct Move
+{
+    public int origin;
+    public int destination;
+    public Piece promoPieceType; // can only be queen, knight, bishop, or rook, or none 
+    public MoveType moveType; 
+}
 class Moves {
 
     public static string fileNames = "abcdefgh" ;
@@ -42,37 +56,37 @@ class Moves {
     /// <param name="piecesBB"></param>
     /// <param name="sideBB"></param>
     /// <returns></returns>
-    public static string possibleMoves(Side side, string history, ulong[][] piecesBB, ulong[] sideBB) {
-        if (side == Side.White) return possibleMovesWhite(history, piecesBB, sideBB);
+    public static List<Move>  possibleMoves(Side side, ulong[][] piecesBB, ulong[] sideBB, ulong EP) {
+        if (side == Side.White) return possibleMovesWhite(piecesBB, sideBB, EP);
         else {
-            return possibleMovesBlack(history, piecesBB, sideBB);
+            return possibleMovesBlack( piecesBB, sideBB, EP);
         }
     }
 
-    public static string possibleMoves ( Side side, string history, Board board) {
-        return possibleMoves(side , history , board.piecesBB, board.sideBB);
+    public static List<Move> possibleMoves ( Side side, Board board, ulong EP) {
+        return possibleMoves(side , board.piecesBB, board.sideBB, EP);
     }
 
 
-    private static string possibleMovesBlack(string history, ulong[][] piecesBB, ulong[] sideBB)
+    private static List<Move> possibleMovesBlack( ulong[][] piecesBB, ulong[] sideBB, ulong EP)
     {
         ulong nonCaptureBB = sideBB[(int)Side.Black] | piecesBB[(int) Side.White][(int) Piece.King];
         ulong captureBB = sideBB[(int)Side.White] ^ piecesBB[(int) Side.White] [(int) Piece.King];
 
         ulong emptyBB = ~(sideBB[(int)Side.Black] | sideBB[(int) Side.White]);
 
-        string moveList = possiblePawnBlack(history, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB)
-            +possibleRook(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black)
-            +possibleBishop(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black)
-            +possibleQueen(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black)
-            +possibleKnight(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black)
-            +possibleKing(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black);
-
+        List<Move> moveList = new List<Move>();
+        possiblePawnBlack(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, EP );
+        possibleRook(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black);
+        possibleBishop(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black);
+        possibleQueen(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black); 
+        possibleKnight(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black);
+        possibleKing(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black);
 
         return moveList; 
     }
 
-    private static string possibleMovesWhite(string history, ulong[][] piecesBB, ulong[] sideBB) {
+    private static List<Move> possibleMovesWhite( ulong[][] piecesBB, ulong[] sideBB, ulong EP) {
         // Get all pieces white can and cannot capture 
         ulong nonCaptureBB = sideBB[(int)Side.White] | piecesBB[(int)Side.Black][(int)Piece.King]; // a bb that holds all white pieces and black king, because the player should never be able to cap. other king (illegal) 
         ulong captureBB = sideBB[(int)(Side.Black)] ^ piecesBB[(int)Side.Black][(int)Piece.King]; // every black piece except black king 
@@ -81,14 +95,17 @@ class Moves {
         ulong emptyBB = ~(sideBB[(int)(Side.White)] | sideBB[(int)Side.Black]); // bb of squares with no pieces on them 
 
         // get all the moves from each piece on this side 
-        string moveList = possiblePawnWhite(history, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB) 
-            + possibleRook(piecesBB,sideBB,nonCaptureBB,captureBB,emptyBB, Side.White)
-            + possibleBishop(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White)
-            + possibleQueen(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White) 
-            + possibleKnight(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White)
-            +possibleKing(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White);  
+        List<Move> moveList = new List<Move>();
+        possiblePawnWhite(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, EP);
+        possibleRook(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White);
+        possibleBishop(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White);
+        possibleQueen(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White);
+        possibleKnight(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White);
+        possibleKing(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White);
 
         return moveList;
+
+
 
     }
 
@@ -104,25 +121,22 @@ class Moves {
     /// <param name="nonCaptureBB"> not capturable pieces </param>
     /// <param name="captureBB"></param>
     /// <param name="emptyBB"> places that are empty</param>
+    /// <param name="EP"> En passant bb that can be used to find if en passants are possible </param>
     /// <returns></returns>
-    private static string possiblePawnWhite(string history, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB) {
-        string moveList = "";
+    private static void possiblePawnWhite(List<Move> moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, ulong EP ) {
+        
         // capture right ;white pawn can't be on rank 7 because that'd be a promotion;  shift bits 9 to left ; make sure there is a caputarable piece there and make sure that piece is not on a file (left column wrap around)
         PAWN_MOVES = ((piecesBB[(int)Side.White][(int)Piece.Pawn] & ~RANKS[6]) << 9) & (captureBB & ~FILES[0]);
 
         // now if a bit is on in that bb convert into move notation
         //x1,y1,x2,y2 
-        int currentIndex;
-        int x1, y1, x2, y2;
+        int currentIndex, origin;
         ulong mask;
 
         while (PAWN_MOVES > 0) {
             currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
-            // so our destination is the currIndex ; do calcs 
-            y2 = (currentIndex / 8)+1 ; x2 = (currentIndex % 8) ;
-            y1 = y2 - 1; x1 = x2 - 1; // prev row and col respectively  
-
-            moveList += "" + fileNames[x1] + "" + y1 + "" + fileNames[x2] + "" + y2;
+            origin = currentIndex - 9;  // for capture right 
+            moveList.Add(new Move { origin= origin,destination= currentIndex, promoPieceType= Piece.NONE, moveType = MoveType.CAPTURE }); 
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
         }
@@ -134,11 +148,8 @@ class Moves {
 
         while (PAWN_MOVES > 0) {
             currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
-            // so our destination is the currIndex ; do calcs 
-            y2 = (currentIndex / 8) + 1; x2 = (currentIndex % 8) ;
-            y1 = y2 - 1; x1 = x2 + 1; // prev row and col respectively  
-
-            moveList += "" + fileNames[x1] + "" + y1 + "" + fileNames[x2] + "" + y2;
+            origin = currentIndex -7;  // for capture left 
+            moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.CAPTURE });
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
         }
@@ -148,29 +159,19 @@ class Moves {
 
         while (PAWN_MOVES > 0) {
             currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
-            // so our destination is the currIndex ; do calcs 
-            y2 = (currentIndex / 8) + 1; x2 = (currentIndex % 8) ;
-            y1 = y2 - 1; x1 = x2; // prev row and col respectively  
-
-            moveList += "" + fileNames[x1] + "" + y1 + "" + fileNames[x2] + "" + y2;
+            origin = currentIndex - 8;  // for push 1
+            moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.QUIET });
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
         }
-
-
-
-
 
         //push pawn 2 ; both spot in front and destination has to be empty ; destination has to be on rank 4
         PAWN_MOVES = (piecesBB[(int)Side.White][(int)Piece.Pawn] << 16) & RANKS[3] & emptyBB & (emptyBB << 8);
 
         while (PAWN_MOVES > 0) {
             currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
-            // so our destination is the currIndex ; do calcs 
-            y2 = (currentIndex / 8) + 1; x2 = (currentIndex % 8) ;
-            y1 = y2 - 2; x1 = x2; // prev row and col respectively  
-
-            moveList += "" + fileNames[x1] + "" + y1 + "" + fileNames[x2] + "" + y2;
+            origin = currentIndex - 16;  // for push 2
+            moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.QUIET });
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
         }
@@ -187,11 +188,11 @@ class Moves {
 
         while (PAWN_MOVES > 0) {
             currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
-            // so our destination is the currIndex ; do calcs 
-            x2 = (currentIndex % 8) ;
-            x1 = x2 - 1; // prev row and col respectively  
-
-            moveList += "" + fileNames[x1] + "" + fileNames[x2] + "QP" + fileNames[x1] + "" + fileNames[x2] + "RP" + fileNames[x1] + "" + fileNames[x2] + "BP" + fileNames[x1] + "" + fileNames[x2] + "NP";
+            origin = currentIndex - 9;  // for push 1
+            moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Queen, moveType = MoveType.CAPTURE });
+            moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Rook, moveType = MoveType.CAPTURE });
+            moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Bishop, moveType = MoveType.CAPTURE });
+            moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Knight, moveType = MoveType.CAPTURE });
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
         }
@@ -202,11 +203,11 @@ class Moves {
 
         while (PAWN_MOVES > 0) {
             currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
-            // so our destination is the currIndex ; do calcs 
-            x2 = (currentIndex % 8) ;
-            x1 = x2 + 1; // prev row and col respectively  
-
-            moveList += "" + fileNames[x1] + "" + fileNames[x2] + "QP" + fileNames[x1]   + "" + fileNames[x2] + "RP" + fileNames[x1] + "" + fileNames[x2] + "BP" + fileNames[x1] + "" + fileNames[x2] + "NP";
+            origin = currentIndex - 7;  // for push 1
+            moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Queen, moveType = MoveType.CAPTURE });
+            moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Rook, moveType = MoveType.CAPTURE });
+            moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Bishop, moveType = MoveType.CAPTURE });
+            moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Knight, moveType = MoveType.CAPTURE });
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
         }
@@ -218,11 +219,11 @@ class Moves {
         // extract valid promos 
         while (PAWN_MOVES > 0) {
             currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
-            // so our destination is the currIndex ; do calcs 
-            x2 = (currentIndex % 8) ;
-            x1 = x2; // prev row and col respectively  
-
-            moveList += "" + fileNames[x1] + "" + fileNames[x2] + "QP" + fileNames[x1] + "" + fileNames[x2] + "RP" + fileNames[x1] + "" + fileNames[x2] + "BP" + fileNames[x1] + "" + fileNames[x2] + "NP";
+            origin = currentIndex - 9;  // for push 1
+            moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Queen, moveType = MoveType.QUIET });
+            moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Rook, moveType = MoveType.QUIET });
+            moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Bishop, moveType = MoveType.QUIET });
+            moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Knight, moveType = MoveType.QUIET });
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
         }
@@ -230,87 +231,57 @@ class Moves {
 
         //EN PASSANT 
 
-        //history has to at least have a move and history's last move has to be a valid black pawn two move 
-        if (history.Length >= 4) {
+        // right capture 
+        // wp has to be left of bp, they both have to be on rank 5, can't wrap around to file a, and has to be on square where ep is possible 
+        // gives the piece to remove, NOT THE DESTINATION 
+        PAWN_MOVES = (piecesBB[(int)Side.White][(int)Piece.Pawn] << 1) & piecesBB[(int)Side.Black][(int)Piece.Pawn] & RANKS[4] & ~FILES[0] & EP;
 
-            //check two move validity 
-            // if the files are letters, then make correct subtraction to get index value 
-            y2 = history[history.Length - 1] - '0';
-            x2 = (Char.IsLetter(history[history.Length - 2])) ? history[history.Length - 2] - 'a' : history[history.Length - 2] - '0';
-            y1 = history[history.Length - 3] - '0';
-            x1 = (Char.IsLetter(history[history.Length - 4])) ? history[history.Length - 4] - 'a' : history[history.Length - 4] - '0';
-
-            // x1 has to equal x2 and y1 has to be 2 greater than y2 (black pawn moving two down), y2 has to equal rank 5 
-            if (x1 == x2 && y2 == 5 && y1 == y2 + 2) {
-
-                // right capture 
-                // wp has to be left of bp that just moved, they both have to be on rank 5, move wp to space above 
-                PAWN_MOVES = ((piecesBB[(int)Side.White][(int)Piece.Pawn] << 1) & piecesBB[(int)Side.Black][(int)Piece.Pawn] & FILES[x1 ] & RANKS[4]) << 8;
-
-                int startFile, destFile; 
-                // we know there is only going to be one 
-                if (PAWN_MOVES > 0) {
-                    currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
-                    // so our destination is the currIndex ; do calcs 
-                    destFile = (currentIndex % 8) ;
-                    startFile = destFile - 1;
-
-                    moveList += "" + fileNames[startFile] + "" + fileNames[destFile] + "EE"; // to make 4 total characters ; y's can be inferred bc always 5->6 for wps 
-
-                    mask = ~(1UL << currentIndex);
-                    PAWN_MOVES &= mask;
-                }
-
-                //left capture 
-
-                PAWN_MOVES = ((piecesBB[(int)Side.White][(int)Piece.Pawn] >> 1) & piecesBB[(int)Side.Black][(int)Piece.Pawn] & FILES[x1 ] & RANKS[4]) << 8;
-
-                // we know there is only going to be one 
-                if (PAWN_MOVES > 0) {
-                    currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
-                    // so our destination is the currIndex ; do calcs 
-                    destFile = (currentIndex % 8) ;
-                    startFile = x2 + 1;
-
-                    moveList += "" + fileNames[startFile] + "" + fileNames[destFile] + "EE"; // to make 4 total characters ; y's can be inferred bc always 5->6 for wps 
-
-                    mask = ~(1UL << currentIndex);
-                    PAWN_MOVES &= mask;
-                }
-
-            }
-
-
-
+        int destination;
+        // we know there is only going to be one 
+        if (PAWN_MOVES > 0)
+        {
+            currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
+            origin = currentIndex - 1;  // right en passant 
+            destination = origin + 9;
+            moveList.Add(new Move { origin = origin, destination = destination, promoPieceType = Piece.NONE, moveType = MoveType.ENPASSANT });
+            mask = ~(1UL << currentIndex);
+            PAWN_MOVES &= mask;
         }
-        return moveList;
 
+        //left capture 
 
+        PAWN_MOVES = (piecesBB[(int)Side.White][(int)Piece.Pawn] >> 1) & piecesBB[(int)Side.Black][(int)Piece.Pawn] & RANKS[4] & ~FILES[7] & EP;
 
-
+        // we know there is only going to be one 
+        if (PAWN_MOVES > 0)
+        {
+            currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
+            origin = currentIndex + 1;   
+            destination = origin + 7;
+            moveList.Add(new Move { origin = origin, destination = destination, promoPieceType = Piece.NONE, moveType = MoveType.ENPASSANT });
+            mask = ~(1UL << currentIndex);
+            PAWN_MOVES &= mask;
+        }
+        
     }
 
 
-    private static string possiblePawnBlack(string history, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB)
+    private static void possiblePawnBlack(List<Move> moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, ulong EP)
     {
-        string moveList = "";
         // capture right ; current pawn can't be on rank 2 cus that just promo and result must be capturable and can't be on file a 
         PAWN_MOVES = ((piecesBB[(int)Side.Black][(int)Piece.Pawn] & ~RANKS[1]) >> 7) & (captureBB & ~FILES[0]);
 
         // now if a bit is on in that bb convert into move notation
         //x1,y1,x2,y2 
         int currentIndex;
-        int x1, y1, x2, y2;
+        int origin, destination; 
         ulong mask;
 
         while (PAWN_MOVES > 0)
         {
             currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
-            // so our destination is the currIndex ; do calcs 
-            y2 = (currentIndex / 8) + 1; x2 = (currentIndex % 8);
-            y1 = y2 + 1; x1 = x2 - 1; // prev row and col respectively  
-
-            moveList += "" + fileNames[x1] + "" + y1 + "" + fileNames[x2] + "" + y2;
+            origin = currentIndex +7;  // for capture right 
+            moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.CAPTURE });
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
         }
@@ -322,11 +293,8 @@ class Moves {
         while (PAWN_MOVES > 0)
         {
             currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
-            // so our destination is the currIndex ; do calcs 
-            y2 = (currentIndex / 8) + 1; x2 = (currentIndex % 8);
-            y1 = y2 + 1; x1 = x2 + 1; // prev row and col respectively  
-
-            moveList += "" + fileNames[x1] + "" + y1 + "" + fileNames[x2] + "" + y2;
+            origin = currentIndex + 9; 
+            moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.CAPTURE });
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
         }
@@ -337,11 +305,8 @@ class Moves {
         while (PAWN_MOVES > 0)
         {
             currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
-            // so our destination is the currIndex ; do calcs 
-            y2 = (currentIndex / 8) + 1; x2 = (currentIndex % 8);
-            y1 = y2 + 1; x1 = x2; // prev row and col respectively  
-
-            moveList += "" + fileNames[x1] + "" + y1 + "" + fileNames[x2] + "" + y2;
+            origin = currentIndex + 8;  //
+            moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.QUIET });
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
         }
@@ -356,11 +321,8 @@ class Moves {
         while (PAWN_MOVES > 0)
         {
             currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
-            // so our destination is the currIndex ; do calcs 
-            y2 = (currentIndex / 8) + 1; x2 = (currentIndex % 8);
-            y1 = y2 + 2; x1 = x2; // prev row and col respectively  
-
-            moveList += "" + fileNames[x1] + "" + y1 + "" + fileNames[x2] + "" + y2;
+            origin = currentIndex + 16;  //
+            moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.QUIET });
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
         }
@@ -378,11 +340,11 @@ class Moves {
         while (PAWN_MOVES > 0)
         {
             currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
-            // so our destination is the currIndex ; do calcs 
-            x2 = (currentIndex % 8);
-            x1 = x2 - 1; // prev row and col respectively  
-
-            moveList += "" + fileNames[x1] + "" + fileNames[x2] + "QP" + fileNames[x1] + "" + fileNames[x2] + "RP" + fileNames[x1] + "" + fileNames[x2] + "BP" + fileNames[x1] + "" + fileNames[x2] + "NP";
+            origin = currentIndex +7;  // for push 1
+            moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Queen, moveType = MoveType.CAPTURE });
+            moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Rook, moveType = MoveType.CAPTURE });
+            moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Bishop, moveType = MoveType.CAPTURE });
+            moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Knight, moveType = MoveType.CAPTURE });
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
         }
@@ -394,11 +356,11 @@ class Moves {
         while (PAWN_MOVES > 0)
         {
             currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
-            // so our destination is the currIndex ; do calcs 
-            x2 = (currentIndex % 8);
-            x1 = x2 + 1; // prev row and col respectively  
-
-            moveList += "" + fileNames[x1] + "" + fileNames[x2] + "QP" + fileNames[x1] + "" + fileNames[x2] + "RP" + fileNames[x1] + "" + fileNames[x2] + "BP" + fileNames[x1] + "" + fileNames[x2] + "NP";
+            origin = currentIndex + 9;  // for push 1
+            moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Queen, moveType = MoveType.CAPTURE });
+            moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Rook, moveType = MoveType.CAPTURE });
+            moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Bishop, moveType = MoveType.CAPTURE });
+            moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Knight, moveType = MoveType.CAPTURE });
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
         }
@@ -411,11 +373,11 @@ class Moves {
         while (PAWN_MOVES > 0)
         {
             currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
-            // so our destination is the currIndex ; do calcs 
-            x2 = (currentIndex % 8);
-            x1 = x2; // prev row and col respectively  
-
-            moveList += "" + fileNames[x1] + "" + fileNames[x2] + "QP" + fileNames[x1] + "" + fileNames[x2] + "RP" + fileNames[x1] + "" + fileNames[x2] + "BP" + fileNames[x1] + "" + fileNames[x2] + "NP";
+            origin = currentIndex + 8;  // for push 1
+            moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Queen, moveType = MoveType.QUIET });
+            moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Rook, moveType = MoveType.QUIET });
+            moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Bishop, moveType = MoveType.QUIET });
+            moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Knight, moveType = MoveType.QUIET });
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
         }
@@ -423,71 +385,42 @@ class Moves {
 
         //EN PASSANT 
 
-        //history has to at least have a move and history's last move has to be a valid black pawn two move 
-        if (history.Length >= 4)
+        // right capture 
+        // bp has to be left of wp, both have to be on rank 4, can't wrap around to file a, has to be on a valid ep square 
+        // give square of piece to remove NOT DESTINATION 
+        PAWN_MOVES = (piecesBB[(int)Side.Black][(int)Piece.Pawn] << 1) & piecesBB[(int)Side.White][(int)Piece.Pawn] &  RANKS[3] & ~FILES[0] &EP;
+        // we know there is only going to be one 
+        if (PAWN_MOVES > 0)
         {
-
-            //check two move validity 
-            // if the files are letters, then make correct subtraction to get index value 
-            y2 = history[history.Length - 1] - '0';
-            x2 = (Char.IsLetter(history[history.Length - 2])) ? history[history.Length - 2]-'a' : history[history.Length - 2] - '0';
-            y1 = history[history.Length - 3] - '0';
-            x1 = (Char.IsLetter(history[history.Length - 4])) ? history[history.Length - 4] - 'a' : history[history.Length - 4] - '0';
-
-            // x1 has to equal x2 and y1 has to be 2 greater than y2 (black pawn moving two down), y2 has to equal rank 5 
-            if (x1 == x2 && y2 == 4 && y1 == y2 - 2)
-            {
-
-                // right capture 
-                // bp has to be left of wp that just moved, they both have to be on rank 4, move bp to space below 
-                PAWN_MOVES = ((piecesBB[(int)Side.Black][(int)Piece.Pawn] << 1) & piecesBB[(int)Side.White][(int)Piece.Pawn] & FILES[x1] & RANKS[y2-1]) >> 8;
-                int startFile, destFile; 
-                // we know there is only going to be one 
-                if (PAWN_MOVES > 0)
-                {
-                    currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
-                    // so our destination is the currIndex ; do calcs 
-                    destFile = (currentIndex % 8);
-                    startFile = destFile - 1;
-
-                    moveList += "" + fileNames[startFile] + "" + fileNames[destFile] + "EE"; // to make 4 total characters ; y's can be inferred bc always rank 4->3 for bps
-
-                    mask = ~(1UL << currentIndex);
-                    PAWN_MOVES &= mask;
-                }
-
-                //left capture 
-
-                PAWN_MOVES = ((piecesBB[(int)Side.Black][(int)Piece.Pawn] >> 1) & piecesBB[(int)Side.White][(int)Piece.Pawn] & FILES[x1] & RANKS[y2 - 1]) >> 8;
-
-                // we know there is only going to be one 
-                if (PAWN_MOVES > 0)
-                {
-                    currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
-                    // so our destination is the currIndex ; do calcs 
-                    destFile = (currentIndex % 8);
-                    startFile = destFile + 1;
-
-                    moveList += "" + fileNames[startFile] + "" + fileNames[destFile] + "EE"; // to make 4 total characters ; y's can be inferred bc always rank 4->3 for bps
-
-                    mask = ~(1UL << currentIndex);
-                    PAWN_MOVES &= mask;
-                }
-
-            }
-
-
-
+            currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
+            origin = currentIndex - 1;  // right en passant 
+            destination = origin - 7;
+            moveList.Add(new Move { origin = origin, destination = destination, promoPieceType = Piece.NONE, moveType = MoveType.ENPASSANT });
+            mask = ~(1UL << currentIndex);
+            PAWN_MOVES &= mask;
         }
-        return moveList;
+
+        //left capture 
+
+        PAWN_MOVES = (piecesBB[(int)Side.Black][(int)Piece.Pawn] >> 1) & piecesBB[(int)Side.White][(int)Piece.Pawn] & RANKS[3] & ~FILES[7] & EP;
+
+        // we know there is only going to be one 
+        if (PAWN_MOVES > 0)
+        {
+            currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
+            origin = currentIndex + 1;  // right en passant 
+            destination = origin - 9;
+            moveList.Add(new Move { origin = origin, destination = destination, promoPieceType = Piece.NONE, moveType = MoveType.ENPASSANT });
+            mask = ~(1UL << currentIndex);
+            PAWN_MOVES &= mask;
+        }
 
 
 
 
     }
-    private static string possibleRook( ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB , Side side) {
-        string moveList = "";
-
+    private static void possibleRook( List<Move> moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB , Side side) {
+   
         // iterate through all the rooks 
         ulong rookBB = piecesBB[(int)side][(int)Piece.Rook]; 
 
@@ -503,19 +436,25 @@ class Moves {
 
             ROOK_MOVES &= (captureBB | emptyBB); // make sure that moves are only on capturable pieces and empty spaces by anding 
 
-
+            MoveType captureOrNot;
+            ulong indexMask; 
             // parse moves from ROOK MOVES 
-            while(ROOK_MOVES > 0) {
+            while (ROOK_MOVES > 0) {
                 int index = BitOperations.TrailingZeroCount(ROOK_MOVES);
+                indexMask = 1UL << index; 
 
-                //ex: a1b1
-                moveList += (fileNames[square % 8] + "" + (square / 8 + 1)) + (fileNames[index % 8] + "" + (index / 8 + 1));
-                ROOK_MOVES &= ~(1UL << index); 
+                // see if they captured something or not; if > 0 that means it captured a capturable piece 
+                if ((indexMask & captureBB) > 0){
+                    captureOrNot = MoveType.CAPTURE;
+                }
+                else { captureOrNot = MoveType.QUIET;  }
+
+                moveList.Add(new Move { origin = square, destination= index, moveType= captureOrNot, promoPieceType= Piece.NONE});
+                ROOK_MOVES &= ~indexMask; 
             }
             // turn off the current index
             rookBB &= ~(1UL<<square);
         }
-        return moveList; 
     }
 
 
@@ -530,8 +469,8 @@ class Moves {
     }
 
 
-    private static string possibleBishop(ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side) {
-        string moveList = "";
+    private static void possibleBishop(List<Move> moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side) {
+        
 
         // iterate through all the bishops 
         ulong bishopBB = piecesBB[(int)side][(int)Piece.Bishop];
@@ -548,19 +487,27 @@ class Moves {
 
             BISHOP_MOVES &= (captureBB | emptyBB); // make sure that moves are only on capturable pieces and empty spaces by anding 
 
-
+            MoveType captureOrNot;
+            ulong indexMask;
             // parse moves from ROOK MOVES 
             while (BISHOP_MOVES > 0) {
                 int index = BitOperations.TrailingZeroCount(BISHOP_MOVES);
+                indexMask = 1UL << index;
 
-                //ex: a1b1
-                moveList += (fileNames[square % 8] + "" + (square / 8 + 1)) + (fileNames[index % 8] + "" + (index / 8 + 1));
-                BISHOP_MOVES &= ~(1UL << index);
+                // see if they captured something or not; if > 0 that means it captured a capturable piece 
+                if ((indexMask & captureBB) > 0)
+                {
+                    captureOrNot = MoveType.CAPTURE;
+                }
+                else { captureOrNot = MoveType.QUIET; }
+
+                moveList.Add(new Move { origin = square, destination = index, moveType = captureOrNot, promoPieceType = Piece.NONE });
+                BISHOP_MOVES &= ~(indexMask);
             }
             // turn off the current index
             bishopBB &= ~(1UL << square);
         }
-        return moveList;
+        
     }
 
 
@@ -580,8 +527,7 @@ class Moves {
     /// <param name="captureBB"></param>
     /// <param name="emptyBB"></param>
     /// <returns></returns>
-    private static string possibleQueen(ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side) {
-        string moveList = "";
+    private static void possibleQueen(List<Move> moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side) {
 
         // get all queen positions 
         ulong queenBB = piecesBB[(int)side][(int)Piece.Queen];
@@ -599,19 +545,26 @@ class Moves {
 
             QUEEN_MOVES &= (captureBB | emptyBB); // make sure that moves are only on capturable pieces and empty spaces by anding 
 
-
+            MoveType captureOrNot;
+            ulong indexMask;
             // parse moves from QUEEN MOVES 
             while (QUEEN_MOVES > 0) {
                 int index = BitOperations.TrailingZeroCount(QUEEN_MOVES);
+                indexMask = 1UL << index;
 
-                //ex: a1b1
-                moveList += (fileNames[square % 8] + "" + (square / 8 + 1)) + (fileNames[index % 8] + "" + (index / 8 + 1));
-                QUEEN_MOVES &= ~(1UL << index);
+                // see if they captured something or not; if > 0 that means it captured a capturable piece 
+                if ((indexMask & captureBB) > 0)
+                {
+                    captureOrNot = MoveType.CAPTURE;
+                }
+                else { captureOrNot = MoveType.QUIET; }
+
+                moveList.Add(new Move { origin = square, destination = index, moveType = captureOrNot, promoPieceType = Piece.NONE });
+                QUEEN_MOVES &= ~(indexMask);
             }
             // turn off the current index
             queenBB &= ~(1UL << square);
         }
-        return moveList; 
     }
 
     //KNIGHT MOVES 
@@ -640,24 +593,29 @@ class Moves {
         return (bb >> 17) & ~(FILES[7]);
     }
 
-    private static string possibleKnight(ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side) {
-        string moveList = "";
+    private static void possibleKnight(List<Move> moveList , ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side) {
 
-        
 
+
+        int origin;
+        ulong indexMask;
+        MoveType captureOrNot; 
         // make sure the move is either on empty or capturable square 
 
         KNIGHT_MOVES = northEastEast(piecesBB[(int)side][(int)Piece.Knight]) & (captureBB |emptyBB); // north east east 
-
         // parse moves for current moveset 
         while (KNIGHT_MOVES > 0) {
             int index = BitOperations.TrailingZeroCount(KNIGHT_MOVES);
+            indexMask = (1UL << index);
 
-            int destRank = index / 8; int destFile = index % 8; 
-            int startRank = destRank-1 , startFile=destFile-2; 
-            //ex: a1b1
-            moveList += (fileNames[startFile] + "" + (startRank + 1)) + (fileNames[destFile] + "" + (destRank+ 1));
-            KNIGHT_MOVES &= ~(1UL << index);
+            if ((indexMask & captureBB) > 0){// something was captured 
+                captureOrNot = MoveType.CAPTURE; 
+            }else{
+                captureOrNot = MoveType.QUIET;     
+            }
+            origin = index - 10; 
+            moveList.Add(new Move { origin = origin, destination = index , moveType= captureOrNot, promoPieceType= Piece.NONE }); 
+            KNIGHT_MOVES &= ~indexMask;
         }
 
         // make sure the move is either on empty or capturable square 
@@ -667,12 +625,19 @@ class Moves {
         // parse moves for current moveset 
         while (KNIGHT_MOVES > 0) {
             int index = BitOperations.TrailingZeroCount(KNIGHT_MOVES);
+            indexMask = (1UL << index);
 
-            int destRank = index / 8; int destFile = index % 8;
-            int startRank = destRank - 2, startFile = destFile - 1;
-            //ex: a1b1
-            moveList += (fileNames[startFile] + "" + (startRank + 1)) + (fileNames[destFile] + "" + (destRank + 1));
-            KNIGHT_MOVES &= ~(1UL << index);
+            if ((indexMask & captureBB) > 0)
+            {// something was captured 
+                captureOrNot = MoveType.CAPTURE;
+            }
+            else
+            {
+                captureOrNot = MoveType.QUIET;
+            }
+            origin = index - 17;
+            moveList.Add(new Move { origin = origin, destination = index, moveType = captureOrNot, promoPieceType = Piece.NONE });
+            KNIGHT_MOVES &= ~indexMask;
         }
 
         KNIGHT_MOVES = northWestWest(piecesBB[(int)side][(int)Piece.Knight]) & (captureBB | emptyBB);
@@ -680,12 +645,19 @@ class Moves {
         // parse moves for current moveset 
         while (KNIGHT_MOVES > 0) {
             int index = BitOperations.TrailingZeroCount(KNIGHT_MOVES);
+            indexMask = (1UL << index);
 
-            int destRank = index / 8; int destFile = index % 8;
-            int startRank = destRank - 1, startFile = destFile + 2;
-            //ex: a1b1
-            moveList += (fileNames[startFile] + "" + (startRank + 1)) + (fileNames[destFile] + "" + (destRank + 1));
-            KNIGHT_MOVES &= ~(1UL << index);
+            if ((indexMask & captureBB) > 0)
+            {// something was captured 
+                captureOrNot = MoveType.CAPTURE;
+            }
+            else
+            {
+                captureOrNot = MoveType.QUIET;
+            }
+            origin = index - 6;
+            moveList.Add(new Move { origin = origin, destination = index, moveType = captureOrNot, promoPieceType = Piece.NONE });
+            KNIGHT_MOVES &= ~indexMask;
         }
 
         KNIGHT_MOVES = northNorthWest(piecesBB[(int)side][(int)Piece.Knight]) & (captureBB | emptyBB);
@@ -693,12 +665,19 @@ class Moves {
         // parse moves for current moveset 
         while (KNIGHT_MOVES > 0) {
             int index = BitOperations.TrailingZeroCount(KNIGHT_MOVES);
+            indexMask = (1UL << index);
 
-            int destRank = index / 8; int destFile = index % 8;
-            int startRank = destRank - 2, startFile = destFile + 1;
-            //ex: a1b1
-            moveList += (fileNames[startFile] + "" + (startRank + 1)) + (fileNames[destFile] + "" + (destRank + 1));
-            KNIGHT_MOVES &= ~(1UL << index);
+            if ((indexMask & captureBB) > 0)
+            {// something was captured 
+                captureOrNot = MoveType.CAPTURE;
+            }
+            else
+            {
+                captureOrNot = MoveType.QUIET;
+            }
+            origin = index - 15;
+            moveList.Add(new Move { origin = origin, destination = index, moveType = captureOrNot, promoPieceType = Piece.NONE });
+            KNIGHT_MOVES &= ~indexMask;
         }
 
         KNIGHT_MOVES = southEastEast(piecesBB[(int)side][(int)Piece.Knight]) & (captureBB | emptyBB);
@@ -706,12 +685,19 @@ class Moves {
         // parse moves for current moveset 
         while (KNIGHT_MOVES > 0) {
             int index = BitOperations.TrailingZeroCount(KNIGHT_MOVES);
+            indexMask = (1UL << index);
 
-            int destRank = index / 8; int destFile = index % 8;
-            int startRank = destRank + 1, startFile = destFile -2;
-            //ex: a1b1
-            moveList += (fileNames[startFile] + "" + (startRank + 1)) + (fileNames[destFile] + "" + (destRank + 1));
-            KNIGHT_MOVES &= ~(1UL << index);
+            if ((indexMask & captureBB) > 0)
+            {// something was captured 
+                captureOrNot = MoveType.CAPTURE;
+            }
+            else
+            {
+                captureOrNot = MoveType.QUIET;
+            }
+            origin = index +6;
+            moveList.Add(new Move { origin = origin, destination = index, moveType = captureOrNot, promoPieceType = Piece.NONE });
+            KNIGHT_MOVES &= ~indexMask;
         }
 
         KNIGHT_MOVES = southSouthEast(piecesBB[(int)side][(int)Piece.Knight]) & (captureBB | emptyBB);
@@ -719,12 +705,19 @@ class Moves {
         // parse moves for current moveset 
         while (KNIGHT_MOVES > 0) {
             int index = BitOperations.TrailingZeroCount(KNIGHT_MOVES);
+            indexMask = (1UL << index);
 
-            int destRank = index / 8; int destFile = index % 8;
-            int startRank = destRank + 2, startFile = destFile - 1;
-            //ex: a1b1
-            moveList += (fileNames[startFile] + "" + (startRank + 1)) + (fileNames[destFile] + "" + (destRank + 1));
-            KNIGHT_MOVES &= ~(1UL << index);
+            if ((indexMask & captureBB) > 0)
+            {// something was captured 
+                captureOrNot = MoveType.CAPTURE;
+            }
+            else
+            {
+                captureOrNot = MoveType.QUIET;
+            }
+            origin = index + 15;
+            moveList.Add(new Move { origin = origin, destination = index, moveType = captureOrNot, promoPieceType = Piece.NONE });
+            KNIGHT_MOVES &= ~indexMask;
         }
 
         KNIGHT_MOVES = southWestWest(piecesBB[(int)side][(int)Piece.Knight]) & (captureBB | emptyBB);
@@ -732,12 +725,19 @@ class Moves {
         // parse moves for current moveset 
         while (KNIGHT_MOVES > 0) {
             int index = BitOperations.TrailingZeroCount(KNIGHT_MOVES);
+            indexMask = (1UL << index);
 
-            int destRank = index / 8; int destFile = index % 8;
-            int startRank = destRank + 1, startFile = destFile +2;
-            //ex: a1b1
-            moveList += (fileNames[startFile] + "" + (startRank + 1)) + (fileNames[destFile] + "" + (destRank + 1));
-            KNIGHT_MOVES &= ~(1UL << index);
+            if ((indexMask & captureBB) > 0)
+            {// something was captured 
+                captureOrNot = MoveType.CAPTURE;
+            }
+            else
+            {
+                captureOrNot = MoveType.QUIET;
+            }
+            origin = index + 10;
+            moveList.Add(new Move { origin = origin, destination = index, moveType = captureOrNot, promoPieceType = Piece.NONE });
+            KNIGHT_MOVES &= ~indexMask; 
         }
 
         KNIGHT_MOVES = southSouthWest(piecesBB[(int)side][(int)Piece.Knight]) & (captureBB | emptyBB);
@@ -745,14 +745,21 @@ class Moves {
         // parse moves for current moveset 
         while (KNIGHT_MOVES > 0) {
             int index = BitOperations.TrailingZeroCount(KNIGHT_MOVES);
+            indexMask = (1UL << index);
 
-            int destRank = index / 8; int destFile = index % 8;
-            int startRank = destRank + 2, startFile = destFile + 1;
-            //ex: a1b1
-            moveList += (fileNames[startFile] + "" + (startRank + 1)) + (fileNames[destFile] + "" + (destRank + 1));
-            KNIGHT_MOVES &= ~(1UL << index);
+            if ((indexMask & captureBB) > 0)
+            {// something was captured 
+                captureOrNot = MoveType.CAPTURE;
+            }
+            else
+            {
+                captureOrNot = MoveType.QUIET;
+            }
+            origin = index + 17;
+            moveList.Add(new Move { origin = origin, destination = index, moveType = captureOrNot, promoPieceType = Piece.NONE });
+            KNIGHT_MOVES &= ~indexMask;
         }
-        return moveList; 
+        
     }
     //KNIGHT MOVES 
 
@@ -760,11 +767,12 @@ class Moves {
     // there is always only one king for a side 
     // a king can only move to a place that won't put it into check 
     // kings can castle if the rook or king hasn't moved yet nd if the castling isn't blocked 
-    private static string possibleKing(ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side) {
-        string moveList = "";
+    private static void possibleKing(List<Move> moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side) {
+
 
         // find the kings reg attack pattern
         ulong currentKing = piecesBB[(int)side][(int)Piece.King];
+        int originOfKing= BitOperations.TrailingZeroCount(currentKing); // get current square of king; we know there's only ever one 
 
         // left moves; the result can't be on file h 
         // left, left up , left down ; check they aren't on file h 
@@ -789,11 +797,32 @@ class Moves {
         // then check that these moves don't put the king in check; king can only move where is safe for the king 
         KING_MOVES &= ~unsafeBB;
 
+
+        //if the king is currently in check, the next safe move would be an evasion? 
+
+        MoveType captureOrNot;
+        ulong indexMask;
+
+       
+        while (KING_MOVES > 0)
+        {
+            int index = BitOperations.TrailingZeroCount(KING_MOVES);
+            indexMask = (1UL << index);
+
+            if ((indexMask & captureBB) > 0)
+            {// something was captured 
+                captureOrNot = MoveType.CAPTURE;
+            }
+            else
+            {
+                captureOrNot = MoveType.QUIET;
+            }
+            
+            moveList.Add(new Move { origin = originOfKing, destination = index, moveType = captureOrNot, promoPieceType = Piece.NONE });
+            KING_MOVES &= ~indexMask;
+        }
         
-        
-        
-        
-        return moveList; 
+       
 
     }
 
