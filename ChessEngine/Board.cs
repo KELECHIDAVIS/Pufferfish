@@ -123,7 +123,7 @@ class Board {
             Console.WriteLine();
         }
     }
-    public static Board charArrayToBitboards(char[][] chessBoard) {
+    public static Board charArrayToBoard(char[][] chessBoard) {
         const int LAST_BIT = 63; // helps with calcs 
 
         Board board = new Board();

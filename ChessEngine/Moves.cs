@@ -42,6 +42,17 @@ class Moves {
                 0b10000000_10000000_10000000_10000000_10000000_10000000_10000000_10000000,
     };
 
+    //The squares that need to be vacant in order to castle on that side 
+    static ulong wKInBetween = 0b00000000_00000000_00000000_00000000_00000000_00000000_00000000_01100000; 
+    static ulong wQInBetween = 0b00000000_00000000_00000000_00000000_00000000_00000000_00000000_00001110;
+    static ulong bkInBetween = 0b01100000_00000000_00000000_00000000_00000000_00000000_00000000_00000000;
+    static ulong bQInBetween = 0b00001110_00000000_00000000_00000000_00000000_00000000_00000000_00000000;
+
+    static int wKSideCastleDest = (int)Square.G1; 
+    static int wQSideCastleDest = (int)Square.C1;
+    static int bKSideCastleDest = (int)Square.G8;
+    static int bQSideCastleDest = (int)Square.C8;
+
     public static ulong PAWN_MOVES;  // to save on memory we just reassign this variable 
     public static ulong KNIGHT_MOVES;
     public static ulong KING_MOVES;
@@ -56,19 +67,19 @@ class Moves {
     /// <param name="piecesBB"></param>
     /// <param name="sideBB"></param>
     /// <returns></returns>
-    public static List<Move>  possibleMoves(Side side, ulong[][] piecesBB, ulong[] sideBB, ulong EP) {
-        if (side == Side.White) return possibleMovesWhite(piecesBB, sideBB, EP);
+    public static List<Move>  possibleMoves(Side side, ulong[][] piecesBB, ulong[] sideBB, ulong EP, bool CWK, bool CBK, bool CWQ, bool CBQ) {
+        if (side == Side.White) return possibleMovesWhite(piecesBB, sideBB, EP, CWK, CWQ);
         else {
-            return possibleMovesBlack( piecesBB, sideBB, EP);
+            return possibleMovesBlack( piecesBB, sideBB, EP, CBK, CBQ);
         }
     }
 
-    public static List<Move> possibleMoves ( Side side, Board board, ulong EP) {
-        return possibleMoves(side , board.piecesBB, board.sideBB, EP);
+    public static List<Move> possibleMoves ( Side side, Board board, ulong EP, bool CWK, bool CBK, bool CWQ, bool CBQ) {
+        return possibleMoves(side , board.piecesBB, board.sideBB, EP, CWK, CBK, CWQ, CBQ);
     }
 
 
-    private static List<Move> possibleMovesBlack( ulong[][] piecesBB, ulong[] sideBB, ulong EP)
+    private static List<Move> possibleMovesBlack( ulong[][] piecesBB, ulong[] sideBB, ulong EP, bool CBK, bool CBQ)
     {
         ulong nonCaptureBB = sideBB[(int)Side.Black] | piecesBB[(int) Side.White][(int) Piece.King];
         ulong captureBB = sideBB[(int)Side.White] ^ piecesBB[(int) Side.White] [(int) Piece.King];
@@ -81,12 +92,12 @@ class Moves {
         possibleBishop(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black);
         possibleQueen(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black); 
         possibleKnight(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black);
-        possibleKing(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black);
+        possibleKing(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black, CBK,  CBQ);
 
         return moveList; 
     }
 
-    private static List<Move> possibleMovesWhite( ulong[][] piecesBB, ulong[] sideBB, ulong EP) {
+    private static List<Move> possibleMovesWhite( ulong[][] piecesBB, ulong[] sideBB, ulong EP, bool CWK,  bool CWQ) {
         // Get all pieces white can and cannot capture 
         ulong nonCaptureBB = sideBB[(int)Side.White] | piecesBB[(int)Side.Black][(int)Piece.King]; // a bb that holds all white pieces and black king, because the player should never be able to cap. other king (illegal) 
         ulong captureBB = sideBB[(int)(Side.Black)] ^ piecesBB[(int)Side.Black][(int)Piece.King]; // every black piece except black king 
@@ -101,7 +112,7 @@ class Moves {
         possibleBishop(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White);
         possibleQueen(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White);
         possibleKnight(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White);
-        possibleKing(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White);
+        possibleKing(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White, CWK, CWQ);
 
         return moveList;
 
@@ -767,7 +778,7 @@ class Moves {
     // there is always only one king for a side 
     // a king can only move to a place that won't put it into check 
     // kings can castle if the rook or king hasn't moved yet nd if the castling isn't blocked 
-    private static void possibleKing(List<Move> moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side) {
+    private static void possibleKing(List<Move> moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side, bool castleKingSide, bool castleQueenSide) {
 
 
         // find the kings reg attack pattern
@@ -798,18 +809,22 @@ class Moves {
         KING_MOVES &= ~unsafeBB;
 
 
-        //if the king is currently in check, the next safe move would be an evasion? 
+        //if the king is currently in check, the next safe move would be an evasion? ; if greater than zero then king is in check 
+        bool currentlyInCheck = (currentKing & unsafeBB) > 0; 
 
         MoveType captureOrNot;
         ulong indexMask;
-
        
         while (KING_MOVES > 0)
         {
             int index = BitOperations.TrailingZeroCount(KING_MOVES);
             indexMask = (1UL << index);
 
-            if ((indexMask & captureBB) > 0)
+            if (currentlyInCheck)
+            {
+                captureOrNot = MoveType.EVASION; // if the king is in check, a safe move is an evasion 
+            }
+            else if ((indexMask & captureBB) > 0)
             {// something was captured 
                 captureOrNot = MoveType.CAPTURE;
             }
@@ -823,6 +838,27 @@ class Moves {
         }
         
        
+        //CASTLING
+        ulong kingInBetween = (side==Side.White) ? wKInBetween : bkInBetween; // the squares in between the rook and king 
+        ulong queenInBetween = (side == Side.White) ? wQInBetween : bQInBetween;
+
+        int kingDest = (side == Side.White) ? wKSideCastleDest : bKSideCastleDest; // destination on where you're castling 
+        int queenDest = (side==Side.White) ? wQSideCastleDest: bQSideCastleDest;
+
+        // and the in between squares with all pieces, if returns 0 there are no pieces in there
+        bool kingSideIsVacant = (kingInBetween & ~emptyBB) == 0;
+        bool queenSideIsVacant = (queenInBetween & ~emptyBB) == 0;
+
+        // now all in between squares and the king squares have to be safe 
+        // so and a combination of inbetween squares nd king bb with unsafe; if == 0 theres no overlap so the castle is safe 
+        bool kingSideSafe = ((kingInBetween | currentKing) & unsafeBB) == 0;
+        bool queenSideSafe = ((queenInBetween | currentKing) & unsafeBB) == 0;
+
+        // so now if the king has castling rights AND the spots are vacant AND they are all safe the king can castle on that side 
+        if (castleKingSide && kingSideIsVacant && kingSideSafe)
+            moveList.Add(new Move { origin = originOfKing, destination = kingDest, moveType = MoveType.CASTLE, promoPieceType = Piece.NONE });
+        if (castleQueenSide && queenSideIsVacant && queenSideSafe)
+            moveList.Add(new Move { origin = originOfKing, destination = queenDest, moveType = MoveType.CASTLE, promoPieceType = Piece.NONE });
 
     }
 
