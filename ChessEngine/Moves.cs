@@ -802,7 +802,7 @@ class Moves {
 
         
         // a bb that holds all the square that are in sight of black pieces 
-        ulong unsafeBB = getUnsafeSquares(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, side);
+        ulong unsafeBB = getUnsafeSquares(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, side, originOfKing);
         
 
         // then check that these moves don't put the king in check; king can only move where is safe for the king 
@@ -863,7 +863,7 @@ class Moves {
     }
 
     //this would return the unsafe squares for this sides to help with king safe moves 
-    private static ulong getUnsafeSquares(ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side) {
+    private static ulong getUnsafeSquares(ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side, int kingsCurrentSquare) {
 
         ulong unsafeBB = 0;
         // if we looking unsafe squares for the white side the opponent would be black 
@@ -901,7 +901,8 @@ class Moves {
             int square = BitOperations.TrailingZeroCount(slidingPieceBB);
 
             // get bishop move from current spot; remove current bishop from blocker bb  
-            blockerBB = ~(emptyBB) & ~(1UL << square);
+            // you want to also remove current side king from blocker so that it doesn't allow king to make illegal moves 
+            blockerBB = ~(emptyBB | piecesBB[(int) side][(int)Piece.King]) & ~(1UL << square);
             unsafeBB |= getBishopMoves(blockerBB, square);// extract squares protected by bishop 
 
 
@@ -915,7 +916,7 @@ class Moves {
         {
             int square = BitOperations.TrailingZeroCount(slidingPieceBB);
 
-            blockerBB = ~(emptyBB) & ~(1UL << square);
+            blockerBB = ~(emptyBB | piecesBB[(int)side][(int)Piece.King]) & ~(1UL << square);
             unsafeBB |= getRookMoves(blockerBB, square);
 
 
@@ -928,7 +929,7 @@ class Moves {
         {
             int square = BitOperations.TrailingZeroCount(slidingPieceBB);
 
-            blockerBB = ~(emptyBB) & ~(1UL << square);
+            blockerBB = ~(emptyBB | piecesBB[(int)side][(int)Piece.King]) & ~(1UL << square);
             unsafeBB |= getBishopMoves(blockerBB, square);
             unsafeBB |= getRookMoves(blockerBB, square);
 
