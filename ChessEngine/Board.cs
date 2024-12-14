@@ -37,6 +37,14 @@ class Board {
     //PIECE LIST IS LEAST SIG BIT TO MOST SIG; LSB->MSB; 0->63
     public int[] pieceList = new int[NUM_SQUARES]; // rep of the board that holds piece info so we can tell which piece is on which square
 
+
+    public GameState state;
+    public GameHistory history; 
+
+    // need zobrist randoms 
+
+
+
     /// <summary>
     /// Inits the pieces bitboard that holds piece bitboards like [side][piecetype]
     /// </summary>
