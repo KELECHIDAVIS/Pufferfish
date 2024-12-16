@@ -1,7 +1,9 @@
 ﻿using System.Numerics;
 using System;
 using System.IO;
-using System.Diagnostics; 
+using System.Diagnostics;
+
+
 class SlidingMoves
 {
     // magic bitboards 
@@ -152,10 +154,10 @@ class SlidingMoves
     /// <returns></returns>
     private static ulong randomUlong()
     {
-        ulong u1, u2, u3, u4;
+        ulong u1= 1, u2=2, u3=3, u4=4;
         Random random = new Random();
-        u1 = (ulong)(random.NextInt64()) & 0xFFFF; u2 = (ulong)(random.NextInt64()) & 0xFFFF;
-        u3 = (ulong)(random.NextInt64()) & 0xFFFF; u4 = (ulong)(random.NextInt64()) & 0xFFFF;
+        /*u1 = (ulong)(random.NextUInt64()) & 0xFFFF; u2 = (ulong)(random.NextUInt64()) & 0xFFFF;
+        u3 = (ulong)(random.NextUInt64()) & 0xFFFF; u4 = (ulong)(random.NextUInt64()) & 0xFFFF;*/ // throwing errors and not needed for frontend 
         return u1 | (u2 << 16) | (u3 << 32) | (u4 << 48);
     }
 
@@ -173,7 +175,7 @@ class SlidingMoves
         while (movementMask > 0)
         {
             shift++;
-            movementMask &= ~(1UL << BitOperations.TrailingZeroCount(movementMask));
+            movementMask &= ~(1UL << Moves.numberOfTrailingZeros(movementMask));
         }
         return shift;
     }

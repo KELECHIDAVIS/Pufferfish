@@ -1,5 +1,5 @@
 ﻿
-public struct GameHistory // a list class that hold all the gamestates (kinda like a stack for states ) 
+public class GameHistory // a list class that hold all the gamestates (kinda like a stack for states ) 
 {
     static readonly int MAX_GAME_MOVES = 2048; // can be more but should never reach this number realistically 
     GameState[] list;

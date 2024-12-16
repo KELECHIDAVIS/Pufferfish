@@ -1,7 +1,6 @@
 ﻿
 using System.Numerics;
 using System.Collections.Generic;
-using Unity.Mathematics; 
 public enum MoveType
 {
     QUIET, // just moving a piece  
@@ -147,7 +146,7 @@ class Moves {
         ulong mask;
 
         while (PAWN_MOVES > 0) {
-            currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
+            currentIndex = numberOfTrailingZeros(PAWN_MOVES);
             origin = currentIndex - 9;  // for capture right 
             moveList.Add(new Move { origin= origin,destination= currentIndex, promoPieceType= Piece.NONE, moveType = MoveType.CAPTURE }); 
             mask = ~(1UL << currentIndex);
@@ -160,7 +159,7 @@ class Moves {
 
 
         while (PAWN_MOVES > 0) {
-            currentIndex = tzcnt(PAWN_MOVES);
+            currentIndex = numberOfTrailingZeros(PAWN_MOVES);
             origin = currentIndex -7;  // for capture left 
             moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.CAPTURE });
             mask = ~(1UL << currentIndex);
@@ -171,7 +170,7 @@ class Moves {
         PAWN_MOVES = ((piecesBB[(int)Side.White][(int)Piece.Pawn] & ~RANKS[6]) << 8) & emptyBB;
 
         while (PAWN_MOVES > 0) {
-            currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
+            currentIndex = numberOfTrailingZeros(PAWN_MOVES);
             origin = currentIndex - 8;  // for push 1
             moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.QUIET });
             mask = ~(1UL << currentIndex);
@@ -182,7 +181,7 @@ class Moves {
         PAWN_MOVES = (piecesBB[(int)Side.White][(int)Piece.Pawn] << 16) & RANKS[3] & emptyBB & (emptyBB << 8);
 
         while (PAWN_MOVES > 0) {
-            currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
+            currentIndex = numberOfTrailingZeros(PAWN_MOVES);
             origin = currentIndex - 16;  // for push 2
             moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.QUIET });
             mask = ~(1UL << currentIndex);
@@ -200,7 +199,7 @@ class Moves {
         // in form of x1,x2,PromoType,'P'  ; Ex: 45QP: a pawn in col 4 captures right and promotes to queen
 
         while (PAWN_MOVES > 0) {
-            currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
+            currentIndex = numberOfTrailingZeros(PAWN_MOVES);
             origin = currentIndex - 9;  // for push 1
             moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Queen, moveType = MoveType.CAPTURE });
             moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Rook, moveType = MoveType.CAPTURE });
@@ -215,7 +214,7 @@ class Moves {
         PAWN_MOVES = (piecesBB[(int)Side.White][(int)Piece.Pawn] << 7) & captureBB & RANKS[7] & (~FILES[7]);
 
         while (PAWN_MOVES > 0) {
-            currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
+            currentIndex = numberOfTrailingZeros(PAWN_MOVES);
             origin = currentIndex - 7;  // for push 1
             moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Queen, moveType = MoveType.CAPTURE });
             moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Rook, moveType = MoveType.CAPTURE });
@@ -231,7 +230,7 @@ class Moves {
 
         // extract valid promos 
         while (PAWN_MOVES > 0) {
-            currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
+            currentIndex = numberOfTrailingZeros(PAWN_MOVES);
             origin = currentIndex - 9;  // for push 1
             moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Queen, moveType = MoveType.QUIET });
             moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Rook, moveType = MoveType.QUIET });
@@ -253,7 +252,7 @@ class Moves {
         // we know there is only going to be one 
         if (PAWN_MOVES > 0)
         {
-            currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
+            currentIndex = numberOfTrailingZeros(PAWN_MOVES);
             origin = currentIndex - 1;  // right en passant 
             destination = origin + 9;
             moveList.Add(new Move { origin = origin, destination = destination, promoPieceType = Piece.NONE, moveType = MoveType.ENPASSANT });
@@ -268,7 +267,7 @@ class Moves {
         // we know there is only going to be one 
         if (PAWN_MOVES > 0)
         {
-            currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
+            currentIndex = numberOfTrailingZeros(PAWN_MOVES);
             origin = currentIndex + 1;   
             destination = origin + 7;
             moveList.Add(new Move { origin = origin, destination = destination, promoPieceType = Piece.NONE, moveType = MoveType.ENPASSANT });
@@ -292,7 +291,7 @@ class Moves {
 
         while (PAWN_MOVES > 0)
         {
-            currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
+            currentIndex = numberOfTrailingZeros(PAWN_MOVES);
             origin = currentIndex +7;  // for capture right 
             moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.CAPTURE });
             mask = ~(1UL << currentIndex);
@@ -305,7 +304,7 @@ class Moves {
 
         while (PAWN_MOVES > 0)
         {
-            currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
+            currentIndex = numberOfTrailingZeros(PAWN_MOVES);
             origin = currentIndex + 9; 
             moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.CAPTURE });
             mask = ~(1UL << currentIndex);
@@ -317,7 +316,7 @@ class Moves {
 
         while (PAWN_MOVES > 0)
         {
-            currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
+            currentIndex = numberOfTrailingZeros(PAWN_MOVES);
             origin = currentIndex + 8;  //
             moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.QUIET });
             mask = ~(1UL << currentIndex);
@@ -333,7 +332,7 @@ class Moves {
 
         while (PAWN_MOVES > 0)
         {
-            currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
+            currentIndex = numberOfTrailingZeros(PAWN_MOVES);
             origin = currentIndex + 16;  //
             moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.QUIET });
             mask = ~(1UL << currentIndex);
@@ -352,7 +351,7 @@ class Moves {
 
         while (PAWN_MOVES > 0)
         {
-            currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
+            currentIndex = numberOfTrailingZeros(PAWN_MOVES);
             origin = currentIndex +7;  // for push 1
             moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Queen, moveType = MoveType.CAPTURE });
             moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Rook, moveType = MoveType.CAPTURE });
@@ -368,7 +367,7 @@ class Moves {
 
         while (PAWN_MOVES > 0)
         {
-            currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
+            currentIndex = numberOfTrailingZeros(PAWN_MOVES);
             origin = currentIndex + 9;  // for push 1
             moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Queen, moveType = MoveType.CAPTURE });
             moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Rook, moveType = MoveType.CAPTURE });
@@ -385,7 +384,7 @@ class Moves {
         // extract valid promos 
         while (PAWN_MOVES > 0)
         {
-            currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
+            currentIndex = numberOfTrailingZeros(PAWN_MOVES);
             origin = currentIndex + 8;  // for push 1
             moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Queen, moveType = MoveType.QUIET });
             moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Rook, moveType = MoveType.QUIET });
@@ -405,7 +404,7 @@ class Moves {
         // we know there is only going to be one 
         if (PAWN_MOVES > 0)
         {
-            currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
+            currentIndex = numberOfTrailingZeros(PAWN_MOVES);
             origin = currentIndex - 1;  // right en passant 
             destination = origin - 7;
             moveList.Add(new Move { origin = origin, destination = destination, promoPieceType = Piece.NONE, moveType = MoveType.ENPASSANT });
@@ -420,7 +419,7 @@ class Moves {
         // we know there is only going to be one 
         if (PAWN_MOVES > 0)
         {
-            currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
+            currentIndex = numberOfTrailingZeros(PAWN_MOVES);
             origin = currentIndex + 1;  // right en passant 
             destination = origin - 9;
             moveList.Add(new Move { origin = origin, destination = destination, promoPieceType = Piece.NONE, moveType = MoveType.ENPASSANT });
@@ -438,7 +437,7 @@ class Moves {
         ulong rookBB = piecesBB[(int)side][(int)Piece.Rook]; 
 
         while(rookBB > 0 ) {// for every rook 
-            int square = BitOperations.TrailingZeroCount(rookBB);
+            int square = numberOfTrailingZeros(rookBB);
 
 
             // get sliding moves 
@@ -453,7 +452,7 @@ class Moves {
             ulong indexMask; 
             // parse moves from ROOK MOVES 
             while (ROOK_MOVES > 0) {
-                int index = BitOperations.TrailingZeroCount(ROOK_MOVES);
+                int index = numberOfTrailingZeros(ROOK_MOVES);
                 indexMask = 1UL << index; 
 
                 // see if they captured something or not; if > 0 that means it captured a capturable piece 
@@ -489,7 +488,7 @@ class Moves {
         ulong bishopBB = piecesBB[(int)side][(int)Piece.Bishop];
 
         while (bishopBB > 0) {// for every rook 
-            int square = BitOperations.TrailingZeroCount(bishopBB);
+            int square = numberOfTrailingZeros(bishopBB);
 
 
             // get sliding moves 
@@ -504,7 +503,7 @@ class Moves {
             ulong indexMask;
             // parse moves from ROOK MOVES 
             while (BISHOP_MOVES > 0) {
-                int index = BitOperations.TrailingZeroCount(BISHOP_MOVES);
+                int index = numberOfTrailingZeros(BISHOP_MOVES);
                 indexMask = 1UL << index;
 
                 // see if they captured something or not; if > 0 that means it captured a capturable piece 
@@ -546,7 +545,7 @@ class Moves {
         ulong queenBB = piecesBB[(int)side][(int)Piece.Queen];
 
         while (queenBB > 0) {// for every rook 
-            int square = BitOperations.TrailingZeroCount(queenBB);
+            int square = numberOfTrailingZeros(queenBB);
 
 
             // get sliding moves 
@@ -562,7 +561,7 @@ class Moves {
             ulong indexMask;
             // parse moves from QUEEN MOVES 
             while (QUEEN_MOVES > 0) {
-                int index = BitOperations.TrailingZeroCount(QUEEN_MOVES);
+                int index = numberOfTrailingZeros(QUEEN_MOVES);
                 indexMask = 1UL << index;
 
                 // see if they captured something or not; if > 0 that means it captured a capturable piece 
@@ -618,7 +617,7 @@ class Moves {
         KNIGHT_MOVES = northEastEast(piecesBB[(int)side][(int)Piece.Knight]) & (captureBB |emptyBB); // north east east 
         // parse moves for current moveset 
         while (KNIGHT_MOVES > 0) {
-            int index = BitOperations.TrailingZeroCount(KNIGHT_MOVES);
+            int index = numberOfTrailingZeros(KNIGHT_MOVES);
             indexMask = (1UL << index);
 
             if ((indexMask & captureBB) > 0){// something was captured 
@@ -637,7 +636,7 @@ class Moves {
 
         // parse moves for current moveset 
         while (KNIGHT_MOVES > 0) {
-            int index = BitOperations.TrailingZeroCount(KNIGHT_MOVES);
+            int index = numberOfTrailingZeros(KNIGHT_MOVES);
             indexMask = (1UL << index);
 
             if ((indexMask & captureBB) > 0)
@@ -657,7 +656,7 @@ class Moves {
 
         // parse moves for current moveset 
         while (KNIGHT_MOVES > 0) {
-            int index = BitOperations.TrailingZeroCount(KNIGHT_MOVES);
+            int index = numberOfTrailingZeros(KNIGHT_MOVES);
             indexMask = (1UL << index);
 
             if ((indexMask & captureBB) > 0)
@@ -677,7 +676,7 @@ class Moves {
 
         // parse moves for current moveset 
         while (KNIGHT_MOVES > 0) {
-            int index = BitOperations.TrailingZeroCount(KNIGHT_MOVES);
+            int index = numberOfTrailingZeros(KNIGHT_MOVES);
             indexMask = (1UL << index);
 
             if ((indexMask & captureBB) > 0)
@@ -697,7 +696,7 @@ class Moves {
 
         // parse moves for current moveset 
         while (KNIGHT_MOVES > 0) {
-            int index = BitOperations.TrailingZeroCount(KNIGHT_MOVES);
+            int index = numberOfTrailingZeros(KNIGHT_MOVES);
             indexMask = (1UL << index);
 
             if ((indexMask & captureBB) > 0)
@@ -717,7 +716,7 @@ class Moves {
 
         // parse moves for current moveset 
         while (KNIGHT_MOVES > 0) {
-            int index = BitOperations.TrailingZeroCount(KNIGHT_MOVES);
+            int index = numberOfTrailingZeros(KNIGHT_MOVES);
             indexMask = (1UL << index);
 
             if ((indexMask & captureBB) > 0)
@@ -737,7 +736,7 @@ class Moves {
 
         // parse moves for current moveset 
         while (KNIGHT_MOVES > 0) {
-            int index = BitOperations.TrailingZeroCount(KNIGHT_MOVES);
+            int index = numberOfTrailingZeros(KNIGHT_MOVES);
             indexMask = (1UL << index);
 
             if ((indexMask & captureBB) > 0)
@@ -757,7 +756,7 @@ class Moves {
 
         // parse moves for current moveset 
         while (KNIGHT_MOVES > 0) {
-            int index = BitOperations.TrailingZeroCount(KNIGHT_MOVES);
+            int index = numberOfTrailingZeros(KNIGHT_MOVES);
             indexMask = (1UL << index);
 
             if ((indexMask & captureBB) > 0)
@@ -785,7 +784,7 @@ class Moves {
 
         // find the kings reg attack pattern
         ulong currentKing = piecesBB[(int)side][(int)Piece.King];
-        int originOfKing= BitOperations.TrailingZeroCount(currentKing); // get current square of king; we know there's only ever one 
+        int originOfKing= numberOfTrailingZeros(currentKing); // get current square of king; we know there's only ever one 
 
         // left moves; the result can't be on file h 
         // left, left up , left down ; check they aren't on file h 
@@ -819,7 +818,7 @@ class Moves {
        
         while (KING_MOVES > 0)
         {
-            int index = BitOperations.TrailingZeroCount(KING_MOVES);
+            int index = numberOfTrailingZeros(KING_MOVES);
             indexMask = (1UL << index);
 
             if (currentlyInCheck)
@@ -900,7 +899,7 @@ class Moves {
         ulong blockerBB;
         while (slidingPieceBB > 0)
         {
-            int square = BitOperations.TrailingZeroCount(slidingPieceBB);
+            int square = numberOfTrailingZeros(slidingPieceBB);
 
             // get bishop move from current spot; remove current bishop from blocker bb  
             // you want to also remove current side king from blocker so that it doesn't allow king to make illegal moves 
@@ -916,7 +915,7 @@ class Moves {
         slidingPieceBB = piecesBB[opponent][(int)Piece.Rook];
         while (slidingPieceBB > 0)
         {
-            int square = BitOperations.TrailingZeroCount(slidingPieceBB);
+            int square = numberOfTrailingZeros(slidingPieceBB);
 
             blockerBB = ~(emptyBB | piecesBB[(int)side][(int)Piece.King]) & ~(1UL << square);
             unsafeBB |= getRookMoves(blockerBB, square);
@@ -929,7 +928,7 @@ class Moves {
         slidingPieceBB = piecesBB[opponent][(int)Piece.Queen];
         while (slidingPieceBB > 0)
         {
-            int square = BitOperations.TrailingZeroCount(slidingPieceBB);
+            int square = numberOfTrailingZeros(slidingPieceBB);
 
             blockerBB = ~(emptyBB | piecesBB[(int)side][(int)Piece.King]) & ~(1UL << square);
             unsafeBB |= getBishopMoves(blockerBB, square);
@@ -949,6 +948,21 @@ class Moves {
 
 
         return unsafeBB; 
+    }
+
+    public static int numberOfTrailingZeros(ulong i) {
+        // HD, Figure 5-14
+        ulong y;
+        if (i == 0) return 64;
+
+        int n = 63;
+        y = i << 32; if (y != 0) { n = n - 32; i = y; }
+        y = i << 16; if (y != 0) { n = n - 16; i = y; }
+        y = i << 8; if (y != 0) { n = n - 8; i = y; }
+        y = i << 4; if (y != 0) { n = n - 4; i = y; }
+        y = i << 2; if (y != 0) { n = n - 2; i = y; }
+
+        return n - (int)((uint)(i << 1) >> 63);
     }
 }
 
