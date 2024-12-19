@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -8,7 +9,7 @@ class Engine
 { 
     public static void Main(string[] args)
     {
-        bool gameRunning = true;
+        /*bool gameRunning = true;
 
         Board board = new Board(); 
         
@@ -17,7 +18,9 @@ class Engine
         while (gameRunning)
         {
             // process uci input 
-        }
+        }*/
+
+        Console.WriteLine(BitOperations.TrailingZeroCount(16711680)); 
 
     }
 

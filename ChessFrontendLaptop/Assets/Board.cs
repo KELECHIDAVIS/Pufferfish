@@ -131,16 +131,18 @@ class Board {
     /// </summary>
     /// <param name="list"></param>
     public static void printPieceList(int[] list) {
-        const int LAST_BIT = 63; 
+        const int LAST_BIT = 63;
+
         for (int rank = 0; rank <= 7; rank++)
         {
+            string rankString = ""; 
             for (int file = 7; file >= 0; file--)
             {
                 int currentIndx = LAST_BIT - (rank * 8 +file );
 
-                Debug.Log(list[currentIndx]+" ");
+                rankString+= list[currentIndx]+" ";
             }
-            Debug.Log("\n");
+            Debug.Log(rankString);
         }
     }
     public static Board charArrayToBoard(char[][] chessBoard) {
@@ -291,17 +293,30 @@ class Board {
         
     }
 
-    private void placePiece(int currentSquare, Piece piece, Side side)
+    private void placePiece(int dest, Piece piece, Side side)
     {
         // if there is already a piece on that square then update their bb too
-        if (pieceList[currentSquare] != (int) Piece.NONE)
+        if (pieceList[dest] != (int) Piece.NONE)
         {
-            piecesBB[(int)side][pieceList[currentSquare]] ^= (1UL << currentSquare);
+            piecesBB[(int)side][pieceList[dest]] ^= (1UL << dest);
         }
         // update piece and side bb
-        piecesBB[(int)side][(int)piece] |= (1UL<<currentSquare) ; 
-        sideBB[(int)side] |= (1UL<<currentSquare);
+        piecesBB[(int)side][(int)piece] |= (1UL<<dest) ; 
+        sideBB[(int)side] |= (1UL<<dest);
         // update piece list 
-        pieceList[currentSquare] = (int)piece; 
+        pieceList[dest] = (int)piece; 
+    }
+
+    public void movePiece (Move move ,  Piece piece , Side side)
+    {
+        // make sure to remove piece from origin
+        sideBB[(int) side] ^= (1UL<< move.origin); 
+        piecesBB[(int) side][(int)piece] ^= (1UL<< move.origin);
+
+        pieceList[move.origin] = (int)Piece.NONE; 
+
+        // now place piece at destination 
+        placePiece(move.destination, piece, side); 
+
     }
 }

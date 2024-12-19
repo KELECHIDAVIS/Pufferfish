@@ -1,6 +1,8 @@
 ﻿
 using System.Numerics;
 using System.Collections.Generic;
+
+
 public enum MoveType
 {
     QUIET, // just moving a piece  
@@ -80,7 +82,7 @@ class Moves {
     }
 
 
-    private static List<Move> possibleMovesBlack( ulong[][] piecesBB, ulong[] sideBB, ulong EP, bool CBK, bool CBQ)
+    public static List<Move> possibleMovesBlack( ulong[][] piecesBB, ulong[] sideBB, ulong EP, bool CBK, bool CBQ)
     {
         ulong nonCaptureBB = sideBB[(int)Side.Black] | piecesBB[(int) Side.White][(int) Piece.King];
         ulong captureBB = sideBB[(int)Side.White] ^ piecesBB[(int) Side.White] [(int) Piece.King];
@@ -94,11 +96,11 @@ class Moves {
         possibleQueen(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black); 
         possibleKnight(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black);
         possibleKing(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black, CBK,  CBQ);
-
+        
         return moveList; 
     }
 
-    private static List<Move> possibleMovesWhite( ulong[][] piecesBB, ulong[] sideBB, ulong EP, bool CWK,  bool CWQ) {
+    public static List<Move> possibleMovesWhite( ulong[][] piecesBB, ulong[] sideBB, ulong EP, bool CWK,  bool CWQ) {
         // Get all pieces white can and cannot capture 
         ulong nonCaptureBB = sideBB[(int)Side.White] | piecesBB[(int)Side.Black][(int)Piece.King]; // a bb that holds all white pieces and black king, because the player should never be able to cap. other king (illegal) 
         ulong captureBB = sideBB[(int)(Side.Black)] ^ piecesBB[(int)Side.Black][(int)Piece.King]; // every black piece except black king 
@@ -135,7 +137,7 @@ class Moves {
     /// <param name="emptyBB"> places that are empty</param>
     /// <param name="EP"> En passant bb that can be used to find if en passants are possible </param>
     /// <returns></returns>
-    private static void possiblePawnWhite(List<Move> moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, ulong EP ) {
+    public static void possiblePawnWhite(List<Move> moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, ulong EP ) {
         
         // capture right ;white pawn can't be on rank 7 because that'd be a promotion;  shift bits 9 to left ; make sure there is a caputarable piece there and make sure that piece is not on a file (left column wrap around)
         PAWN_MOVES = ((piecesBB[(int)Side.White][(int)Piece.Pawn] & ~RANKS[6]) << 9) & (captureBB & ~FILES[0]);
@@ -144,7 +146,7 @@ class Moves {
         //x1,y1,x2,y2 
         int currentIndex, origin;
         ulong mask;
-
+        
         while (PAWN_MOVES > 0) {
             currentIndex = numberOfTrailingZeros(PAWN_MOVES);
             origin = currentIndex - 9;  // for capture right 
@@ -278,7 +280,7 @@ class Moves {
     }
 
 
-    private static void possiblePawnBlack(List<Move> moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, ulong EP)
+    public static void possiblePawnBlack(List<Move> moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, ulong EP)
     {
         // capture right ; current pawn can't be on rank 2 cus that just promo and result must be capturable and can't be on file a 
         PAWN_MOVES = ((piecesBB[(int)Side.Black][(int)Piece.Pawn] & ~RANKS[1]) >> 7) & (captureBB & ~FILES[0]);
@@ -431,7 +433,7 @@ class Moves {
 
 
     }
-    private static void possibleRook( List<Move> moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB , Side side) {
+    public static void possibleRook( List<Move> moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB , Side side) {
    
         // iterate through all the rooks 
         ulong rookBB = piecesBB[(int)side][(int)Piece.Rook]; 
@@ -474,14 +476,14 @@ class Moves {
     /// returns rook moves as a ulong 
     /// </summary>
     /// <returns></returns>
-    private static ulong getRookMoves(ulong blockerConfig , int square ) {
+    public static ulong getRookMoves(ulong blockerConfig , int square ) {
         int rookKey = (int)SlidingMoves.getMagicIndex(SlidingMoves.RookInfoTable[square], blockerConfig);
 
         return SlidingMoves.RookMoveHashTable[square][rookKey];
     }
 
 
-    private static void possibleBishop(List<Move> moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side) {
+    public static void possibleBishop(List<Move> moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side) {
         
 
         // iterate through all the bishops 
@@ -523,7 +525,7 @@ class Moves {
     }
 
 
-    private static ulong getBishopMoves(ulong blockerConfig, int square) {
+    public static ulong getBishopMoves(ulong blockerConfig, int square) {
         int bishopKey = (int)SlidingMoves.getMagicIndex(SlidingMoves.BishopInfoTable[square], blockerConfig);
 
         return SlidingMoves.BishopMoveHashTable[square][bishopKey];
@@ -539,7 +541,7 @@ class Moves {
     /// <param name="captureBB"></param>
     /// <param name="emptyBB"></param>
     /// <returns></returns>
-    private static void possibleQueen(List<Move> moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side) {
+    public static void possibleQueen(List<Move> moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side) {
 
         // get all queen positions 
         ulong queenBB = piecesBB[(int)side][(int)Piece.Queen];
@@ -605,7 +607,7 @@ class Moves {
         return (bb >> 17) & ~(FILES[7]);
     }
 
-    private static void possibleKnight(List<Move> moveList , ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side) {
+    public static void possibleKnight(List<Move> moveList , ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side) {
 
 
 
@@ -779,7 +781,7 @@ class Moves {
     // there is always only one king for a side 
     // a king can only move to a place that won't put it into check 
     // kings can castle if the rook or king hasn't moved yet nd if the castling isn't blocked 
-    private static void possibleKing(List<Move> moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side, bool castleKingSide, bool castleQueenSide) {
+    public static void possibleKing(List<Move> moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side, bool castleKingSide, bool castleQueenSide) {
 
 
         // find the kings reg attack pattern
@@ -864,7 +866,7 @@ class Moves {
     }
 
     //this would return the unsafe squares for this sides to help with king safe moves 
-    private static ulong getUnsafeSquares(ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side, int kingsCurrentSquare) {
+    public static ulong getUnsafeSquares(ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side, int kingsCurrentSquare) {
 
         ulong unsafeBB = 0;
         // if we looking unsafe squares for the white side the opponent would be black 
@@ -950,19 +952,29 @@ class Moves {
         return unsafeBB; 
     }
 
-    public static int numberOfTrailingZeros(ulong i) {
-        // HD, Figure 5-14
-        ulong y;
-        if (i == 0) return 64;
+    public static int numberOfTrailingZeros(ulong x) {
+       
 
-        int n = 63;
-        y = i << 32; if (y != 0) { n = n - 32; i = y; }
-        y = i << 16; if (y != 0) { n = n - 16; i = y; }
-        y = i << 8; if (y != 0) { n = n - 8; i = y; }
-        y = i << 4; if (y != 0) { n = n - 4; i = y; }
-        y = i << 2; if (y != 0) { n = n - 2; i = y; }
+        ulong y = x ^ (x - 1);
 
-        return n - (int)((uint)(i << 1) >> 63);
+        
+
+        ulong debruijn = 0x03f79d71b4cb0a89;
+
+        uint z = (uint)((debruijn * y) >> 58);
+        
+        int[] lookup = {
+        0, 47,  1, 56, 48, 27,  2, 60,
+        57, 49, 41, 37, 28, 16,  3, 61,
+        54, 58, 35, 52, 50, 42, 21, 44,
+        38, 32, 29, 23, 17, 11,  4, 62,
+        46, 55, 26, 59, 40, 36, 15, 53,
+        34, 51, 20, 43, 31, 22, 10, 45,
+        25, 39, 14, 33, 19, 30,  9, 24,
+        13, 18,  8, 12,  7,  6,  5, 63
+        };
+
+        return lookup[z];
     }
 }
 
