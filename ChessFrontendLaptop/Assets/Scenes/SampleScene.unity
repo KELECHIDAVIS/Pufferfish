@@ -240,8 +240,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a994786cc488b946bcac055257cc853, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  darkTile: {fileID: 8362097355526884477, guid: 556d28dc6e1d5d742b78e8cee90af1cd, type: 3}
-  lightTile: {fileID: 100323900875096719, guid: cd94fa99f1b0c4a49b1872d401751d51, type: 3}
+  tileSprite: {fileID: 6205867161233269689, guid: 030decb00a4614c42a59c5b403e8c330, type: 3}
   whitePieces:
   - {fileID: 58797574971430985, guid: 0db0ded804f4c754a8b1afbb87635446, type: 3}
   - {fileID: 3590887079499059854, guid: 4dba2fb67efecd440ae4fca8cdcd4160, type: 3}
