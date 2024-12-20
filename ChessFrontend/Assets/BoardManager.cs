@@ -210,7 +210,7 @@ public class CreateBoard : MonoBehaviour
 
         tileBoard = new GameObject[64]; 
         // Calculate tile size
-         tileSize = Mathf.Min(boardWidth, boardHeight) / boardSize;
+        tileSize = Mathf.Min(boardWidth, boardHeight) / boardSize;
 
         // Calculate total board size
          totalBoardWidth = tileSize * boardSize;
