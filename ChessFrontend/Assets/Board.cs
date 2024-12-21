@@ -284,7 +284,16 @@ class Board {
                         piece = Piece.King;
                         break;
                 }
-                placePiece(currentSquare, piece, side);
+
+                // place piece at current square
+                // update pieceBB, sideBB, and pieceList to pieceVal
+                ulong indexMask = (1UL << currentSquare);
+
+                piecesBB[(int)side][(int)piece] |= (indexMask);
+                sideBB[(int)side] |= (indexMask);
+                pieceList[currentSquare] = (int)piece; 
+
+
                 currentSquare++; 
             }
             if (currentSquare < 0)
@@ -293,30 +302,33 @@ class Board {
         
     }
 
-    private void placePiece(int dest, Piece piece, Side side)
-    {
-        // if there is already a piece on that square then update their bb too
-        if (pieceList[dest] != (int) Piece.NONE)
-        {
-            piecesBB[(int)side][pieceList[dest]] ^= (1UL << dest);
-        }
-        // update piece and side bb
-        piecesBB[(int)side][(int)piece] |= (1UL<<dest) ; 
-        sideBB[(int)side] |= (1UL<<dest);
-        // update piece list 
-        pieceList[dest] = (int)piece; 
-    }
+    
 
     public void movePiece (Move move ,  Piece piece , Side side)
     {
-        // make sure to remove piece from origin
-        sideBB[(int) side] ^= (1UL<< move.origin); 
-        piecesBB[(int) side][(int)piece] ^= (1UL<< move.origin);
+        // remove current piece from origin square in it's personal bb, side bb , and piecelist 
+        ulong indexMask = (1UL << move.origin);
 
-        pieceList[move.origin] = (int)Piece.NONE; 
+        piecesBB[(int)side][(int)piece] &= ~(indexMask);  
+        sideBB[(int)side] &= ~(indexMask);
+        pieceList[move.origin] = (int)Piece.NONE;
 
-        // now place piece at destination 
-        placePiece(move.destination, piece, side); 
+
+        // if there is a piece on the destination square have to update that piece's bb , side bb, and piecelist to capturing piece
+        ulong destMask = (1UL << move.destination); 
+
+        Piece capturedPiece = (Piece)pieceList[move.destination]; 
+        
+        // only check side if there is a piece there 
+        if(capturedPiece != Piece.NONE ) { // there is fs a piece here 
+            Side capturedSide = (sideBB[(int) Side.White] & destMask ) > 0 ? Side.White : Side.Black;
+
+            piecesBB[(int)side][(int)piece] &= ~(destMask);
+            sideBB[(int)side] &= ~(destMask);
+        }
+
+        // update pieceList to capturing piece at destination 
+        pieceList[move.destination] = (int)piece; 
 
     }
 }
