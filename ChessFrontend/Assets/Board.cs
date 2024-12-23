@@ -309,26 +309,26 @@ class Board {
         // remove current piece from origin square in it's personal bb, side bb , and piecelist 
         ulong indexMask = (1UL << move.origin);
 
-        piecesBB[(int)side][(int)piece] &= ~(indexMask);  
-        sideBB[(int)side] &= ~(indexMask);
-        pieceList[move.origin] = (int)Piece.NONE;
+        this.piecesBB[(int)side][(int)piece] &= ~(indexMask);  
+        this.sideBB[(int)side] &= ~(indexMask);
+        this.pieceList[move.origin] = (int)Piece.NONE;
 
 
         // if there is a piece on the destination square have to update that piece's bb , side bb, and piecelist to capturing piece
         ulong destMask = (1UL << move.destination); 
 
-        Piece capturedPiece = (Piece)pieceList[move.destination]; 
+        Piece capturedPiece = (Piece)this.pieceList[move.destination]; 
         
         // only check side if there is a piece there 
         if(capturedPiece != Piece.NONE ) { // there is fs a piece here 
-            Side capturedSide = (sideBB[(int) Side.White] & destMask ) > 0 ? Side.White : Side.Black;
+            Side capturedSide = (this.sideBB[(int) Side.White] & destMask ) > 0 ? Side.White : Side.Black;
 
-            piecesBB[(int)side][(int)piece] &= ~(destMask);
-            sideBB[(int)side] &= ~(destMask);
+            this.piecesBB[(int)capturedSide][(int)capturedPiece] &= ~(destMask);
+            this.sideBB[(int)capturedSide] &= ~(destMask);
         }
 
         // update pieceList to capturing piece at destination 
-        pieceList[move.destination] = (int)piece; 
+        this.pieceList[move.destination] = (int)piece; 
 
     }
 }

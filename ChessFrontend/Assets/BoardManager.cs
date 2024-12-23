@@ -33,11 +33,12 @@ public class CreateBoard : MonoBehaviour
 
     bool cwk=true, cwq= true, cbk= true, cbq= true; // castling rights  
     ulong EP; // en passant 
-    Board board = new Board();
+    Board board; 
 
     SelectedPiece? selected = null; 
     void Start()
     {
+        board = new Board(); 
         initChessTiles();
         initPieces("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"); 
     }
@@ -69,11 +70,16 @@ public class CreateBoard : MonoBehaviour
                         Side side = (board.sideBB[(int)Side.White] & indexMask) > 0 ? Side.White : Side.Black;
                         Square sq = (Square)square;
                         List<Move> validMoves = getValidMoves(piece, side, sq);
-                        selected = new SelectedPiece { piece = piece, side = side, square = sq, validMoves = validMoves, pieceObject = pieceObjects[square] };
 
-                        foreach (Move move in validMoves) // highlight each valid move
-                        {
-                            tileBoard[move.destination].GetComponent<SpriteRenderer>().color = highLightColor;
+                        if (validMoves.Count > 0) { // can only select when there are valid moves otherwise select another piece 
+                            selected = new SelectedPiece { piece = piece, side = side, square = sq, validMoves = validMoves, pieceObject = pieceObjects[square] };
+
+                            foreach (Move move in validMoves) // highlight each valid move
+                            {
+                                tileBoard[move.destination].GetComponent<SpriteRenderer>().color = highLightColor;
+                            }
+                        } else {
+                            selected = null; 
                         }
                     }
                 } else { // piece is alr selected, place piece if valid move was selected 
