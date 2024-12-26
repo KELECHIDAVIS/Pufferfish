@@ -87,12 +87,16 @@ class Moves {
         ulong emptyBB = ~(sideBB[(int)Side.Black] | sideBB[(int) Side.White]);
 
         List<Move> moveList = new List<Move>();
-        possiblePawnBlack(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, EP );
+        // initially max val because when not in check pieces can capture or push to whereever they want 
+        ulong pushMask = UInt64.MaxValue, captureMask=UInt64.MaxValue; // for pieces that are checking our king these masks represent that paths that can be blocked and the checkers that should be captured 
+        
+        
+        possibleKing(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black, CBK,  CBQ, captureMask, pushMask);
+        possiblePawnBlack(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, EP, );
         possibleRook(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black);
         possibleBishop(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black);
         possibleQueen(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black); 
         possibleKnight(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black);
-        possibleKing(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black, CBK,  CBQ);
 
         return moveList; 
     }
@@ -604,16 +608,18 @@ class Moves {
         return (bb >> 17) & ~(FILES[7]);
     }
 
-    private static void possibleKnight(List<Move> moveList , ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side) {
+    private static ulong possibleKnight(List<Move> moveList , ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side) {
 
 
 
         int origin;
         ulong indexMask;
-        MoveType captureOrNot; 
+        MoveType captureOrNot;
+        ulong validMovesBB=0; 
         // make sure the move is either on empty or capturable square 
 
         KNIGHT_MOVES = northEastEast(piecesBB[(int)side][(int)Piece.Knight]) & (captureBB |emptyBB); // north east east 
+        validMovesBB |= KNIGHT_MOVES; 
         // parse moves for current moveset 
         while (KNIGHT_MOVES > 0) {
             int index = BitOperations.TrailingZeroCount(KNIGHT_MOVES);
@@ -631,7 +637,8 @@ class Moves {
 
         // make sure the move is either on empty or capturable square 
 
-        KNIGHT_MOVES = northNorthEast(piecesBB[(int)side][(int)Piece.Knight]) & (captureBB | emptyBB); 
+        KNIGHT_MOVES = northNorthEast(piecesBB[(int)side][(int)Piece.Knight]) & (captureBB | emptyBB);
+        validMovesBB |= KNIGHT_MOVES;
 
         // parse moves for current moveset 
         while (KNIGHT_MOVES > 0) {
@@ -652,6 +659,7 @@ class Moves {
         }
 
         KNIGHT_MOVES = northWestWest(piecesBB[(int)side][(int)Piece.Knight]) & (captureBB | emptyBB);
+        validMovesBB |= KNIGHT_MOVES;
 
         // parse moves for current moveset 
         while (KNIGHT_MOVES > 0) {
@@ -672,6 +680,7 @@ class Moves {
         }
 
         KNIGHT_MOVES = northNorthWest(piecesBB[(int)side][(int)Piece.Knight]) & (captureBB | emptyBB);
+        validMovesBB |= KNIGHT_MOVES;
 
         // parse moves for current moveset 
         while (KNIGHT_MOVES > 0) {
@@ -692,6 +701,7 @@ class Moves {
         }
 
         KNIGHT_MOVES = southEastEast(piecesBB[(int)side][(int)Piece.Knight]) & (captureBB | emptyBB);
+        validMovesBB |= KNIGHT_MOVES;
 
         // parse moves for current moveset 
         while (KNIGHT_MOVES > 0) {
@@ -712,6 +722,7 @@ class Moves {
         }
 
         KNIGHT_MOVES = southSouthEast(piecesBB[(int)side][(int)Piece.Knight]) & (captureBB | emptyBB);
+        validMovesBB |= KNIGHT_MOVES;
 
         // parse moves for current moveset 
         while (KNIGHT_MOVES > 0) {
@@ -732,6 +743,7 @@ class Moves {
         }
 
         KNIGHT_MOVES = southWestWest(piecesBB[(int)side][(int)Piece.Knight]) & (captureBB | emptyBB);
+        validMovesBB |= KNIGHT_MOVES;
 
         // parse moves for current moveset 
         while (KNIGHT_MOVES > 0) {
@@ -752,6 +764,7 @@ class Moves {
         }
 
         KNIGHT_MOVES = southSouthWest(piecesBB[(int)side][(int)Piece.Knight]) & (captureBB | emptyBB);
+        validMovesBB |= KNIGHT_MOVES;
 
         // parse moves for current moveset 
         while (KNIGHT_MOVES > 0) {
@@ -770,6 +783,8 @@ class Moves {
             moveList.Add(new Move { origin = origin, destination = index, moveType = captureOrNot, promoPieceType = Piece.NONE });
             KNIGHT_MOVES &= ~indexMask;
         }
+
+        return validMovesBB; 
         
     }
     //KNIGHT MOVES 
@@ -778,7 +793,11 @@ class Moves {
     // there is always only one king for a side 
     // a king can only move to a place that won't put it into check 
     // kings can castle if the rook or king hasn't moved yet nd if the castling isn't blocked 
-    private static void possibleKing(List<Move> moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side, bool castleKingSide, bool castleQueenSide) {
+    // capture mask is for the pieces that are giving check 
+    // push mask is the mask to push into to block check; both will be all squares initiall
+    
+    // since push mask and capture mask are primitives they could be returned as a tuple 
+    private static void possibleKing(List<Move> moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side, bool castleKingSide, bool castleQueenSide, ulong captureMask, ulong pushMask) {
 
 
         // find the kings reg attack pattern
@@ -809,33 +828,140 @@ class Moves {
         KING_MOVES &= ~unsafeBB;
 
 
-        //if the king is currently in check, the next safe move would be an evasion? ; if greater than zero then king is in check 
-        bool currentlyInCheck = (currentKing & unsafeBB) > 0; 
+        // We have all the king's safe moves 
+        //Now see if the king is already and check and if so return the moves that get hem out of check
 
+        //Pretend the kings is every type of other pece on this square 
+        // if king can see that piece type from it's sq then it is in check by that piece
+        int opponent = (side == Side.White) ? (int)Side.Black : (int)Side.White;
+        ulong attackers=0;
+
+        // knight; and the knight moves bb from the king square and all the opponents knights to find which are checkin
+
+        attackers |= getMovesAtSquareKnight((Square)  originOfKing,(Side) opponent  ) & piecesBB[opponent][(int)Piece.Knight];
+
+        // sliding pieces 
+        // blockers would be all pieces on the board removing the current square 
+        ulong blockers = (~emptyBB) & ~(1UL<<originOfKing);
+        // then and with the opponents capturable bb to make sure that they are valid moves in this context 
+        ulong opponentCapturable = sideBB[(int)(side)] ^ piecesBB[(int)side][(int)Piece.King];
+
+        // bishop and rook 
+        // get possible sliding moves then make sure they are on capturable pieces then make sure the correct piece can be seen 
+        ulong rookMoves = (getRookMoves(blockers, originOfKing) & opponentCapturable);
+        ulong bishopMoves = (getBishopMoves(blockers, originOfKing) & opponentCapturable); 
+        attackers |= (bishopMoves & piecesBB[opponent][(int) Piece.Bishop]); 
+        attackers |= (rookMoves & piecesBB[opponent][(int) Piece.Rook]);
+
+        // queen just combine both then and with queens on board 
+        attackers |= ((rookMoves | bishopMoves) & piecesBB[opponent][(int)Piece.Queen]); 
+
+
+        // finally add pawn moves from opponent perspective
+        // can only check king from two diff positions 
+        // if the king is white: if it can see a black pawn from up left or up right then a pawn is checking 
+        // if black: then if it can see a white pawn from bottom right or bot left then it is checking 
+        if (side == Side.White) {
+            attackers |= (currentKing << 7) & piecesBB[opponent][(int)Piece.Pawn];   
+            attackers |= (currentKing << 9) & piecesBB[opponent][(int)Piece.Pawn];
+        } else {
+            attackers |= (currentKing >> 7) & piecesBB[opponent][(int)Piece.Pawn];
+            attackers |= (currentKing >> 9) & piecesBB[opponent][(int)Piece.Pawn];
+        }
+
+
+        // now we have all the possible attackers
+
+        // two possibilities : 
+        int numCheckers = BitOperations.PopCount(attackers); 
+
+        // more than one checker 
         MoveType captureOrNot;
         ulong indexMask;
        
-        while (KING_MOVES > 0)
-        {
-            int index = BitOperations.TrailingZeroCount(KING_MOVES);
-            indexMask = (1UL << index);
+        
+        if(numCheckers >1) {
+            // it is not possible to block or capture both attackers so just return the valid moves we already have 
+            //set push and capture mask to 0 because the only thing that can save the king is an a
+            pushMask = 0;
+            captureMask = 0;
+            while (KING_MOVES > 0) {
+                int index = BitOperations.TrailingZeroCount(KING_MOVES);
+                indexMask = (1UL << index);
+                moveList.Add(new Move { origin = originOfKing, destination = index, moveType = MoveType.EVASION, promoPieceType = Piece.NONE });
+                KING_MOVES &= ~indexMask;
+            }
 
-            if (currentlyInCheck)
-            {
-                captureOrNot = MoveType.EVASION; // if the king is in check, a safe move is an evasion 
+        } else if(numCheckers ==1 ) {        // or single checker 
+            // possible to capture this piece to prevent check or block it's path if it is a sliding piece 
+            // set capture bb to attackers; if piece is a slider set the push bb to the spaces inbetween them and the king 
+            captureMask = attackers;
+
+            pushMask = 0; // in case of a non sliding checker 
+            if(((attackers & piecesBB[opponent][(int) Piece.Rook])>0) | ((attackers & piecesBB[opponent][(int)Piece.Bishop]) > 0) | ((attackers & piecesBB[opponent][(int)Piece.Queen]) > 0)) {
+                // iteratively find the king; the max push length is 7 
+                ulong north=attackers, south=attackers, east = attackers, west = attackers, nwest = attackers, swest = attackers, neast = attackers, seast = attackers; 
+                for(int i =0; i< 7; i++) {
+                    if(((north << 8) & currentKing) > 0) { // this  is the correct path 
+                        pushMask = north ^ attackers ; // attacker shouldn't be in 
+                        break; 
+                    }
+                    if (((south >> 8) & currentKing) > 0) { // this  is the correct path 
+                        pushMask = south ^ attackers;
+                        break;
+                    }
+                    if (((east << 1) & currentKing) > 0) { // this  is the correct path 
+                        pushMask = east ^ attackers;
+                        break;
+                    }
+                    if (((west >> 1) & currentKing) > 0) { // this  is the correct path 
+                        pushMask = west ^ attackers;
+                        break;
+                    }
+                    if (((nwest << 7) & currentKing) > 0) { // this  is the correct path 
+                        pushMask = nwest ^ attackers;
+                        break;
+                    }
+                    if (((neast << 9) & currentKing) > 0) { // this  is the correct path 
+                        pushMask = neast ^ attackers;
+                        break;
+                    }
+                    if (((swest >> 9) & currentKing) > 0) { // this  is the correct path 
+                        pushMask = swest ^ attackers;
+                        break;
+                    }
+                    if (((seast >> 7) & currentKing) > 0) { // this  is the correct path 
+                        pushMask = seast ^ attackers;
+                        break;
+                    }
+                    north <<= 8; south >>= 8; east <<= 1; west >>= 1; nwest <<= 7; neast <<= 9; swest >>= 9; seast >>= 7; 
+                }
             }
-            else if ((indexMask & captureBB) > 0)
-            {// something was captured 
-                captureOrNot = MoveType.CAPTURE;
+            // only valid king moves would also only be evasions 
+            while (KING_MOVES > 0) {
+                int index = BitOperations.TrailingZeroCount(KING_MOVES);
+                indexMask = (1UL << index);
+                moveList.Add(new Move { origin = originOfKing, destination = index, moveType = MoveType.EVASION, promoPieceType = Piece.NONE });
+                KING_MOVES &= ~indexMask;
             }
-            else
-            {
-                captureOrNot = MoveType.QUIET;
+
+        } else { // no checkers 
+
+            while (KING_MOVES > 0) {
+                int index = BitOperations.TrailingZeroCount(KING_MOVES);
+                indexMask = (1UL << index);
+
+                if ((indexMask & captureBB) > 0) {// something was captured 
+                    captureOrNot = MoveType.CAPTURE;
+                } else {
+                    captureOrNot = MoveType.QUIET;
+                }
+
+                moveList.Add(new Move { origin = originOfKing, destination = index, moveType = captureOrNot, promoPieceType = Piece.NONE });
+                KING_MOVES &= ~indexMask;
             }
-            
-            moveList.Add(new Move { origin = originOfKing, destination = index, moveType = captureOrNot, promoPieceType = Piece.NONE });
-            KING_MOVES &= ~indexMask;
         }
+
         
        
         //CASTLING
@@ -859,6 +985,20 @@ class Moves {
             moveList.Add(new Move { origin = originOfKing, destination = kingDest, moveType = MoveType.CASTLE, promoPieceType = Piece.NONE });
         if (castleQueenSide && queenSideIsVacant && queenSideSafe)
             moveList.Add(new Move { origin = originOfKing, destination = queenDest, moveType = MoveType.CASTLE, promoPieceType = Piece.NONE });
+
+
+    }
+
+    private static ulong getMovesAtSquareKnight(Square currSquare, Side  side) {
+        ulong knightBB = (1UL << (int)currSquare);
+        return northEastEast(knightBB)
+            | northNorthEast(knightBB)
+            | northWestWest(knightBB)
+            | northNorthWest(knightBB)
+            | southEastEast(knightBB)
+            | southSouthEast(knightBB)
+            | southWestWest(knightBB)
+            | southSouthWest(knightBB); 
 
     }
 
