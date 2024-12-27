@@ -20,8 +20,18 @@ class Engine
             // process uci input 
         }*/
 
-        Console.WriteLine(BitOperations.TrailingZeroCount(16711680)); 
-
+        char[][] chessBoard = new char[][]{
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', 'k', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', 'P', 'p', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', ' ', 'K', ' ', ' ', ' ' },
+        };
+        Board board = Board.charArrayToBoard(chessBoard);
+        Moves.printMoves(board); 
     }
 
 }

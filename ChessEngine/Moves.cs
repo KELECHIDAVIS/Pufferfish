@@ -1,5 +1,7 @@
 ﻿
 using System.Numerics;
+using System.Xml.Serialization;
+
 public enum MoveType
 {
     QUIET, // just moving a piece  
@@ -88,15 +90,17 @@ class Moves {
 
         List<Move> moveList = new List<Move>();
         // initially max val because when not in check pieces can capture or push to whereever they want 
-        ulong pushMask = UInt64.MaxValue, captureMask=UInt64.MaxValue; // for pieces that are checking our king these masks represent that paths that can be blocked and the checkers that should be captured 
+        ulong captureMask, pushMask;  // for pieces that are checking our king these masks represent that paths that can be blocked and the checkers that should be captured 
+        ulong pinningRays; // if a piece is pinned it can only move along the pinning rays
         
-        
-        possibleKing(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black, CBK,  CBQ, captureMask, pushMask);
-        possiblePawnBlack(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, EP, );
-        possibleRook(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black);
-        possibleBishop(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black);
-        possibleQueen(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black); 
-        possibleKnight(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black);
+        var result = possibleKing(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black, CBK,  CBQ);
+        captureMask = result.captureMask; pushMask = result.pushMask; pinningRays = result.pinningRays; 
+
+        possiblePawnBlack(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, EP, captureMask, pushMask);
+        possibleRook(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black, captureMask , pushMask);
+        possibleBishop(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black, captureMask, pushMask);
+        possibleQueen(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black, captureMask, pushMask); 
+        possibleKnight(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black, captureMask, pushMask, pinningRays );
 
         return moveList; 
     }
@@ -111,12 +115,16 @@ class Moves {
 
         // get all the moves from each piece on this side 
         List<Move> moveList = new List<Move>();
-        possiblePawnWhite(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, EP);
-        possibleRook(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White);
-        possibleBishop(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White);
-        possibleQueen(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White);
-        possibleKnight(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White);
-        possibleKing(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White, CWK, CWQ);
+        ulong captureMask, pushMask; // for pieces that are checking our king these masks represent that paths that can be blocked and the checkers that should be captured 
+        ulong pinningRays; 
+
+        var result = possibleKing(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White, CWK, CWQ);
+        captureMask = result.captureMask; pushMask = result.pushMask; pinningRays = result.pinningRays; 
+        possiblePawnWhite(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, EP , captureMask, pushMask);
+        possibleRook(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White, captureMask, pushMask);
+        possibleBishop(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White, captureMask, pushMask);
+        possibleQueen(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White, captureMask, pushMask);
+        possibleKnight(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White, captureMask, pushMask, pinningRays);
 
         return moveList;
 
@@ -138,10 +146,11 @@ class Moves {
     /// <param name="emptyBB"> places that are empty</param>
     /// <param name="EP"> En passant bb that can be used to find if en passants are possible </param>
     /// <returns></returns>
-    private static void possiblePawnWhite(List<Move> moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, ulong EP ) {
+    private static void possiblePawnWhite(List<Move> moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, ulong EP, ulong captureMask , ulong pushMask) {
         
         // capture right ;white pawn can't be on rank 7 because that'd be a promotion;  shift bits 9 to left ; make sure there is a caputarable piece there and make sure that piece is not on a file (left column wrap around)
         PAWN_MOVES = ((piecesBB[(int)Side.White][(int)Piece.Pawn] & ~RANKS[6]) << 9) & (captureBB & ~FILES[0]);
+        PAWN_MOVES &= captureMask; // if there is a check on king should only be able to capture checking piece 
 
         // now if a bit is on in that bb convert into move notation
         //x1,y1,x2,y2 
@@ -159,7 +168,7 @@ class Moves {
         // left capture 
         //wp cant be on rank7; shift left 7; capturable piece has to be at destination and can't be on file h; 
         PAWN_MOVES = ((piecesBB[(int)Side.White][(int)Piece.Pawn] & ~RANKS[6]) << 7) & (captureBB & ~FILES[7]);
-
+        PAWN_MOVES &= captureMask;
 
         while (PAWN_MOVES > 0) {
             currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
@@ -171,6 +180,7 @@ class Moves {
 
         // push pawn 1 ; that spot has to be empty
         PAWN_MOVES = ((piecesBB[(int)Side.White][(int)Piece.Pawn] & ~RANKS[6]) << 8) & emptyBB;
+        PAWN_MOVES &= pushMask; 
 
         while (PAWN_MOVES > 0) {
             currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
@@ -182,6 +192,7 @@ class Moves {
 
         //push pawn 2 ; both spot in front and destination has to be empty ; destination has to be on rank 4
         PAWN_MOVES = (piecesBB[(int)Side.White][(int)Piece.Pawn] << 16) & RANKS[3] & emptyBB & (emptyBB << 8);
+        PAWN_MOVES &= pushMask;
 
         while (PAWN_MOVES > 0) {
             currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
@@ -197,6 +208,7 @@ class Moves {
         // capture right promotion
         //destination has to be capturable, on rank 8, and can't be on file a (wrap around) 
         PAWN_MOVES = (piecesBB[(int)Side.White][(int)Piece.Pawn] << 9) & captureBB & RANKS[7] & (~FILES[0]);
+        PAWN_MOVES &= captureMask; 
 
         // extract valid promotions 
         // in form of x1,x2,PromoType,'P'  ; Ex: 45QP: a pawn in col 4 captures right and promotes to queen
@@ -215,6 +227,7 @@ class Moves {
 
         // capture left promo 
         PAWN_MOVES = (piecesBB[(int)Side.White][(int)Piece.Pawn] << 7) & captureBB & RANKS[7] & (~FILES[7]);
+        PAWN_MOVES &= captureMask;
 
         while (PAWN_MOVES > 0) {
             currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
@@ -230,6 +243,7 @@ class Moves {
 
         // push 1 promo 
         PAWN_MOVES = (piecesBB[(int)Side.White][(int)Piece.Pawn] << 8) & emptyBB & RANKS[7];
+        PAWN_MOVES &= pushMask;
 
         // extract valid promos 
         while (PAWN_MOVES > 0) {
@@ -250,6 +264,8 @@ class Moves {
         // wp has to be left of bp, they both have to be on rank 5, can't wrap around to file a, and has to be on square where ep is possible 
         // gives the piece to remove, NOT THE DESTINATION 
         PAWN_MOVES = (piecesBB[(int)Side.White][(int)Piece.Pawn] << 1) & piecesBB[(int)Side.Black][(int)Piece.Pawn] & RANKS[4] & ~FILES[0] & EP;
+        // should only add pawn move if pawnmoves and capturemask or pushbb and push mask 
+        PAWN_MOVES = (PAWN_MOVES & captureMask) | (((PAWN_MOVES << 8) & pushMask) >> 8); // if the capture mask is on at that spot or the push is on on the destination add that move 
 
         int destination;
         // we know there is only going to be one 
@@ -266,6 +282,7 @@ class Moves {
         //left capture 
 
         PAWN_MOVES = (piecesBB[(int)Side.White][(int)Piece.Pawn] >> 1) & piecesBB[(int)Side.Black][(int)Piece.Pawn] & RANKS[4] & ~FILES[7] & EP;
+        PAWN_MOVES = (PAWN_MOVES & captureMask) | (((PAWN_MOVES << 8) & pushMask) >> 8);
 
         // we know there is only going to be one 
         if (PAWN_MOVES > 0)
@@ -280,12 +297,12 @@ class Moves {
         
     }
 
-
-    private static void possiblePawnBlack(List<Move> moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, ulong EP)
+    // captures have to be valid in the capture mask, all pushes have to be valid in the push mask 
+    private static void possiblePawnBlack(List<Move> moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, ulong EP, ulong captureMask , ulong pushMask)
     {
         // capture right ; current pawn can't be on rank 2 cus that just promo and result must be capturable and can't be on file a 
         PAWN_MOVES = ((piecesBB[(int)Side.Black][(int)Piece.Pawn] & ~RANKS[1]) >> 7) & (captureBB & ~FILES[0]);
-
+        PAWN_MOVES &= captureMask; // capture has to be valid in capture mask in event of check (if no check all bits are set and nothing is changed 
         // now if a bit is on in that bb convert into move notation
         //x1,y1,x2,y2 
         int currentIndex;
@@ -303,7 +320,7 @@ class Moves {
 
         // left capture 
         PAWN_MOVES = ((piecesBB[(int)Side.Black][(int)Piece.Pawn] & ~RANKS[1]) >> 9) & (captureBB & ~FILES[7]);
-
+        PAWN_MOVES &= captureMask;
 
         while (PAWN_MOVES > 0)
         {
@@ -316,6 +333,7 @@ class Moves {
 
         // push pawn 1 ; that spot has to be empty
         PAWN_MOVES = ((piecesBB[(int)Side.Black][(int)Piece.Pawn] & ~RANKS[1]) >> 8) & emptyBB;
+        PAWN_MOVES &= pushMask; 
 
         while (PAWN_MOVES > 0)
         {
@@ -332,6 +350,7 @@ class Moves {
 
         //push pawn 2 ; both spot in front and destination has to be empty ; destination has to be on rank 5
         PAWN_MOVES = (piecesBB[(int)Side.Black][(int)Piece.Pawn] >> 16) & RANKS[4] & emptyBB & (emptyBB >> 8);
+        PAWN_MOVES &= pushMask; 
 
         while (PAWN_MOVES > 0)
         {
@@ -348,7 +367,7 @@ class Moves {
         // capture right promotion
         //destination has to be capturable, on rank 1, and can't be on file a (wrap around) 
         PAWN_MOVES = (piecesBB[(int)Side.Black][(int)Piece.Pawn] >> 7) & captureBB & RANKS[0] & (~FILES[0]);
-
+        PAWN_MOVES &= captureMask; 
         // extract valid promotions 
         // in form of x1,x2,PromoType,'P'  ; Ex: 45QP: a pawn in col 4 captures right and promotes to queen
 
@@ -367,6 +386,7 @@ class Moves {
 
         // capture left promo 
         PAWN_MOVES = (piecesBB[(int)Side.Black][(int)Piece.Pawn] >> 9) & captureBB & RANKS[0] & (~FILES[7]);
+        PAWN_MOVES &= captureMask;
 
         while (PAWN_MOVES > 0)
         {
@@ -383,7 +403,7 @@ class Moves {
 
         // push 1 promo 
         PAWN_MOVES = (piecesBB[(int)Side.Black][(int)Piece.Pawn] >> 8) & emptyBB & RANKS[0];
-
+        PAWN_MOVES &= pushMask; 
         // extract valid promos 
         while (PAWN_MOVES > 0)
         {
@@ -402,8 +422,18 @@ class Moves {
 
         // right capture 
         // bp has to be left of wp, both have to be on rank 4, can't wrap around to file a, has to be on a valid ep square 
+
         // give square of piece to remove NOT DESTINATION 
+        // if check is present 
+        // the piece to remove should be in capture mask if it is giving check since that piece is being captured 
+        // or the destination can be in the push mask to block a check 
+
+
         PAWN_MOVES = (piecesBB[(int)Side.Black][(int)Piece.Pawn] << 1) & piecesBB[(int)Side.White][(int)Piece.Pawn] &  RANKS[3] & ~FILES[0] &EP;
+
+        // should only add pawn move if pawnmoves and capturemask or pushbb and push mask 
+        PAWN_MOVES = (PAWN_MOVES&captureMask)| (((PAWN_MOVES >> 8) & pushMask )<< 8); // if the capture mask is on at that spot or the push is on on the destination add that move 
+        
         // we know there is only going to be one 
         if (PAWN_MOVES > 0)
         {
@@ -418,7 +448,7 @@ class Moves {
         //left capture 
 
         PAWN_MOVES = (piecesBB[(int)Side.Black][(int)Piece.Pawn] >> 1) & piecesBB[(int)Side.White][(int)Piece.Pawn] & RANKS[3] & ~FILES[7] & EP;
-
+        PAWN_MOVES = (PAWN_MOVES & captureMask) | (((PAWN_MOVES >> 8) & pushMask) << 8); 
         // we know there is only going to be one 
         if (PAWN_MOVES > 0)
         {
@@ -434,7 +464,7 @@ class Moves {
 
 
     }
-    private static void possibleRook( List<Move> moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB , Side side) {
+    private static void possibleRook( List<Move> moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB , Side side, ulong captureMask, ulong pushMask ) {
    
         // iterate through all the rooks 
         ulong rookBB = piecesBB[(int)side][(int)Piece.Rook]; 
@@ -449,23 +479,20 @@ class Moves {
 
             ROOK_MOVES = getRookMoves(ROOK_MOVES, square); // get possible rook moves from function 
 
-            ROOK_MOVES &= (captureBB | emptyBB); // make sure that moves are only on capturable pieces and empty spaces by anding 
+            ulong captures = ROOK_MOVES & captureBB& captureMask; // a square that has a capturable piece is a capture 
+            ulong pushes = ROOK_MOVES &emptyBB&  pushMask;
 
-            MoveType captureOrNot;
-            ulong indexMask; 
-            // parse moves from ROOK MOVES 
-            while (ROOK_MOVES > 0) {
-                int index = BitOperations.TrailingZeroCount(ROOK_MOVES);
-                indexMask = 1UL << index; 
-
-                // see if they captured something or not; if > 0 that means it captured a capturable piece 
-                if ((indexMask & captureBB) > 0){
-                    captureOrNot = MoveType.CAPTURE;
-                }
-                else { captureOrNot = MoveType.QUIET;  }
-
-                moveList.Add(new Move { origin = square, destination= index, moveType= captureOrNot, promoPieceType= Piece.NONE});
-                ROOK_MOVES &= ~indexMask; 
+            //for every capture 
+            while(captures > 0) {
+                int index = BitOperations.TrailingZeroCount(captures);
+                moveList.Add(new Move { origin = square, destination = index, moveType = MoveType.CAPTURE, promoPieceType = Piece.NONE });
+                captures &= ~(1UL << index);
+            }
+            //for every push 
+            while (pushes  > 0) {
+                int index = BitOperations.TrailingZeroCount(pushes);
+                moveList.Add(new Move { origin = square, destination = index, moveType = MoveType.QUIET, promoPieceType = Piece.NONE });
+                pushes &= ~(1UL << index);
             }
             // turn off the current index
             rookBB &= ~(1UL<<square);
@@ -484,7 +511,7 @@ class Moves {
     }
 
 
-    private static void possibleBishop(List<Move> moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side) {
+    private static void possibleBishop(List<Move> moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side,ulong captureMask, ulong pushMask ) {
         
 
         // iterate through all the bishops 
@@ -499,25 +526,20 @@ class Moves {
             BISHOP_MOVES = (~emptyBB) & ~(1UL << square); // get blocker board 
 
             BISHOP_MOVES = getBishopMoves(BISHOP_MOVES, square); // get possible bishop moves from function 
+            ulong captures = BISHOP_MOVES & captureBB & captureMask; // a square that has a capturable piece is a capture 
+            ulong pushes = BISHOP_MOVES & emptyBB & pushMask;
 
-            BISHOP_MOVES &= (captureBB | emptyBB); // make sure that moves are only on capturable pieces and empty spaces by anding 
-
-            MoveType captureOrNot;
-            ulong indexMask;
-            // parse moves from ROOK MOVES 
-            while (BISHOP_MOVES > 0) {
-                int index = BitOperations.TrailingZeroCount(BISHOP_MOVES);
-                indexMask = 1UL << index;
-
-                // see if they captured something or not; if > 0 that means it captured a capturable piece 
-                if ((indexMask & captureBB) > 0)
-                {
-                    captureOrNot = MoveType.CAPTURE;
-                }
-                else { captureOrNot = MoveType.QUIET; }
-
-                moveList.Add(new Move { origin = square, destination = index, moveType = captureOrNot, promoPieceType = Piece.NONE });
-                BISHOP_MOVES &= ~(indexMask);
+            //for every capture 
+            while (captures > 0) {
+                int index = BitOperations.TrailingZeroCount(captures);
+                moveList.Add(new Move { origin = square, destination = index, moveType = MoveType.CAPTURE, promoPieceType = Piece.NONE });
+                captures &= ~(1UL << index);
+            }
+            //for every push 
+            while (pushes > 0) {
+                int index = BitOperations.TrailingZeroCount(pushes);
+                moveList.Add(new Move { origin = square, destination = index, moveType = MoveType.QUIET, promoPieceType = Piece.NONE });
+                pushes &= ~(1UL << index);
             }
             // turn off the current index
             bishopBB &= ~(1UL << square);
@@ -542,7 +564,7 @@ class Moves {
     /// <param name="captureBB"></param>
     /// <param name="emptyBB"></param>
     /// <returns></returns>
-    private static void possibleQueen(List<Move> moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side) {
+    private static void possibleQueen(List<Move> moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side, ulong captureMask , ulong pushMask) {
 
         // get all queen positions 
         ulong queenBB = piecesBB[(int)side][(int)Piece.Queen];
@@ -556,26 +578,22 @@ class Moves {
             QUEEN_MOVES = (~emptyBB) & ~(1UL << square); // get blocker board 
 
             // or rook moves and bishop moves to get all possible queens moves 
-            QUEEN_MOVES = getRookMoves(QUEEN_MOVES, square) | getBishopMoves(QUEEN_MOVES,square) ; 
+            QUEEN_MOVES = getRookMoves(QUEEN_MOVES, square) | getBishopMoves(QUEEN_MOVES,square) ;
 
-            QUEEN_MOVES &= (captureBB | emptyBB); // make sure that moves are only on capturable pieces and empty spaces by anding 
+            ulong captures = QUEEN_MOVES & captureBB & captureMask; // a square that has a capturable piece is a capture 
+            ulong pushes = QUEEN_MOVES & emptyBB & pushMask;
 
-            MoveType captureOrNot;
-            ulong indexMask;
-            // parse moves from QUEEN MOVES 
-            while (QUEEN_MOVES > 0) {
-                int index = BitOperations.TrailingZeroCount(QUEEN_MOVES);
-                indexMask = 1UL << index;
-
-                // see if they captured something or not; if > 0 that means it captured a capturable piece 
-                if ((indexMask & captureBB) > 0)
-                {
-                    captureOrNot = MoveType.CAPTURE;
-                }
-                else { captureOrNot = MoveType.QUIET; }
-
-                moveList.Add(new Move { origin = square, destination = index, moveType = captureOrNot, promoPieceType = Piece.NONE });
-                QUEEN_MOVES &= ~(indexMask);
+            //for every capture 
+            while (captures > 0) {
+                int index = BitOperations.TrailingZeroCount(captures);
+                moveList.Add(new Move { origin = square, destination = index, moveType = MoveType.CAPTURE, promoPieceType = Piece.NONE });
+                captures &= ~(1UL << index);
+            }
+            //for every push 
+            while (pushes > 0) {
+                int index = BitOperations.TrailingZeroCount(pushes);
+                moveList.Add(new Move { origin = square, destination = index, moveType = MoveType.QUIET, promoPieceType = Piece.NONE });
+                pushes &= ~(1UL << index);
             }
             // turn off the current index
             queenBB &= ~(1UL << square);
@@ -608,184 +626,178 @@ class Moves {
         return (bb >> 17) & ~(FILES[7]);
     }
 
-    private static ulong possibleKnight(List<Move> moveList , ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side) {
+    private static void possibleKnight(List<Move> moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side, ulong captureMask, ulong pushMask, ulong pinningRays) {
 
 
 
         int origin;
-        ulong indexMask;
-        MoveType captureOrNot;
-        ulong validMovesBB=0; 
+        ulong captures, pushes; 
         // make sure the move is either on empty or capturable square 
 
-        KNIGHT_MOVES = northEastEast(piecesBB[(int)side][(int)Piece.Knight]) & (captureBB |emptyBB); // north east east 
-        validMovesBB |= KNIGHT_MOVES; 
-        // parse moves for current moveset 
-        while (KNIGHT_MOVES > 0) {
-            int index = BitOperations.TrailingZeroCount(KNIGHT_MOVES);
-            indexMask = (1UL << index);
+        KNIGHT_MOVES = northEastEast(piecesBB[(int)side][(int)Piece.Knight]) ; // north east east 
+        captures = KNIGHT_MOVES & captureBB & captureMask; // has to comply with capture mask 
+        pushes = KNIGHT_MOVES & emptyBB & pushMask;
 
-            if ((indexMask & captureBB) > 0){// something was captured 
-                captureOrNot = MoveType.CAPTURE; 
-            }else{
-                captureOrNot = MoveType.QUIET;     
-            }
-            origin = index - 10; 
-            moveList.Add(new Move { origin = origin, destination = index , moveType= captureOrNot, promoPieceType= Piece.NONE }); 
-            KNIGHT_MOVES &= ~indexMask;
+        while (captures > 0) {
+            int index = BitOperations.TrailingZeroCount(captures);
+            origin = index - 10;
+            // if knight is in the pinning ray it can't move at all 
+            if ((pinningRays & (1UL<<origin)) ==0 ) // add move if this knight isn't pinned 
+                moveList.Add(new Move { origin = origin, destination = index, moveType = MoveType.CAPTURE, promoPieceType = Piece.NONE });
+            captures &= ~(1UL<<index) ;
+        }
+        // parse moves for current moveset 
+        while (pushes > 0) {
+            int index = BitOperations.TrailingZeroCount(pushes);
+            origin = index - 10;
+            if ((pinningRays & (1UL << origin)) == 0)
+                moveList.Add(new Move { origin = origin, destination = index, moveType = MoveType.QUIET, promoPieceType = Piece.NONE });
+            pushes  &= ~(1UL << index);
         }
 
         // make sure the move is either on empty or capturable square 
 
-        KNIGHT_MOVES = northNorthEast(piecesBB[(int)side][(int)Piece.Knight]) & (captureBB | emptyBB);
-        validMovesBB |= KNIGHT_MOVES;
+        KNIGHT_MOVES = northNorthEast(piecesBB[(int)side][(int)Piece.Knight]) ;
+        captures = KNIGHT_MOVES & captureBB & captureMask; // has to comply with capture mask 
+        pushes = KNIGHT_MOVES & emptyBB & pushMask;
 
-        // parse moves for current moveset 
-        while (KNIGHT_MOVES > 0) {
-            int index = BitOperations.TrailingZeroCount(KNIGHT_MOVES);
-            indexMask = (1UL << index);
-
-            if ((indexMask & captureBB) > 0)
-            {// something was captured 
-                captureOrNot = MoveType.CAPTURE;
-            }
-            else
-            {
-                captureOrNot = MoveType.QUIET;
-            }
+        while (captures > 0) {
+            int index = BitOperations.TrailingZeroCount(captures);
             origin = index - 17;
-            moveList.Add(new Move { origin = origin, destination = index, moveType = captureOrNot, promoPieceType = Piece.NONE });
-            KNIGHT_MOVES &= ~indexMask;
+            if ((pinningRays & (1UL << origin)) == 0)
+                moveList.Add(new Move { origin = origin, destination = index, moveType = MoveType.CAPTURE, promoPieceType = Piece.NONE });
+            captures &= ~(1UL << index);
+        }
+        // parse moves for current moveset 
+        while (pushes > 0) {
+            int index = BitOperations.TrailingZeroCount(pushes);
+            origin = index - 17;
+            if ((pinningRays & (1UL << origin)) == 0)
+                moveList.Add(new Move { origin = origin, destination = index, moveType = MoveType.QUIET, promoPieceType = Piece.NONE });
+            pushes &= ~(1UL << index);
         }
 
-        KNIGHT_MOVES = northWestWest(piecesBB[(int)side][(int)Piece.Knight]) & (captureBB | emptyBB);
-        validMovesBB |= KNIGHT_MOVES;
+        KNIGHT_MOVES = northWestWest(piecesBB[(int)side][(int)Piece.Knight]) ;
+        captures = KNIGHT_MOVES & captureBB & captureMask; // has to comply with capture mask 
+        pushes = KNIGHT_MOVES & emptyBB & pushMask;
 
-        // parse moves for current moveset 
-        while (KNIGHT_MOVES > 0) {
-            int index = BitOperations.TrailingZeroCount(KNIGHT_MOVES);
-            indexMask = (1UL << index);
-
-            if ((indexMask & captureBB) > 0)
-            {// something was captured 
-                captureOrNot = MoveType.CAPTURE;
-            }
-            else
-            {
-                captureOrNot = MoveType.QUIET;
-            }
+        while (captures > 0) {
+            int index = BitOperations.TrailingZeroCount(captures);
             origin = index - 6;
-            moveList.Add(new Move { origin = origin, destination = index, moveType = captureOrNot, promoPieceType = Piece.NONE });
-            KNIGHT_MOVES &= ~indexMask;
+            if ((pinningRays & (1UL << origin)) == 0)
+                moveList.Add(new Move { origin = origin, destination = index, moveType = MoveType.CAPTURE, promoPieceType = Piece.NONE });
+            captures &= ~(1UL << index);
+        }
+        // parse moves for current moveset 
+        while (pushes > 0) {
+            int index = BitOperations.TrailingZeroCount(pushes);
+            origin = index - 6;
+            if ((pinningRays & (1UL << origin)) == 0)
+                moveList.Add(new Move { origin = origin, destination = index, moveType = MoveType.QUIET, promoPieceType = Piece.NONE });
+            pushes &= ~(1UL << index);
         }
 
-        KNIGHT_MOVES = northNorthWest(piecesBB[(int)side][(int)Piece.Knight]) & (captureBB | emptyBB);
-        validMovesBB |= KNIGHT_MOVES;
+        KNIGHT_MOVES = northNorthWest(piecesBB[(int)side][(int)Piece.Knight]);
+        captures = KNIGHT_MOVES & captureBB & captureMask; // has to comply with capture mask 
+        pushes = KNIGHT_MOVES & emptyBB & pushMask;
 
-        // parse moves for current moveset 
-        while (KNIGHT_MOVES > 0) {
-            int index = BitOperations.TrailingZeroCount(KNIGHT_MOVES);
-            indexMask = (1UL << index);
-
-            if ((indexMask & captureBB) > 0)
-            {// something was captured 
-                captureOrNot = MoveType.CAPTURE;
-            }
-            else
-            {
-                captureOrNot = MoveType.QUIET;
-            }
+        while (captures > 0) {
+            int index = BitOperations.TrailingZeroCount(captures);
             origin = index - 15;
-            moveList.Add(new Move { origin = origin, destination = index, moveType = captureOrNot, promoPieceType = Piece.NONE });
-            KNIGHT_MOVES &= ~indexMask;
+            if ((pinningRays & (1UL << origin)) == 0)
+                moveList.Add(new Move { origin = origin, destination = index, moveType = MoveType.CAPTURE, promoPieceType = Piece.NONE });
+            captures &= ~(1UL << index);
+        }
+        // parse moves for current moveset 
+        while (pushes > 0) {
+            int index = BitOperations.TrailingZeroCount(pushes);
+            origin = index - 15;
+            if ((pinningRays & (1UL << origin)) == 0)
+                moveList.Add(new Move { origin = origin, destination = index, moveType = MoveType.QUIET, promoPieceType = Piece.NONE });
+            pushes &= ~(1UL << index);
         }
 
-        KNIGHT_MOVES = southEastEast(piecesBB[(int)side][(int)Piece.Knight]) & (captureBB | emptyBB);
-        validMovesBB |= KNIGHT_MOVES;
+        KNIGHT_MOVES = southEastEast(piecesBB[(int)side][(int)Piece.Knight]);
+        captures = KNIGHT_MOVES & captureBB & captureMask; // has to comply with capture mask 
+        pushes = KNIGHT_MOVES & emptyBB & pushMask;
 
-        // parse moves for current moveset 
-        while (KNIGHT_MOVES > 0) {
-            int index = BitOperations.TrailingZeroCount(KNIGHT_MOVES);
-            indexMask = (1UL << index);
-
-            if ((indexMask & captureBB) > 0)
-            {// something was captured 
-                captureOrNot = MoveType.CAPTURE;
-            }
-            else
-            {
-                captureOrNot = MoveType.QUIET;
-            }
+        while (captures > 0) {
+            int index = BitOperations.TrailingZeroCount(captures);
             origin = index +6;
-            moveList.Add(new Move { origin = origin, destination = index, moveType = captureOrNot, promoPieceType = Piece.NONE });
-            KNIGHT_MOVES &= ~indexMask;
+            if ((pinningRays & (1UL << origin)) == 0)
+                moveList.Add(new Move { origin = origin, destination = index, moveType = MoveType.CAPTURE, promoPieceType = Piece.NONE });
+            captures &= ~(1UL << index);
+        }
+        // parse moves for current moveset 
+        while (pushes > 0) {
+            int index = BitOperations.TrailingZeroCount(pushes);
+            origin = index +6;
+            if ((pinningRays & (1UL << origin)) == 0)
+                moveList.Add(new Move { origin = origin, destination = index, moveType = MoveType.QUIET, promoPieceType = Piece.NONE });
+            pushes &= ~(1UL << index);
         }
 
-        KNIGHT_MOVES = southSouthEast(piecesBB[(int)side][(int)Piece.Knight]) & (captureBB | emptyBB);
-        validMovesBB |= KNIGHT_MOVES;
+        KNIGHT_MOVES = southSouthEast(piecesBB[(int)side][(int)Piece.Knight]) ;
+        captures = KNIGHT_MOVES & captureBB & captureMask; // has to comply with capture mask 
+        pushes = KNIGHT_MOVES & emptyBB & pushMask;
 
+        while (captures > 0) {
+            int index = BitOperations.TrailingZeroCount(captures);
+            origin = index +15;
+            if ((pinningRays & (1UL << origin)) == 0)
+                moveList.Add(new Move { origin = origin, destination = index, moveType = MoveType.CAPTURE, promoPieceType = Piece.NONE });
+            captures &= ~(1UL << index);
+        }
         // parse moves for current moveset 
-        while (KNIGHT_MOVES > 0) {
-            int index = BitOperations.TrailingZeroCount(KNIGHT_MOVES);
-            indexMask = (1UL << index);
-
-            if ((indexMask & captureBB) > 0)
-            {// something was captured 
-                captureOrNot = MoveType.CAPTURE;
-            }
-            else
-            {
-                captureOrNot = MoveType.QUIET;
-            }
-            origin = index + 15;
-            moveList.Add(new Move { origin = origin, destination = index, moveType = captureOrNot, promoPieceType = Piece.NONE });
-            KNIGHT_MOVES &= ~indexMask;
+        while (pushes > 0) {
+            int index = BitOperations.TrailingZeroCount(pushes);
+            origin = index +15;
+            if ((pinningRays & (1UL << origin)) == 0)
+                moveList.Add(new Move { origin = origin, destination = index, moveType = MoveType.QUIET, promoPieceType = Piece.NONE });
+            pushes &= ~(1UL << index);
         }
 
-        KNIGHT_MOVES = southWestWest(piecesBB[(int)side][(int)Piece.Knight]) & (captureBB | emptyBB);
-        validMovesBB |= KNIGHT_MOVES;
+        KNIGHT_MOVES = southWestWest(piecesBB[(int)side][(int)Piece.Knight]) ;
+        captures = KNIGHT_MOVES & captureBB & captureMask; // has to comply with capture mask 
+        pushes = KNIGHT_MOVES & emptyBB & pushMask;
 
-        // parse moves for current moveset 
-        while (KNIGHT_MOVES > 0) {
-            int index = BitOperations.TrailingZeroCount(KNIGHT_MOVES);
-            indexMask = (1UL << index);
-
-            if ((indexMask & captureBB) > 0)
-            {// something was captured 
-                captureOrNot = MoveType.CAPTURE;
-            }
-            else
-            {
-                captureOrNot = MoveType.QUIET;
-            }
+        while (captures > 0) {
+            int index = BitOperations.TrailingZeroCount(captures);
             origin = index + 10;
-            moveList.Add(new Move { origin = origin, destination = index, moveType = captureOrNot, promoPieceType = Piece.NONE });
-            KNIGHT_MOVES &= ~indexMask; 
+            if ((pinningRays & (1UL << origin)) == 0)
+                moveList.Add(new Move { origin = origin, destination = index, moveType = MoveType.CAPTURE, promoPieceType = Piece.NONE });
+            captures &= ~(1UL << index);
         }
-
-        KNIGHT_MOVES = southSouthWest(piecesBB[(int)side][(int)Piece.Knight]) & (captureBB | emptyBB);
-        validMovesBB |= KNIGHT_MOVES;
-
         // parse moves for current moveset 
-        while (KNIGHT_MOVES > 0) {
-            int index = BitOperations.TrailingZeroCount(KNIGHT_MOVES);
-            indexMask = (1UL << index);
-
-            if ((indexMask & captureBB) > 0)
-            {// something was captured 
-                captureOrNot = MoveType.CAPTURE;
-            }
-            else
-            {
-                captureOrNot = MoveType.QUIET;
-            }
-            origin = index + 17;
-            moveList.Add(new Move { origin = origin, destination = index, moveType = captureOrNot, promoPieceType = Piece.NONE });
-            KNIGHT_MOVES &= ~indexMask;
+        while (pushes > 0) {
+            int index = BitOperations.TrailingZeroCount(pushes);
+            origin = index + 10;
+            if ((pinningRays & (1UL << origin)) == 0)
+                moveList.Add(new Move { origin = origin, destination = index, moveType = MoveType.QUIET, promoPieceType = Piece.NONE });
+            pushes &= ~(1UL << index);
         }
 
-        return validMovesBB; 
-        
+        KNIGHT_MOVES = southSouthWest(piecesBB[(int)side][(int)Piece.Knight]) ;
+        captures = KNIGHT_MOVES & captureBB & captureMask; // has to comply with capture mask 
+        pushes = KNIGHT_MOVES & emptyBB & pushMask;
+
+        while (captures > 0) {
+            int index = BitOperations.TrailingZeroCount(captures);
+            origin = index +17;
+            if ((pinningRays & (1UL << origin)) == 0)
+                moveList.Add(new Move { origin = origin, destination = index, moveType = MoveType.CAPTURE, promoPieceType = Piece.NONE });
+            captures &= ~(1UL << index);
+        }
+        // parse moves for current moveset 
+        while (pushes > 0) {
+            int index = BitOperations.TrailingZeroCount(pushes);
+            origin = index;
+            if ((pinningRays & (1UL << origin)) == 0)
+                moveList.Add(new Move { origin = origin, destination = index, moveType = MoveType.QUIET, promoPieceType = Piece.NONE });
+            pushes &= ~(1UL << index);
+        }
+
+
     }
     //KNIGHT MOVES 
 
@@ -797,9 +809,10 @@ class Moves {
     // push mask is the mask to push into to block check; both will be all squares initiall
     
     // since push mask and capture mask are primitives they could be returned as a tuple 
-    private static void possibleKing(List<Move> moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side, bool castleKingSide, bool castleQueenSide, ulong captureMask, ulong pushMask) {
+    private static (ulong captureMask, ulong pushMask, ulong pinningRays) possibleKing(List<Move> moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side, bool castleKingSide, bool castleQueenSide) {
 
-
+        ulong captureMask = ulong.MaxValue, pushMask = ulong.MaxValue, pinningRays = 0; 
+        
         // find the kings reg attack pattern
         ulong currentKing = piecesBB[(int)side][(int)Piece.King];
         int originOfKing= BitOperations.TrailingZeroCount(currentKing); // get current square of king; we know there's only ever one 
@@ -843,13 +856,12 @@ class Moves {
         // sliding pieces 
         // blockers would be all pieces on the board removing the current square 
         ulong blockers = (~emptyBB) & ~(1UL<<originOfKing);
-        // then and with the opponents capturable bb to make sure that they are valid moves in this context 
-        ulong opponentCapturable = sideBB[(int)(side)] ^ piecesBB[(int)side][(int)Piece.King];
+        
 
         // bishop and rook 
         // get possible sliding moves then make sure they are on capturable pieces then make sure the correct piece can be seen 
-        ulong rookMoves = (getRookMoves(blockers, originOfKing) & opponentCapturable);
-        ulong bishopMoves = (getBishopMoves(blockers, originOfKing) & opponentCapturable); 
+        ulong rookMoves = (getRookMoves(blockers, originOfKing) );
+        ulong bishopMoves = (getBishopMoves(blockers, originOfKing) ); 
         attackers |= (bishopMoves & piecesBB[opponent][(int) Piece.Bishop]); 
         attackers |= (rookMoves & piecesBB[opponent][(int) Piece.Rook]);
 
@@ -873,8 +885,8 @@ class Moves {
         // now we have all the possible attackers
 
         // two possibilities : 
-        int numCheckers = BitOperations.PopCount(attackers); 
-
+        int numCheckers = BitOperations.PopCount(attackers) ; 
+        
         // more than one checker 
         MoveType captureOrNot;
         ulong indexMask;
@@ -882,7 +894,8 @@ class Moves {
         
         if(numCheckers >1) {
             // it is not possible to block or capture both attackers so just return the valid moves we already have 
-            //set push and capture mask to 0 because the only thing that can save the king is an a
+            //set push and capture mask to 0 because the only thing that can save the king is a king move
+
             pushMask = 0;
             captureMask = 0;
             while (KING_MOVES > 0) {
@@ -934,7 +947,7 @@ class Moves {
                         pushMask = seast ^ attackers;
                         break;
                     }
-                    north <<= 8; south >>= 8; east <<= 1; west >>= 1; nwest <<= 7; neast <<= 9; swest >>= 9; seast >>= 7; 
+                    north =  (north<<8) | north; south= (south>> 8) |south ; east = (east<<1) | east ; west = (west>> 1) |west ; nwest = (nwest >> 7)| nwest; neast = (neast<<9) | neast; swest = (swest>>9) | swest; seast =  (seast>>7) |seast; 
                 }
             }
             // only valid king moves would also only be evasions 
@@ -960,33 +973,52 @@ class Moves {
                 moveList.Add(new Move { origin = originOfKing, destination = index, moveType = captureOrNot, promoPieceType = Piece.NONE });
                 KING_MOVES &= ~indexMask;
             }
+
+            //CASTLING can only castle when not in check 
+            ulong kingInBetween = (side == Side.White) ? wKInBetween : bkInBetween; // the squares in between the rook and king 
+            ulong queenInBetween = (side == Side.White) ? wQInBetween : bQInBetween;
+
+            int kingDest = (side == Side.White) ? wKSideCastleDest : bKSideCastleDest; // destination on where you're castling 
+            int queenDest = (side == Side.White) ? wQSideCastleDest : bQSideCastleDest;
+
+            // and the in between squares with all pieces, if returns 0 there are no pieces in there
+            bool kingSideIsVacant = (kingInBetween & ~emptyBB) == 0;
+            bool queenSideIsVacant = (queenInBetween & ~emptyBB) == 0;
+
+            // now all in between squares and the king squares have to be safe 
+            // so and a combination of inbetween squares nd king bb with unsafe; if == 0 theres no overlap so the castle is safe 
+            bool kingSideSafe = ((kingInBetween | currentKing) & unsafeBB) == 0;
+            bool queenSideSafe = ((queenInBetween | currentKing) & unsafeBB) == 0;
+
+            // so now if the king has castling rights AND the spots are vacant AND they are all safe the king can castle on that side 
+            if (castleKingSide && kingSideIsVacant && kingSideSafe)
+                moveList.Add(new Move { origin = originOfKing, destination = kingDest, moveType = MoveType.CASTLE, promoPieceType = Piece.NONE });
+            if (castleQueenSide && queenSideIsVacant && queenSideSafe)
+                moveList.Add(new Move { origin = originOfKing, destination = queenDest, moveType = MoveType.CASTLE, promoPieceType = Piece.NONE });
+
         }
 
-        
-       
-        //CASTLING
-        ulong kingInBetween = (side==Side.White) ? wKInBetween : bkInBetween; // the squares in between the rook and king 
-        ulong queenInBetween = (side == Side.White) ? wQInBetween : bQInBetween;
-
-        int kingDest = (side == Side.White) ? wKSideCastleDest : bKSideCastleDest; // destination on where you're castling 
-        int queenDest = (side==Side.White) ? wQSideCastleDest: bQSideCastleDest;
-
-        // and the in between squares with all pieces, if returns 0 there are no pieces in there
-        bool kingSideIsVacant = (kingInBetween & ~emptyBB) == 0;
-        bool queenSideIsVacant = (queenInBetween & ~emptyBB) == 0;
-
-        // now all in between squares and the king squares have to be safe 
-        // so and a combination of inbetween squares nd king bb with unsafe; if == 0 theres no overlap so the castle is safe 
-        bool kingSideSafe = ((kingInBetween | currentKing) & unsafeBB) == 0;
-        bool queenSideSafe = ((queenInBetween | currentKing) & unsafeBB) == 0;
-
-        // so now if the king has castling rights AND the spots are vacant AND they are all safe the king can castle on that side 
-        if (castleKingSide && kingSideIsVacant && kingSideSafe)
-            moveList.Add(new Move { origin = originOfKing, destination = kingDest, moveType = MoveType.CASTLE, promoPieceType = Piece.NONE });
-        if (castleQueenSide && queenSideIsVacant && queenSideSafe)
-            moveList.Add(new Move { origin = originOfKing, destination = queenDest, moveType = MoveType.CASTLE, promoPieceType = Piece.NONE });
+        // PINNED PIECEs
+        // To find calc in all directions : 
+        // Moves from opponents sliding pcs 
+        // Opponent sliding piece moves from kings posiition (king pretending to be every sliding piece) 
+        // The overlap of these two will be all the pinned pieces 
 
 
+
+
+
+        return (captureMask, pushMask, pinningRays); 
+    }
+
+    private static int popCount(ulong attackers) {
+        int setBits = 0; 
+        while(attackers > 0) {
+            int index = BitOperations.TrailingZeroCount(attackers);
+            setBits++; 
+            attackers &= ~(1UL << index);
+        }
+        return setBits; 
     }
 
     private static ulong getMovesAtSquareKnight(Square currSquare, Side  side) {
@@ -1087,6 +1119,18 @@ class Moves {
 
 
         return unsafeBB; 
+    }
+
+    public static void printMoves(Board board) {
+        List<Move> white = possibleMovesWhite(board.piecesBB, board.sideBB, board.piecesBB[(int)Side.White][(int)Piece.Pawn], board.state.CWK, board.state.CWQ); 
+        Console.WriteLine($"{white.Count} WHITE MOVES");
+        foreach (Move move in white) Console.Write((Square) move.origin+"->"+ (Square)move.destination+": "+move.moveType+", ");
+        Console.WriteLine(); 
+
+        List<Move> black = possibleMovesBlack(board.piecesBB, board.sideBB, board.state.EP, board.state.CBK, board.state.CBQ); 
+        Console.WriteLine($"{black.Count} BLACK MOVES");
+        foreach (Move move in black) Console.Write((Square)move.origin + "->" + (Square)move.destination + ": " + move.moveType + ", ");
+        Console.WriteLine();
     }
 }
 
