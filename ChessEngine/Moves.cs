@@ -300,6 +300,7 @@ class Moves {
     // captures have to be valid in the capture mask, all pushes have to be valid in the push mask 
     private static void possiblePawnBlack(List<Move> moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, ulong EP, ulong captureMask , ulong pushMask)
     {
+        
         // capture right ; current pawn can't be on rank 2 cus that just promo and result must be capturable and can't be on file a 
         PAWN_MOVES = ((piecesBB[(int)Side.Black][(int)Piece.Pawn] & ~RANKS[1]) >> 7) & (captureBB & ~FILES[0]);
         PAWN_MOVES &= captureMask; // capture has to be valid in capture mask in event of check (if no check all bits are set and nothing is changed 
@@ -431,6 +432,8 @@ class Moves {
 
         PAWN_MOVES = (piecesBB[(int)Side.Black][(int)Piece.Pawn] << 1) & piecesBB[(int)Side.White][(int)Piece.Pawn] &  RANKS[3] & ~FILES[0] &EP;
 
+
+        
         // should only add pawn move if pawnmoves and capturemask or pushbb and push mask 
         PAWN_MOVES = (PAWN_MOVES&captureMask)| (((PAWN_MOVES >> 8) & pushMask )<< 8); // if the capture mask is on at that spot or the push is on on the destination add that move 
         
@@ -448,6 +451,13 @@ class Moves {
         //left capture 
 
         PAWN_MOVES = (piecesBB[(int)Side.Black][(int)Piece.Pawn] >> 1) & piecesBB[(int)Side.White][(int)Piece.Pawn] & RANKS[3] & ~FILES[7] & EP;
+
+        Console.WriteLine("LEFT EN PASSANT ");
+        Board.printBitBoard(PAWN_MOVES);
+        Console.WriteLine("EP ");
+        Board.printBitBoard(EP);
+        Console.WriteLine("PushMask ");
+        Board.printBitBoard(pushMask);
         PAWN_MOVES = (PAWN_MOVES & captureMask) | (((PAWN_MOVES >> 8) & pushMask) << 8); 
         // we know there is only going to be one 
         if (PAWN_MOVES > 0)
@@ -911,13 +921,15 @@ class Moves {
             captureMask = attackers;
 
             pushMask = 0; // in case of a non sliding checker 
-            if(((attackers & piecesBB[opponent][(int) Piece.Rook])>0) | ((attackers & piecesBB[opponent][(int)Piece.Bishop]) > 0) | ((attackers & piecesBB[opponent][(int)Piece.Queen]) > 0)) {
+            if(((attackers & piecesBB[opponent][(int) Piece.Rook])>0) || ((attackers & piecesBB[opponent][(int)Piece.Bishop]) > 0) || ((attackers & piecesBB[opponent][(int)Piece.Queen]) > 0)) {
                 // iteratively find the king; the max push length is 7 
-                ulong north=attackers, south=attackers, east = attackers, west = attackers, nwest = attackers, swest = attackers, neast = attackers, seast = attackers; 
-                for(int i =0; i< 7; i++) {
-                    if(((north << 8) & currentKing) > 0) { // this  is the correct path 
-                        pushMask = north ^ attackers ; // attacker shouldn't be in 
-                        break; 
+                ulong north = attackers, south = attackers, east = attackers, west = attackers, nwest = attackers, swest = attackers, neast = attackers, seast = attackers;
+                for (int i = 0; i < 7; i++) {
+                    Console.WriteLine("Nwest");
+                    Board.printBitBoard(nwest); 
+                    if (((north << 8) & currentKing) > 0) { // this  is the correct path 
+                        pushMask = north ^ attackers; // attacker shouldn't be in 
+                        break;
                     }
                     if (((south >> 8) & currentKing) > 0) { // this  is the correct path 
                         pushMask = south ^ attackers;
@@ -947,8 +959,11 @@ class Moves {
                         pushMask = seast ^ attackers;
                         break;
                     }
-                    north =  (north<<8) | north; south= (south>> 8) |south ; east = (east<<1) | east ; west = (west>> 1) |west ; nwest = (nwest >> 7)| nwest; neast = (neast<<9) | neast; swest = (swest>>9) | swest; seast =  (seast>>7) |seast; 
+                    north = (north << 8) | north; south = (south >> 8) | south; east = (east << 1) | east; west = (west >> 1) | west; nwest = (nwest << 7) | nwest; neast = (neast << 9) | neast; swest = (swest >> 9) | swest; seast = (seast >> 7) | seast;
                 }
+
+
+
             }
             // only valid king moves would also only be evasions 
             while (KING_MOVES > 0) {
@@ -1122,12 +1137,12 @@ class Moves {
     }
 
     public static void printMoves(Board board) {
-        List<Move> white = possibleMovesWhite(board.piecesBB, board.sideBB, board.piecesBB[(int)Side.White][(int)Piece.Pawn], board.state.CWK, board.state.CWQ); 
+        List<Move> white = possibleMovesWhite(board.piecesBB, board.sideBB, board.piecesBB[(int)Side.Black][(int)Piece.Pawn], board.state.CWK, board.state.CWQ); ; 
         Console.WriteLine($"{white.Count} WHITE MOVES");
         foreach (Move move in white) Console.Write((Square) move.origin+"->"+ (Square)move.destination+": "+move.moveType+", ");
         Console.WriteLine(); 
 
-        List<Move> black = possibleMovesBlack(board.piecesBB, board.sideBB, board.state.EP, board.state.CBK, board.state.CBQ); 
+        List<Move> black = possibleMovesBlack(board.piecesBB, board.sideBB, board.piecesBB[(int)Side.White][(int) Piece.Pawn], board.state.CBK, board.state.CBQ); 
         Console.WriteLine($"{black.Count} BLACK MOVES");
         foreach (Move move in black) Console.Write((Square)move.origin + "->" + (Square)move.destination + ": " + move.moveType + ", ");
         Console.WriteLine();

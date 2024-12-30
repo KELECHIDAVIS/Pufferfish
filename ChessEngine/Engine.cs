@@ -24,11 +24,11 @@ class Engine
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
-            new char[] { ' ', ' ', 'k', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', 'k', ' ', ' ', ' ', ' ', ' ', ' ' },
             new char[] { ' ', ' ', ' ', 'P', 'p', ' ', ' ', ' ' },
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
-            new char[] { ' ', ' ', ' ', ' ', 'K', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', ' ', 'K', 'Q', ' ', ' ' },
         };
         Board board = Board.charArrayToBoard(chessBoard);
         Moves.printMoves(board); 
