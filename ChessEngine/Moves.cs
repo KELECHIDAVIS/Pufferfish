@@ -1,5 +1,6 @@
 ﻿
 using System.Numerics;
+using System.Security;
 using System.Xml.Serialization;
 
 public enum MoveType
@@ -452,12 +453,6 @@ class Moves {
 
         PAWN_MOVES = (piecesBB[(int)Side.Black][(int)Piece.Pawn] >> 1) & piecesBB[(int)Side.White][(int)Piece.Pawn] & RANKS[3] & ~FILES[7] & EP;
 
-        Console.WriteLine("LEFT EN PASSANT ");
-        Board.printBitBoard(PAWN_MOVES);
-        Console.WriteLine("EP ");
-        Board.printBitBoard(EP);
-        Console.WriteLine("PushMask ");
-        Board.printBitBoard(pushMask);
         PAWN_MOVES = (PAWN_MOVES & captureMask) | (((PAWN_MOVES >> 8) & pushMask) << 8); 
         // we know there is only going to be one 
         if (PAWN_MOVES > 0)
@@ -858,7 +853,7 @@ class Moves {
         // if king can see that piece type from it's sq then it is in check by that piece
         int opponent = (side == Side.White) ? (int)Side.Black : (int)Side.White;
         ulong attackers=0;
-
+        ulong oppSlidingPiecesFromKing = 0; 
         // knight; and the knight moves bb from the king square and all the opponents knights to find which are checkin
 
         attackers |= getMovesAtSquareKnight((Square)  originOfKing,(Side) opponent  ) & piecesBB[opponent][(int)Piece.Knight];
@@ -871,7 +866,9 @@ class Moves {
         // bishop and rook 
         // get possible sliding moves then make sure they are on capturable pieces then make sure the correct piece can be seen 
         ulong rookMoves = (getRookMoves(blockers, originOfKing) );
-        ulong bishopMoves = (getBishopMoves(blockers, originOfKing) ); 
+        oppSlidingPiecesFromKing |= rookMoves;
+        ulong bishopMoves = (getBishopMoves(blockers, originOfKing) );
+        oppSlidingPiecesFromKing|= bishopMoves; // of use later 
         attackers |= (bishopMoves & piecesBB[opponent][(int) Piece.Bishop]); 
         attackers |= (rookMoves & piecesBB[opponent][(int) Piece.Rook]);
 
@@ -1019,10 +1016,101 @@ class Moves {
         // Opponent sliding piece moves from kings posiition (king pretending to be every sliding piece) 
         // The overlap of these two will be all the pinned pieces 
 
+        // Moves from opposing sliding pieces 
+        ulong slidingPcs = 0;
+        
+        ulong rooks = piecesBB[(int)opponent][(int)Piece.Rook]; 
+        while(rooks> 0) {// for every rook 
+            int square = BitOperations.TrailingZeroCount(rooks);
+            blockers = (~emptyBB) ^ (1UL << square); 
+            slidingPcs |= getRookMoves(blockers, square);
+            rooks ^= (1UL << square); 
+        }
+
+        ulong bishops = piecesBB[(int)opponent][(int)Piece.Bishop];
+        while (bishops > 0) {// for every rook 
+            int square = BitOperations.TrailingZeroCount(bishops);
+            blockers = (~emptyBB) ^ (1UL << square);
+            slidingPcs |= getBishopMoves(blockers, square);
+            bishops ^= (1UL << square);
+        }
+
+        ulong queens = piecesBB[(int)opponent][(int)Piece.Queen];
+        while (queens > 0) {// for every rook 
+            int square = BitOperations.TrailingZeroCount(queens);
+            blockers = (~emptyBB) ^ (1UL << square);
+            slidingPcs |= getBishopMoves(blockers, square);
+            slidingPcs |= getRookMoves(blockers, square);
+            queens ^= (1UL << square);
+        }
 
 
+        // get opponent sliding pieces from kings perspective oppslidingmoves from king 
 
+        // and them together; the resulting bitboard will show where all the pinned pieces are 
+        ulong pinnedPieces = oppSlidingPiecesFromKing & slidingPcs;
 
+        // so now if there are any pinned pieces remove from board and develop pinning rays that that piece giving pin to king
+        if (pinnedPieces != 0) {
+            ulong removed = (~emptyBB) ^ pinnedPieces;
+            // now if the king can see a sliding piece from it's position then it is pinned by that piece 
+            Console.WriteLine("Removed BB");
+            Board.printBitBoard(removed); 
+            ulong lineSliding = (piecesBB[opponent][(int)Piece.Rook] | piecesBB[opponent][(int)Piece.Queen]) & removed;
+            ulong diagSliding = (piecesBB[opponent][(int)Piece.Bishop] | piecesBB[opponent][(int)Piece.Queen]) & removed;
+
+            ulong north = currentKing, south = currentKing, east = currentKing, west = currentKing, nwest = currentKing, swest = currentKing, neast = currentKing, seast = currentKing;
+            for(int i =0; i< 7; i++) { 
+                north = (north << 8) | north; south = (south >> 8) | south; east = (east << 1) | east; west = (west >> 1) | west; nwest = (nwest << 7) | nwest; neast = (neast << 9) | neast; swest = (swest >> 9) | swest; seast = (seast >> 7) | seast;
+
+                // if the ray == 0 that means a pinning piece was already found in the direction so skip 
+                if ((north & lineSliding) > 0 && north != 0) { // rook or queen found on this ray 
+                    north ^= currentKing; // remove king 
+                    pinningRays |= north; //add ray to pinnedRays
+                    north = 0; // stop looking in this direction 
+                }
+                if ((south & lineSliding) > 0 && south != 0) { // this  is the correct path 
+                    south ^= currentKing; // remove king 
+                    pinningRays |= south; //add ray to pinnedRays
+                    south = 0; // stop looking in this direction 
+                }
+
+                if ((east & lineSliding) > 0 && east != 0) { // this  is the correct path 
+                    east ^= currentKing; // remove king 
+                    pinningRays |= east; //add ray to pinnedRays
+                    east = 0; // stop looking in this direction 
+                }
+                if ((west & lineSliding) > 0 && west != 0) { // this  is the correct path 
+                    west ^= currentKing; // remove king 
+                    pinningRays |= west; //add ray to pinnedRays
+                    west = 0; // stop looking in this direction 
+                }
+                if ((nwest & diagSliding) > 0 && nwest != 0) { // this  is the correct path 
+                    nwest ^= currentKing; // remove king 
+                    pinningRays |= nwest; //add ray to pinnedRays
+                    nwest = 0; // stop looking in this direction 
+                }
+                if ((neast & diagSliding) > 0 && neast != 0) { // this  is the correct path 
+                    neast ^= currentKing; // remove king 
+                    pinningRays |= neast; //add ray to pinnedRays
+                    neast = 0; // stop looking in this direction 
+                }
+                if ((swest & diagSliding) > 0 && swest != 0) { // this  is the correct path 
+                    swest ^= currentKing; // remove king 
+                    pinningRays |= swest; //add ray to pinnedRays
+                    swest = 0; // stop looking in this direction 
+                }
+                if ((seast & diagSliding) > 0 && seast != 0) { // this  is the correct path 
+                    seast ^= currentKing; // remove king 
+                    pinningRays |= seast; //add ray to pinnedRays
+                    seast = 0; // stop looking in this direction 
+                }
+
+            }
+
+            Console.WriteLine("PinningRays: ");
+            Board.printBitBoard(pinningRays); 
+        }
         return (captureMask, pushMask, pinningRays); 
     }
 
@@ -1137,12 +1225,12 @@ class Moves {
     }
 
     public static void printMoves(Board board) {
-        List<Move> white = possibleMovesWhite(board.piecesBB, board.sideBB, board.piecesBB[(int)Side.Black][(int)Piece.Pawn], board.state.CWK, board.state.CWQ); ; 
+        List<Move> white = possibleMovesWhite(board.piecesBB, board.sideBB, board.state.EP, board.state.CWK, board.state.CWQ); ; 
         Console.WriteLine($"{white.Count} WHITE MOVES");
         foreach (Move move in white) Console.Write((Square) move.origin+"->"+ (Square)move.destination+": "+move.moveType+", ");
         Console.WriteLine(); 
 
-        List<Move> black = possibleMovesBlack(board.piecesBB, board.sideBB, board.piecesBB[(int)Side.White][(int) Piece.Pawn], board.state.CBK, board.state.CBQ); 
+        List<Move> black = possibleMovesBlack(board.piecesBB, board.sideBB, board.state.EP, board.state.CBK, board.state.CBQ); 
         Console.WriteLine($"{black.Count} BLACK MOVES");
         foreach (Move move in black) Console.Write((Square)move.origin + "->" + (Square)move.destination + ": " + move.moveType + ", ");
         Console.WriteLine();
