@@ -21,14 +21,14 @@ class Engine
         }*/
 
         char[][] chessBoard = new char[][]{
-            new char[] { ' ', ' ', ' ', ' ', 'k', ' ', ' ', ' ' },
-            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
-            new char[] { ' ', ' ', ' ', ' ', 'q', ' ', ' ', ' ' },
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
-            new char[] { ' ', ' ', ' ', ' ', 'Q', ' ', ' ', ' ' },
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
-            new char[] { ' ', ' ', 'K', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { 'k', ' ', ' ', 'P', 'p', ' ', ' ', 'Q' },
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', 'K', ' ', ' ', ' ', ' ' },
         };
         Board board = Board.charArrayToBoard(chessBoard);
         Moves.printMoves(board); 
