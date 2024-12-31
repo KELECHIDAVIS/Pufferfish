@@ -1,4 +1,6 @@
-﻿enum Square
+﻿using System.Xml.Schema;
+
+enum Square
 {
     A1, B1, C1, D1, E1, F1, G1, H1,
     A2, B2, C2, D2, E2, F2, G2, H2,
@@ -231,11 +233,58 @@ class Board {
     /// fen is read right to left, top to bottom 
     /// </summary>
     /// <param name="fen"> </param>
-    public static void FEN_TO_BB (string fen) {
+    public static void initFEN (string fen) {
      
+    }
+    public static Board initCopy(Board board) {
+        Board newBoard = new Board(); 
+        newBoard.piecesBB = board.piecesBB;
+        newBoard.sideBB = board.sideBB; 
+        newBoard.pieceList= board.pieceList;
+        newBoard.history = board.history;
+        newBoard.state = board.state;
+        return newBoard; 
     }
 
 
+    // updates boards bbs to reflect move 
 
+    //  DON'T FORGET TO UPDATE GAME HISTORY ASWELL AFTER A MOVE IS MADE ****
+
+    public  void makeMove(Move move) {
+        // first get the side that is moving 
+        Side side = (this.sideBB[(int)Side.White] & (1UL << (int)move.origin)) > 0 ? Side.White : Side.Black;
+        Side opp = (Side.White == side) ? Side.Black : Side.White; 
+        switch(move.moveType ) {
+            case MoveType.ENPASSANT:
+                // en passant captures an enemy pawn so we have to update both their bb's seperately 
+                // the pawn to remove is alway below the destination if pawn is white and above the destination if the pawn is black 
+                int add; 
+                if(side == Side.White) {
+                    add = -8; // if white its below if black its above
+                } else {
+                    add = 8; 
+                }
+                // remove captured pawn 
+                this.piecesBB[(int)opp][(int)Piece.Pawn] ^= (1UL << (move.destination + add));
+                this.sideBB[(int)opp] ^= (1UL << (move.destination + add));
+                this.pieceList[move.destination + add] = (int)Piece.NONE;
+
+                // move capturing pawn 
+                // remove from origin 
+                this.piecesBB[(int)side][(int)Piece.Pawn] ^= (1UL << (move.origin));
+                this.sideBB[(int)side] ^= (1UL << (move.origin));
+                this.pieceList[move.origin] = (int)Piece.NONE;
+                // then place at destination 
+                this.piecesBB[(int)side][(int)Piece.Pawn] |= (1UL << (move.destination));
+                this.sideBB[(int)side] |= (1UL << (move.destination));
+                this.pieceList[move.origin] = (int)Piece.Pawn;
+
+                // since EP was made have to turn off this EP in the state ;  piece to remove is at the same pos 
+                this.state.EP ^= (1UL << (move.destination + add)); 
+                break; 
+        }
+        // UPDATE GAME HISTORY **** 
     
+    }
 }

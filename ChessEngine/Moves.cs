@@ -327,11 +327,25 @@ class Moves {
             origin = currentIndex - 1;  // right en passant 
             destination = origin + 9;
             if ((pinningRays & (1UL << origin)) != 0) { // piece is pinned ; only add move if it adheres to pin
-                if ((pinningRays & (1UL << destination)) != 0) { // if destination adheres to the pin ray then you can add the move 
-                    moveList.Add(new Move { origin = origin, destination = destination, promoPieceType = Piece.NONE, moveType = MoveType.QUIET });
+                if ((pinningRays & (1UL << destination)) != 0) { // if destination adheres to the pin ray then you can add the move
+
+                    // now have to make sure this en passant move doesn't expose king to a discovered check 
+                    //Make EP move on copy board 
+                    Board board = new Board();
+                    board.piecesBB = piecesBB; 
+                    board.sideBB = sideBB;
+                    Move ep = new Move { origin = origin, destination = destination, promoPieceType = Piece.NONE, moveType = MoveType.ENPASSANT };
+                    board.makeMove(ep); 
+
+                    //See if move put their king in check
+                    bool kingInCheck = isKingInCheck(Side.White , board); 
+
+                    // if not move is valid 
+                    if(!kingInCheck) 
+                        moveList.Add(ep);
                 }
             } else { // piece is not pinned 
-                moveList.Add(new Move { origin = origin, destination = destination, promoPieceType = Piece.NONE, moveType = MoveType.QUIET });
+                moveList.Add(new Move { origin = origin, destination = destination, promoPieceType = Piece.NONE, moveType = MoveType.ENPASSANT });
             }
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
@@ -350,10 +364,10 @@ class Moves {
             destination = origin + 7;
             if ((pinningRays & (1UL << origin)) != 0) { // piece is pinned ; only add move if it adheres to pin
                 if ((pinningRays & (1UL << destination)) != 0) { // if destination adheres to the pin ray then you can add the move 
-                    moveList.Add(new Move { origin = origin, destination = destination, promoPieceType = Piece.NONE, moveType = MoveType.QUIET });
+                    moveList.Add(new Move { origin = origin, destination = destination, promoPieceType = Piece.NONE, moveType = MoveType.ENPASSANT });
                 }
             } else { // piece is not pinned 
-                moveList.Add(new Move { origin = origin, destination = destination, promoPieceType = Piece.NONE, moveType = MoveType.QUIET });
+                moveList.Add(new Move { origin = origin, destination = destination, promoPieceType = Piece.NONE, moveType = MoveType.ENPASSANT });
             }
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
@@ -564,10 +578,10 @@ class Moves {
             destination = origin - 7;
             if ((pinningRays & (1UL << origin)) != 0) { // piece is pinned ; only add move if it adheres to pin
                 if ((pinningRays & (1UL << destination)) != 0) { // if destination adheres to the pin ray then you can add the move 
-                    moveList.Add(new Move { origin = origin, destination = destination, promoPieceType = Piece.NONE, moveType = MoveType.QUIET });
+                    moveList.Add(new Move { origin = origin, destination = destination, promoPieceType = Piece.NONE, moveType = MoveType.ENPASSANT });
                 }
             } else { // piece is not pinned 
-                moveList.Add(new Move { origin = origin, destination = destination, promoPieceType = Piece.NONE, moveType = MoveType.QUIET });
+                moveList.Add(new Move { origin = origin, destination = destination, promoPieceType = Piece.NONE, moveType = MoveType.ENPASSANT });
             }
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
@@ -586,10 +600,10 @@ class Moves {
             destination = origin - 9;
             if ((pinningRays & (1UL << origin)) != 0) { // piece is pinned ; only add move if it adheres to pin
                 if ((pinningRays & (1UL << destination)) != 0) { // if destination adheres to the pin ray then you can add the move 
-                    moveList.Add(new Move { origin = origin, destination = destination, promoPieceType = Piece.NONE, moveType = MoveType.QUIET });
+                    moveList.Add(new Move { origin = origin, destination = destination, promoPieceType = Piece.NONE, moveType = MoveType.ENPASSANT });
                 }
             } else { // piece is not pinned 
-                moveList.Add(new Move { origin = origin, destination = destination, promoPieceType = Piece.NONE, moveType = MoveType.QUIET });
+                moveList.Add(new Move { origin = origin, destination = destination, promoPieceType = Piece.NONE, moveType = MoveType.ENPASSANT });
             }
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
