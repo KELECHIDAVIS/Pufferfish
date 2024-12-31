@@ -1,4 +1,5 @@
-﻿using System.Xml.Schema;
+﻿using System.Numerics;
+using System.Xml.Schema;
 
 enum Square
 {
@@ -26,12 +27,12 @@ public enum Side
     White,
     Black
 }
-class Board {
+public class Board {
    
 
-    const int NUM_PIECE_TYPES = 6;
-    const int NUM_SIDES = 2;
-    const int NUM_SQUARES = 64;
+    public const int NUM_PIECE_TYPES = 6;
+    public const int NUM_SIDES = 2;
+    public const int NUM_SQUARES = 64;
 
     public ulong[][] piecesBB = initPiecesBitBoard(); // row is color, col is piece type Ex: [white][king]
     public ulong[] sideBB = new ulong[NUM_SIDES]; // hold all pieces from a certain color Ex: [white] 
@@ -41,11 +42,13 @@ class Board {
 
 
     public GameState state;
-    public GameHistory history; 
+    public GameHistory history = new(); // list of states; all the states taken so far 
 
     // need zobrist randoms 
+    ZobristRandoms zobristRandom = new(); 
+    
 
-
+    
 
     /// <summary>
     /// Inits the pieces bitboard that holds piece bitboards like [side][piecetype]
@@ -77,6 +80,10 @@ class Board {
         };
         charArrayToBitboards(chessBoard, pieceList, piecesBB, sideBB);
 
+        state.sideToMove = Side.White;
+        state.castling = 15; // 1111: all castling rights 
+        state.EP = 0;
+        state.zobristKey = initZobristKey(); 
     }
     
 
@@ -243,7 +250,8 @@ class Board {
         newBoard.pieceList= board.pieceList;
         newBoard.history = board.history;
         newBoard.state = board.state;
-        return newBoard; 
+        newBoard.zobristRandom = board.zobristRandom; 
+        return newBoard;
     }
 
 
@@ -251,19 +259,24 @@ class Board {
 
     //  DON'T FORGET TO UPDATE GAME HISTORY ASWELL AFTER A MOVE IS MADE ****
 
-    public  void makeMove(Move move) {
+    public void makeMove(Move move) {
         // first get the side that is moving 
-        Side side = (this.sideBB[(int)Side.White] & (1UL << (int)move.origin)) > 0 ? Side.White : Side.Black;
-        Side opp = (Side.White == side) ? Side.Black : Side.White; 
-        switch(move.moveType ) {
+        Side side = state.sideToMove; 
+        Side opp = (Side.White == side) ? Side.Black : Side.White;
+        ulong destMask = (1UL << (move.destination)), origMask = (1UL << (move.origin));
+        // save the state into the history to prepare for other moves 
+        state.nextMove = move; 
+        history.push (state); 
+
+        switch (move.moveType) {
             case MoveType.ENPASSANT:
                 // en passant captures an enemy pawn so we have to update both their bb's seperately 
                 // the pawn to remove is alway below the destination if pawn is white and above the destination if the pawn is black 
-                int add; 
-                if(side == Side.White) {
+                int add;
+                if (side == Side.White) {
                     add = -8; // if white its below if black its above
                 } else {
-                    add = 8; 
+                    add = 8;
                 }
                 // remove captured pawn 
                 this.piecesBB[(int)opp][(int)Piece.Pawn] ^= (1UL << (move.destination + add));
@@ -272,19 +285,141 @@ class Board {
 
                 // move capturing pawn 
                 // remove from origin 
-                this.piecesBB[(int)side][(int)Piece.Pawn] ^= (1UL << (move.origin));
-                this.sideBB[(int)side] ^= (1UL << (move.origin));
+                this.piecesBB[(int)side][(int)Piece.Pawn] ^= origMask;
+                this.sideBB[(int)side] ^= origMask;
                 this.pieceList[move.origin] = (int)Piece.NONE;
                 // then place at destination 
-                this.piecesBB[(int)side][(int)Piece.Pawn] |= (1UL << (move.destination));
-                this.sideBB[(int)side] |= (1UL << (move.destination));
+                this.piecesBB[(int)side][(int)Piece.Pawn] |= destMask;
+                this.sideBB[(int)side] |= destMask;
                 this.pieceList[move.origin] = (int)Piece.Pawn;
 
                 // since EP was made have to turn off this EP in the state ;  piece to remove is at the same pos 
-                this.state.EP ^= (1UL << (move.destination + add)); 
+                this.state.EP ^= (1UL << (move.destination + add));
+                break;
+            case MoveType.CASTLE:
+                // update castling rights based on where castled 
+                // the king that moved is not allowed to castle again
+                // wk 0001 wq 0010 bk 0100 bq 1000 all(initial): 1111 none: 0000
+                int toRemove = 0b00000011; // if white remove 0011 if black shift twice to right and remove 1100
+                if (side == Side.Black) toRemove <<=2;
+
+                state.castling ^= toRemove;
+
+                // if destination is greater than origin then it castled king side other wise it castled queen 
+                int rookOrigin, rookDestination; 
+                if (move.destination> move.origin) { // king side 
+                    rookOrigin = (side==Side.White) ? (int) Square.H1: (int)Square.H8;
+                    rookDestination = move.destination - 1; // left of the king 
+                } else {// queen side 
+                    rookOrigin = (side == Side.White) ? (int)Square.A1 : (int)Square.A8;
+                    rookDestination = move.destination +1; // right of the king 
+                }
+
+                // remove king and rook from origin 
+                this.piecesBB[(int)side][(int)Piece.King] ^= origMask;
+                this.sideBB[(int)side] ^= origMask;
+                this.pieceList[move.origin] = (int)Piece.NONE;
+
+                this.piecesBB[(int)side][(int)Piece.Rook] ^= (1UL << (rookOrigin));
+                this.sideBB[(int)side] ^= (1UL << (rookOrigin));
+                this.pieceList[rookOrigin] = (int)Piece.NONE;
+
+                // now place rook and king at correct destinations 
+                this.piecesBB[(int)side][(int)Piece.King] |= destMask;
+                this.sideBB[(int)side] |= destMask;
+                this.pieceList[move.destination] = (int)Piece.King;
+
+                this.piecesBB[(int)side][(int)Piece.Rook] |= (1UL << (rookDestination));
+                this.sideBB[(int)side] |= (1UL << (rookDestination));
+                this.pieceList[rookDestination] = (int)Piece.Rook;
+                break;
+            default:  // capture, evasion, or quiet 
+                 
+                if(MoveType.CAPTURE == move.moveType) {
+                    int capturedPiece = pieceList[move.destination];
+                    // update captured piece 
+                    this.piecesBB[(int)opp][capturedPiece] ^= destMask;
+                    this.sideBB[(int)opp] ^= destMask;
+                }
+
+                int piece =pieceList[move.origin];  // moving piece 
+
+                // update piece list 
+                pieceList[move.origin] = (int) Piece.NONE;
+                pieceList[move.destination] = piece;
+
+                // update moving piece: remove from origin the put at destination 
+                this.piecesBB[(int)side][piece] ^= origMask ;
+                this.sideBB[(int)side] ^= origMask;
+
+                this.piecesBB[(int)side][piece] |= destMask;
+                this.sideBB[(int)side] |= destMask;
+
+                // if a pawn is pushed two spaces light up their destination in the ep
+                if(piece == (int) Piece.Pawn && ((move.origin+2 == move.destination)||(move.origin-2== move.destination))) {
+                    state.EP |= destMask; 
+                }
+
+                int kingRemove = 0b00000011; // if white remove 0011 if black shift twice to right and remove 1100
+                if (side == Side.Black) kingRemove <<= 2;
+                // if a king moves at all and still has castling rights 
+                if (piece == (int)Piece.King && ((state.castling & kingRemove) > 0 )) {
+
+                    state.castling &= ~kingRemove; // can't xor bc it may be on or off 
+                }
+
+                //if rook moves for the first time and their side still has castling rights revoke rights 
+                
+                if (piece == (int) Piece.Rook ) {
+                    int relevantBit = 0;
+                    // if origin is 56 or 0  its queen side if 63 or 7 its king 
+                    if (move.origin == 63 || move.origin == 7) {
+                        int pos = BitOperations.TrailingZeroCount(kingRemove) ; // gives kings bit for this side
+                        relevantBit = 1<<pos;
+                    }
+                    else if (move.origin == 56 || move.origin == 0) {
+                        int pos = BitOperations.TrailingZeroCount(kingRemove) + 1;
+                        relevantBit = 1<<pos; 
+                    }
+                    state.castling &= ~relevantBit; // turns off bit if rook hasn't moved 
+                }
                 break; 
         }
-        // UPDATE GAME HISTORY **** 
-    
+        
+
+        state.sideToMove = opp; // opponents turn next
+
+
+    }
+
+    // creates a zobrist key based on this boards piece config and state 
+    private ulong initZobristKey() {
+        ulong key = 0; 
+        
+        // iterate through all piece types white and black and xor their zobrist random for that square and side to the key
+        for(int side = 0; side< piecesBB.Length; side++) {
+
+            for(int piece = 0; piece< piecesBB[side].Length; piece++) {
+                ulong bb = piecesBB[side][piece]; // this is this current pieces bb for this side 
+
+                // so for each piece that exists xor it's position onto the key
+                while (bb> 0) {
+                    int sq = BitOperations.TrailingZeroCount(bb);
+                    key ^= zobristRandom.pieceRandoms[side][piece][sq]; 
+                    bb &= ~(1UL << sq); 
+                }
+
+            }
+        }
+
+        // now do castling ep nd side to move 
+        key ^= zobristRandom.castlingRandoms[state.castling];
+        key ^= zobristRandom.sideRandoms[(int)state.sideToMove];
+        int epIndx = BitOperations.TrailingZeroCount(state.EP); 
+        if (epIndx == 0 ) { // meaning no en passants possible 
+            epIndx = 64; // the last element 
+        }
+        key ^= zobristRandom.epRandoms[epIndx]; // the sq ep is valid on 
+        return key; 
     }
 }

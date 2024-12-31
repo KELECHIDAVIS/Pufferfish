@@ -20,7 +20,7 @@ class Engine
             // process uci input 
         }*/
 
-        char[][] chessBoard = new char[][]{
+        /*char[][] chessBoard = new char[][]{
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
@@ -31,7 +31,14 @@ class Engine
             new char[] { ' ', ' ', ' ', 'K', ' ', ' ', ' ', ' ' },
         };
         Board board = Board.charArrayToBoard(chessBoard);
-        Moves.printMoves(board); 
+        Moves.printMoves(board); */
+
+        Board board = new Board();
+        board.initStandardChess();
+        
+       
+        int totalMoves = Perft.perft(board, 1);
+        Console.WriteLine("Total Nodes: " + totalMoves);
     }
 
 }
