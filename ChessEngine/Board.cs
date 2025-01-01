@@ -283,11 +283,9 @@ public class Board {
     }
 
 
-    // updates boards bbs to reflect move 
+    // updates boards bbs and state to reflect move 
 
-    //  DON'T FORGET TO UPDATE GAME HISTORY ASWELL AFTER A MOVE IS MADE ****
-
-    public void makeMove(Move move) {
+    public void makeMove(Move move ) {
         // first get the side that is moving 
         Side side = state.sideToMove; 
         Side opp = (Side.White == side) ? Side.Black : Side.White;
@@ -296,6 +294,8 @@ public class Board {
         state.nextMove = move; 
         history.push (state);
         state.sideToMove = opp; // opponents turn next
+
+        // based on move the zobrist key should be updated accordingly 
         switch (move.moveType) {
             case MoveType.ENPASSANT:
                 // en passant captures an enemy pawn so we have to update both their bb's seperately 
@@ -310,19 +310,28 @@ public class Board {
                 this.piecesBB[(int)opp][(int)Piece.Pawn] ^= (1UL << (move.destination + add));
                 this.sideBB[(int)opp] ^= (1UL << (move.destination + add));
                 this.pieceList[move.destination + add] = (int)Piece.NONE;
+                // remove captured pawn from zobrist
+                state.zobristKey ^= zobristRandom.pieceRandoms[(int)opp][(int)Piece.Pawn][move.destination + add]; 
 
                 // move capturing pawn 
-                // remove from origin 
+                // remove from origin , the remove from zobrist
                 this.piecesBB[(int)side][(int)Piece.Pawn] ^= origMask;
                 this.sideBB[(int)side] ^= origMask;
                 this.pieceList[move.origin] = (int)Piece.NONE;
-                // then place at destination 
+                state.zobristKey ^= zobristRandom.pieceRandoms[(int)side][(int)Piece.Pawn][move.origin];
+
+
+                // then place at destination and update zobrist
                 this.piecesBB[(int)side][(int)Piece.Pawn] |= destMask;
                 this.sideBB[(int)side] |= destMask;
-                this.pieceList[move.origin] = (int)Piece.Pawn;
+                this.pieceList[move.destination] = (int)Piece.Pawn;
+                state.zobristKey ^= zobristRandom.pieceRandoms[(int)side][(int)Piece.Pawn][move.destination];
+
+
 
                 // since EP was made have to turn off this EP in the state ;  piece to remove is at the same pos 
                 this.state.EP ^= (1UL << (move.destination + add));
+                state.zobristKey ^= zobristRandom.epRandoms[move.destination + add]; // toggle ep zobrist 
                 break;
             case MoveType.CASTLE:
                 // update castling rights based on where castled 
@@ -331,35 +340,53 @@ public class Board {
                 int toRemove = 0b00000011; // if white remove 0011 if black shift twice to right and remove 1100
                 if (side == Side.Black) toRemove <<=2;
 
-                state.castling ^= toRemove;
+                // toggle original castling rights off 
+                state.zobristKey ^= zobristRandom.castlingRandoms[state.castling]; 
+
+                state.castling &= ~toRemove; // gotta make sure both options are off 
+                
 
                 // if destination is greater than origin then it castled king side other wise it castled queen 
+                // depending on which side was castled update zobrist 
                 int rookOrigin, rookDestination; 
                 if (move.destination> move.origin) { // king side 
                     rookOrigin = (side==Side.White) ? (int) Square.H1: (int)Square.H8;
                     rookDestination = move.destination - 1; // left of the king 
+
+                    // zobrist : turn off queen side then toggle zobrist with the king side move 
+                    toRemove &= ~0b00001010;
+
                 } else {// queen side 
                     rookOrigin = (side == Side.White) ? (int)Square.A1 : (int)Square.A8;
                     rookDestination = move.destination +1; // right of the king 
+
+                    toRemove &= ~0b00000101; // turn off king side
                 }
+                state.zobristKey ^= zobristRandom.castlingRandoms[toRemove]; //toggle that specific move
 
                 // remove king and rook from origin 
                 this.piecesBB[(int)side][(int)Piece.King] ^= origMask;
                 this.sideBB[(int)side] ^= origMask;
                 this.pieceList[move.origin] = (int)Piece.NONE;
+                state.zobristKey ^= zobristRandom.pieceRandoms[(int)side][(int)Piece.King][move.origin];
 
                 this.piecesBB[(int)side][(int)Piece.Rook] ^= (1UL << (rookOrigin));
                 this.sideBB[(int)side] ^= (1UL << (rookOrigin));
                 this.pieceList[rookOrigin] = (int)Piece.NONE;
+                state.zobristKey ^= zobristRandom.pieceRandoms[(int)side][(int)Piece.Rook][rookOrigin];
 
                 // now place rook and king at correct destinations 
                 this.piecesBB[(int)side][(int)Piece.King] |= destMask;
                 this.sideBB[(int)side] |= destMask;
                 this.pieceList[move.destination] = (int)Piece.King;
+                state.zobristKey ^= zobristRandom.pieceRandoms[(int)side][(int)Piece.King][move.destination];
+
 
                 this.piecesBB[(int)side][(int)Piece.Rook] |= (1UL << (rookDestination));
                 this.sideBB[(int)side] |= (1UL << (rookDestination));
                 this.pieceList[rookDestination] = (int)Piece.Rook;
+                state.zobristKey ^= zobristRandom.pieceRandoms[(int)side][(int)Piece.Rook][rookDestination];
+
                 break;
             default:  // capture, evasion, or quiet 
                  
@@ -368,6 +395,8 @@ public class Board {
                     // update captured piece 
                     this.piecesBB[(int)opp][capturedPiece] ^= destMask;
                     this.sideBB[(int)opp] ^= destMask;
+                    state.zobristKey ^= zobristRandom.pieceRandoms[(int)opp][capturedPiece][move.destination];
+
                 }
 
                 int piece =pieceList[move.origin];  // moving piece 
@@ -379,19 +408,27 @@ public class Board {
                 // update moving piece: remove from origin the put at destination 
                 this.piecesBB[(int)side][piece] ^= origMask ;
                 this.sideBB[(int)side] ^= origMask;
+                state.zobristKey ^= zobristRandom.pieceRandoms[(int)side][piece][move.origin];
 
                 this.piecesBB[(int)side][piece] |= destMask;
                 this.sideBB[(int)side] |= destMask;
+                state.zobristKey ^= zobristRandom.pieceRandoms[(int)side][piece][move.destination];
 
                 // if a pawn is pushed two spaces light up their destination in the ep
-                if(piece == (int) Piece.Pawn && ((move.origin+2 == move.destination)||(move.origin-2== move.destination))) {
-                    state.EP |= destMask; 
+                if (piece == (int) Piece.Pawn && ((move.origin+2 == move.destination)||(move.origin-2== move.destination))) {
+                    int epIndx = BitOperations.TrailingZeroCount(state.EP);
+                    state.zobristKey ^= zobristRandom.epRandoms[epIndx]; // toggle original ep 
+                    state.EP = destMask; //can only ever be one ep position at a time 
+                    epIndx = BitOperations.TrailingZeroCount(state.EP);
+                    state.zobristKey ^= zobristRandom.epRandoms[epIndx]; // final ep rights 
+
                 }
 
                 int kingRemove = 0b00000011; // if white remove 0011 if black shift twice to right and remove 1100
                 if (side == Side.Black) kingRemove <<= 2;
                 // if a king moves at all and still has castling rights 
                 if (piece == (int)Piece.King && ((state.castling & kingRemove) > 0 )) {
+                    state.zobristKey ^= zobristRandom.castlingRandoms[state.castling]; // toggle original castling rights
 
                     state.castling &= ~kingRemove; // can't xor bc it may be on or off 
                 }
@@ -443,10 +480,9 @@ public class Board {
         // now do castling ep nd side to move 
         key ^= zobristRandom.castlingRandoms[state.castling];
         key ^= zobristRandom.sideRandoms[(int)state.sideToMove];
+
+
         int epIndx = BitOperations.TrailingZeroCount(state.EP); 
-        if (epIndx == 0 ) { // meaning no en passants possible 
-            epIndx = 64; // the last element 
-        }
         key ^= zobristRandom.epRandoms[epIndx]; // the sq ep is valid on 
         return key; 
     }

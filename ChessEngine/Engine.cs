@@ -36,11 +36,12 @@ class Engine
         Board board = new Board();
         board.initStandardChess();
 
-        
 
-        for(int maxDepth = 1; maxDepth<=5; maxDepth++) {
-            Console.WriteLine("MaxDepth: " + maxDepth); 
-            int totalMoves = Perft.perft(board, 1, maxDepth);
+
+        for (int maxDepth = 1; maxDepth <= 5; maxDepth++) {
+            Console.WriteLine("MaxDepth: " + maxDepth);
+            Dictionary<ulong, int> boardMemo = new Dictionary<ulong, int>();
+            int totalMoves = Perft.perft(board, 1, maxDepth, boardMemo);
             Console.WriteLine("Total Nodes: " + totalMoves);
         }
 

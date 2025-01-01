@@ -31,8 +31,9 @@ public class ZobristRandoms {
         sideRandoms = new ulong[Board.NUM_SIDES];
         for (int i = 0; i < Board.NUM_SIDES; i++) { sideRandoms[i] = (ulong)rand.NextInt64(); }
 
-        // ep : 65 : all squares plus1 
+        // ep : 65 : all squares plus1 because if ep is 0 itll have 64 leading 0's so it'll be the last position 
         epRandoms = new ulong[Board.NUM_SQUARES+1];
         for (int i = 0; i < Board.NUM_SQUARES+1; i++) { epRandoms[i] = (ulong)rand.NextInt64(); }
     }
+    
 }
