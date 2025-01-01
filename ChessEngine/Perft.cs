@@ -1,6 +1,6 @@
 ﻿public class Perft {
 
-    static readonly int maxDepth =1 ; 
+    static readonly int maxDepth =3 ; 
 
     // return the number of legal moves that can be made from this board state
     public static int perft(Board board, int depth){
