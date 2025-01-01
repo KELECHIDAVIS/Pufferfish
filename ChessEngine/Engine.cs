@@ -35,8 +35,15 @@ class Engine
 
         Board board = new Board();
         board.initStandardChess();
-        
-       
+
+        // debugging d2 
+        Move move = new Move { origin = (int) Square.D2, destination =  (int)Square.D3, moveType=MoveType.QUIET, promoPieceType= Piece.NONE };  
+        board.makeMove(move);
+
+        // debugging d2 
+        Move move2 = new Move { origin = (int)Square.E7, destination = (int)Square.E6, moveType = MoveType.QUIET, promoPieceType = Piece.NONE };
+        board.makeMove(move2);
+
         int totalMoves = Perft.perft(board, 1);
         Console.WriteLine("Total Nodes: " + totalMoves);
     }

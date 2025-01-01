@@ -27,11 +27,11 @@ public struct GameHistory // a list class that hold all the gamestates (kinda li
         return list[index];
     }
 
-    public GameState? pop(int index)
+    public GameState? pop()
     {
         if (count > 0)
         {
-            GameState state = list[index];
+            GameState state = list[count-1];
             count--;
             return state;
         }

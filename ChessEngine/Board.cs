@@ -45,7 +45,7 @@ public class Board {
     public GameHistory history = new(); // list of states; all the states taken so far 
 
     // need zobrist randoms 
-    ZobristRandoms zobristRandom = new(); 
+    ZobristRandoms zobristRandom= new();  // UNCOMMENT WHEN DONE DEBUGGING 
     
 
     
@@ -243,14 +243,19 @@ public class Board {
     public static void initFEN (string fen) {
      
     }
-    public static Board initCopy(Board board) {
-        Board newBoard = new Board(); 
-        newBoard.piecesBB = board.piecesBB;
-        newBoard.sideBB = board.sideBB; 
-        newBoard.pieceList= board.pieceList;
-        newBoard.history = board.history;
-        newBoard.state = board.state;
-        newBoard.zobristRandom = board.zobristRandom; 
+    public static Board initCopy(Board parent) {
+        // can't copy objects directly;
+        // Two ways to copy: go through every relevant primitve Variable and just copy and paste
+        // or just start with standard chess and make every move thats in the parent's history in order 
+        Board newBoard = new Board();
+        newBoard.initStandardChess(); 
+
+        // for every parent move make same move on new board  
+        for(int i =0; i< parent.history.length(); i++) {
+            GameState currState = parent.history.getState(i);
+            newBoard.makeMove(currState.nextMove); 
+        }
+        
         return newBoard;
     }
 
@@ -266,8 +271,8 @@ public class Board {
         ulong destMask = (1UL << (move.destination)), origMask = (1UL << (move.origin));
         // save the state into the history to prepare for other moves 
         state.nextMove = move; 
-        history.push (state); 
-
+        history.push (state);
+        state.sideToMove = opp; // opponents turn next
         switch (move.moveType) {
             case MoveType.ENPASSANT:
                 // en passant captures an enemy pawn so we have to update both their bb's seperately 
@@ -387,7 +392,7 @@ public class Board {
         }
         
 
-        state.sideToMove = opp; // opponents turn next
+        
 
 
     }

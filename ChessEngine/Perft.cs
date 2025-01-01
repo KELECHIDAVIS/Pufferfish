@@ -1,6 +1,6 @@
 ﻿public class Perft {
 
-    const int maxDepth = 3; 
+    static readonly int maxDepth =1 ; 
 
     // return the number of legal moves that can be made from this board state
     public static int perft(Board board, int depth){
@@ -23,7 +23,7 @@
         // for each move:
         // create child board, make move, update state, recursively call on perft on child board 
         foreach (Move move in moves) {
-            Board child = Board.initCopy(board); 
+            Board child = Board.initCopy(board); // creates an identical board based on sent board 
             child.makeMove(move); // SHOULD UPDATE ALL STATE RELATED TO MOVE MADE ; as well as switch the side 
             int childResponses=  perft(child, depth+1);
 
