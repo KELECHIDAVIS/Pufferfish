@@ -189,8 +189,11 @@ class Moves {
 
         // push pawn 1 ; that spot has to be empty
         PAWN_MOVES = ((piecesBB[(int)Side.White][(int)Piece.Pawn] & ~RANKS[6]) << 8) & emptyBB;
-        PAWN_MOVES &= pushMask; 
+        PAWN_MOVES &= pushMask;
 
+
+        Console.WriteLine("Pinning Rays");
+        Board.printBitBoard(pinningRays); 
         while (PAWN_MOVES > 0) {
             currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
             origin = currentIndex - 8;  // for push 1

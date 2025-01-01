@@ -96,8 +96,8 @@ public class Board {
         string rankString = ""; 
 
         for (int rank =0;rank<=7; rank++) {
-            rankString = (8-rank) + " "; 
-            for(int file= 7; file>=0; file--) {
+            rankString = (8 - rank) + " | ";
+            for (int file= 7; file>=0; file--) {
                 int currentBit = LAST_BIT - (rank * 8 + file);
 
                 ulong mask = 1UL;
@@ -110,13 +110,13 @@ public class Board {
             }
             Console.WriteLine(rankString); 
         }
+        Console.WriteLine("    - - - - - - - - ");
         string fileNames = "abcdefgh";
-        rankString = "  "; 
-        for (int i = 0; i < 8; i++)
-        {
-            rankString+= fileNames[i] + " ";
+        rankString = "  ";
+        for (int i = 0; i < 8; i++) {
+            rankString += fileNames[i] + " ";
         }
-        Console.WriteLine(rankString);
+        Console.WriteLine("  " + rankString);
 
     }
     public static void printBoard(Board board)
@@ -127,18 +127,41 @@ public class Board {
     /// Prints out piecelist that has all piece values into an 8x8 chess board form
     /// </summary>
     /// <param name="list"></param>
-    public static void printPieceList(int[] list) {
-        const int LAST_BIT = 63; 
-        for (int rank = 0; rank <= 7; rank++)
-        {
-            for (int file = 7; file >= 0; file--)
-            {
-                int currentIndx = LAST_BIT - (rank * 8 +file );
+    public static void printPieceList(int[] list, ulong[] sideBB) {
+        const int LAST_BIT = 63; // helps with calcs 
+        string rankString = "";
 
-                Console.Write(list[currentIndx]+" ");
+        for (int rank = 0; rank <= 7; rank++) {
+            rankString = (8 - rank) + " | ";
+            for (int file = 7; file >= 0; file--) {
+                int currentBit = LAST_BIT - (rank * 8 + file);
+
+                if (list[currentBit ] != (int) Piece.NONE) { // check if there is a piece at the current piece 
+                    char c = ' ';
+                    Side side = (sideBB[(int) Side.White] & (1UL<<currentBit) )> 0 ? Side.White : Side.Black;
+                    switch (list[currentBit]) {
+                        case (int)Piece.Pawn: c = 'p'; break;
+                        case (int)Piece.Knight: c = 'n'; break;
+                        case (int)Piece.Bishop: c = 'b'; break;
+                        case (int)Piece.Rook: c = 'r'; break;
+                        case (int)Piece.Queen: c = 'q'; break;
+                        case (int)Piece.King: c = 'k'; break;
+                    }
+                    if (side == Side.White)
+                        c = char.ToUpper(c); 
+                    rankString += c+" ";
+                } else { rankString += ". "; }
+
             }
-            Console.WriteLine();
+            Console.WriteLine(rankString);
         }
+        Console.WriteLine("    - - - - - - - - "); 
+        string fileNames = "abcdefgh";
+        rankString = "  ";
+        for (int i = 0; i < 8; i++) {
+            rankString += fileNames[i] + " ";
+        }
+        Console.WriteLine("  " + rankString);
     }
     public static Board charArrayToBoard(char[][] chessBoard) {
         const int LAST_BIT = 63; // helps with calcs 

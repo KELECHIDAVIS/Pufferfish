@@ -36,16 +36,29 @@ class Engine
         Board board = new Board();
         board.initStandardChess();
 
-        // debugging d2 
+        // debugging d2d3 
         Move move = new Move { origin = (int) Square.D2, destination =  (int)Square.D3, moveType=MoveType.QUIET, promoPieceType= Piece.NONE };  
         board.makeMove(move);
 
-        // debugging d2 
-        Move move2 = new Move { origin = (int)Square.E7, destination = (int)Square.E6, moveType = MoveType.QUIET, promoPieceType = Piece.NONE };
+        // debugging c7->c6
+        Move move2 = new Move { origin = (int)Square.C7, destination = (int)Square.C6, moveType = MoveType.QUIET, promoPieceType = Piece.NONE };
         board.makeMove(move2);
 
+        // my engine is only returning 25 white moves when there should be 27 in this position f2->f3 and f2->f4 are missing
+        Board.printPieceList(board.pieceList, board.sideBB);
+
+        List<Move> moves = Moves.possibleMoves(Side.White, board, board.state.EP, board.state.castling);
+        Console.WriteLine(moves.Count+" moves: "); 
+        foreach(Move temp in moves ) Console.Write((Square)temp.origin + "" + (Square)temp.destination + ", "); 
+        
+        
+        Console.WriteLine("\n\n Pawn BB ");
+        Board.printBitBoard(board.piecesBB[(int)Side.White][(int)Piece.Pawn]); 
+       
+        
+        /* 
         int totalMoves = Perft.perft(board, 1);
-        Console.WriteLine("Total Nodes: " + totalMoves);
+        Console.WriteLine("Total Nodes: " + totalMoves);*/
     }
 
 }
