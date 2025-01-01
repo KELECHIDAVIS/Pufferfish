@@ -121,7 +121,7 @@ public class Board {
     }
     public static void printBoard(Board board)
     {
-        printBitBoard(board.sideBB[0] | board.sideBB[1]);
+        printPieceList(board.pieceList, board.sideBB); 
     }
     /// <summary>
     /// Prints out piecelist that has all piece values into an 8x8 chess board form

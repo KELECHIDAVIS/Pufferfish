@@ -37,7 +37,7 @@ class Engine
         board.initStandardChess();
 
         // debugging d2d3 
-        Move move = new Move { origin = (int) Square.D2, destination =  (int)Square.D3, moveType=MoveType.QUIET, promoPieceType= Piece.NONE };  
+        Move move = new Move { origin = (int)Square.D2, destination = (int)Square.D3, moveType = MoveType.QUIET, promoPieceType = Piece.NONE };
         board.makeMove(move);
 
         // debugging c7->c6
@@ -48,17 +48,40 @@ class Engine
         Board.printPieceList(board.pieceList, board.sideBB);
 
         List<Move> moves = Moves.possibleMoves(Side.White, board, board.state.EP, board.state.castling);
-        Console.WriteLine(moves.Count+" moves: "); 
-        foreach(Move temp in moves ) Console.Write((Square)temp.origin + "" + (Square)temp.destination + ", "); 
-        
-        
+        Console.WriteLine(moves.Count + " moves: ");
+        foreach (Move temp in moves) Console.Write((Square)temp.origin + "" + (Square)temp.destination + ", ");
+
+
         Console.WriteLine("\n\n Pawn BB ");
-        Board.printBitBoard(board.piecesBB[(int)Side.White][(int)Piece.Pawn]); 
-       
-        
+        Board.printBitBoard(board.piecesBB[(int)Side.White][(int)Piece.Pawn]);
+
+
         /* 
         int totalMoves = Perft.perft(board, 1);
         Console.WriteLine("Total Nodes: " + totalMoves);*/
+
+
+
+        /*char[][] chessBoard = new char[][]{
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', 'P', ' ' },
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', ' ', 'b', ' ', ' ', ' ' },
+        };
+        Board board = Board.charArrayToBoard(chessBoard);
+        Board.printBoard(board);
+
+        ulong bishopBB = board.piecesBB[(int)Side.Black][(int)Piece.Bishop]; 
+        int origin= BitOperations.TrailingZeroCount(bishopBB);
+        ulong blockerBB = (board.sideBB[(int)Side.White] | board.sideBB[(int)Side.Black]) ^ (1UL << origin);
+
+        ulong rawBishopMoves = Moves.getBishopMoves(blockerBB, origin);
+        Console.WriteLine("Raw Bishop Moves");
+        Board.printBitBoard(rawBishopMoves); */
     }
 
 }

@@ -832,7 +832,7 @@ class Moves {
     }
 
 
-    private static ulong getBishopMoves(ulong blockerConfig, int square) {
+    public static ulong getBishopMoves(ulong blockerConfig, int square) {
         int bishopKey = (int)SlidingMoves.getMagicIndex(SlidingMoves.BishopInfoTable[square], blockerConfig);
 
         return SlidingMoves.BishopMoveHashTable[square][bishopKey];
@@ -1317,6 +1317,8 @@ class Moves {
             slidingPcs |= getRookMoves(blockers, square);
             rooks ^= (1UL << square); 
         }
+        Console.WriteLine("Square that can be seen by " + (Side)opponent + " rooks");
+        Board.printBitBoard(slidingPcs); 
 
         ulong bishops = piecesBB[(int)opponent][(int)Piece.Bishop];
         while (bishops > 0) {// for every rook 
@@ -1325,6 +1327,9 @@ class Moves {
             slidingPcs |= getBishopMoves(blockers, square);
             bishops ^= (1UL << square);
         }
+
+        Console.WriteLine("Square that can be seen by " + (Side)opponent + " rooks and bishops");
+        Board.printBitBoard(slidingPcs);
 
         ulong queens = piecesBB[(int)opponent][(int)Piece.Queen];
         while (queens > 0) {// for every rook 
@@ -1335,11 +1340,15 @@ class Moves {
             queens ^= (1UL << square);
         }
 
-
+        Console.WriteLine("Square that can be seen by " + (Side)opponent + " rooks, bishops, and queens");
+        Board.printBitBoard(slidingPcs);
         // get opponent sliding pieces from kings perspective oppslidingmoves from king 
 
-        // and them together; the resulting bitboard will show where all the pinned pieces are 
-        ulong pinnedPieces = oppSlidingPiecesFromKing & slidingPcs;
+        // if there is a piece from the king's side that is seen by a opp sliding piece and sliding piece from king's perspective that piece is a pinned candidate 
+        ulong pinnedPieces = oppSlidingPiecesFromKing & slidingPcs& sideBB[(int)side];
+
+        Console.WriteLine("Opponent Sliding Pieces From " + (Side)side + " king perspective");
+        Board.printBitBoard(oppSlidingPiecesFromKing); 
 
         // so now if there are any pinned pieces remove from board and develop pinning rays that that piece giving pin to king
         if (pinnedPieces != 0) {
@@ -1347,56 +1356,96 @@ class Moves {
             // now if the king can see a sliding piece from it's position then it is pinned by that 
             ulong lineSliding = (piecesBB[opponent][(int)Piece.Rook] | piecesBB[opponent][(int)Piece.Queen]) & removed;
             ulong diagSliding = (piecesBB[opponent][(int)Piece.Bishop] | piecesBB[opponent][(int)Piece.Queen]) & removed;
-
-            ulong north = currentKing, south = currentKing, east = currentKing, west = currentKing, nwest = currentKing, swest = currentKing, neast = currentKing, seast = currentKing;
-            for(int i =0; i< 7; i++) { 
-                north = (north << 8) | north; south = (south >> 8) | south; east = (east << 1) | east; west = (west >> 1) | west; nwest = (nwest << 7) | nwest; neast = (neast << 9) | neast; swest = (swest >> 9) | swest; seast = (seast >> 7) | seast;
-
-                // if the ray == 0 that means a pinning piece was already found in the direction so skip 
-                if ((north & lineSliding) > 0 && north != 0) { // rook or queen found on this ray 
-                    north ^= currentKing; // remove king 
-                    pinningRays |= north; //add ray to pinnedRays
-                    north = 0; // stop looking in this direction 
+            
+            // to make sure we are not going through pieces 
+            ulong nonSlidingBlockers = removed & (~lineSliding) & (~diagSliding); 
+            ulong north = currentKing<<8, south = currentKing>>8, east = currentKing<<1, west = currentKing>>1, nwest = currentKing<<7, swest = currentKing>>9, neast = currentKing<<9, seast = currentKing>>7;
+            int counter = 0; // to keep track of the directions; max it should go is 6; if 7 stop
+            
+            // only check cardinal directions if there are line sliding pieces
+            if(lineSliding!= 0) {
+                // should only go max of 7 times and if it wraps around stop
+                // should also stop if you run into a nonsliding piece 
+                while (counter < 7 && (north & RANKS[0]) == 0 && (north & nonSlidingBlockers) == 0) {
+                    if ((north & lineSliding) != 0) { // ran into a valid sliding piece
+                        pinningRays |= north; // add ray 
+                        break;
+                    }
+                    north = (north << 8) | north; //iterate ray 
+                    counter++;
                 }
-                if ((south & lineSliding) > 0 && south != 0) { // this  is the correct path 
-                    south ^= currentKing; // remove king 
-                    pinningRays |= south; //add ray to pinnedRays
-                    south = 0; // stop looking in this direction 
+                counter = 0; // reset counter 
+                while (counter < 7 && (south & RANKS[7]) == 0 && (south & nonSlidingBlockers) == 0) {
+                    if ((south & lineSliding) != 0) { // ran into a valid sliding piece
+                        pinningRays |= south; // add ray 
+                        break;
+                    }
+                    south = (south >> 8) | south; //iterate ray 
+                    counter++;
                 }
-
-                if ((east & lineSliding) > 0 && east != 0) { // this  is the correct path 
-                    east ^= currentKing; // remove king 
-                    pinningRays |= east; //add ray to pinnedRays
-                    east = 0; // stop looking in this direction 
+                counter = 0; // reset counter 
+                while (counter < 7 && (east & FILES[0]) == 0 && (east & nonSlidingBlockers) == 0) {
+                    if ((east & lineSliding) != 0) { // ran into a valid sliding piece
+                        pinningRays |= east; // add ray 
+                        break;
+                    }
+                    east = (east << 1) | east; //iterate ray 
+                    counter++;
                 }
-                if ((west & lineSliding) > 0 && west != 0) { // this  is the correct path 
-                    west ^= currentKing; // remove king 
-                    pinningRays |= west; //add ray to pinnedRays
-                    west = 0; // stop looking in this direction 
+                counter = 0; // reset counter 
+                while (counter < 7 && (west & FILES[7]) == 0 && (west & nonSlidingBlockers) == 0) {
+                    if ((west & lineSliding) != 0) { // ran into a valid sliding piece
+                        pinningRays |= west; // add ray 
+                        break;
+                    }
+                    west = (west >> 1) | west; //iterate ray 
+                    counter++;
                 }
-                if ((nwest & diagSliding) > 0 && nwest != 0) { // this  is the correct path 
-                    nwest ^= currentKing; // remove king 
-                    pinningRays |= nwest; //add ray to pinnedRays
-                    nwest = 0; // stop looking in this direction 
-                }
-                if ((neast & diagSliding) > 0 && neast != 0) { // this  is the correct path 
-                    neast ^= currentKing; // remove king 
-                    pinningRays |= neast; //add ray to pinnedRays
-                    neast = 0; // stop looking in this direction 
-                }
-                if ((swest & diagSliding) > 0 && swest != 0) { // this  is the correct path 
-                    swest ^= currentKing; // remove king 
-                    pinningRays |= swest; //add ray to pinnedRays
-                    swest = 0; // stop looking in this direction 
-                }
-                if ((seast & diagSliding) > 0 && seast != 0) { // this  is the correct path 
-                    seast ^= currentKing; // remove king 
-                    pinningRays |= seast; //add ray to pinnedRays
-                    seast = 0; // stop looking in this direction 
-                }
+                counter = 0; // reset counter 
 
             }
+            // only check cardinal directions if there are line sliding pieces
+            if (diagSliding != 0) {
+                // should only go max of 7 times and if it wraps around stop
+                // should also stop if you run into a nonsliding piece 
+                while (counter < 7 && (neast & (RANKS[0] | FILES[0])) == 0 && (neast & nonSlidingBlockers) == 0) {
+                    if ((neast & diagSliding) != 0) { // ran into a valid sliding piece
+                        pinningRays |= neast; // add ray 
+                        break;
+                    }
+                    neast = (neast << 9) | neast; //iterate ray 
+                    counter++;
+                }
+                counter = 0; // reset counter 
+                while (counter < 7 && (nwest & (RANKS[0] | FILES[7])) == 0 && (nwest & nonSlidingBlockers) == 0) {
+                    if ((nwest & diagSliding) != 0) { // ran into a valid sliding piece
+                        pinningRays |= nwest; // add ray 
+                        break;
+                    }
+                    nwest = (nwest << 7) | nwest; //iterate ray 
+                    counter++;
+                }
+                counter = 0; // reset counter 
+                while (counter < 7 && (seast & (RANKS[7] | FILES[0])) == 0 && (seast & nonSlidingBlockers) == 0) {
+                    if ((seast & diagSliding) != 0) { // ran into a valid sliding piece
+                        pinningRays |= seast; // add ray 
+                        break;
+                    }
+                    seast = (seast >> 7) | seast; //iterate ray 
+                    counter++;
+                }
+                counter = 0; // reset counter 
+                while (counter < 7 && (swest & (RANKS[7] | FILES[7])) == 0 && (swest & nonSlidingBlockers) == 0) {
+                    if ((swest & diagSliding) != 0) { // ran into a valid sliding piece
+                        pinningRays |= swest; // add ray 
+                        break;
+                    }
+                    swest = (swest >> 9) | swest; //iterate ray 
+                    counter++;
+                }
+                counter = 0; // reset counter 
 
+            }
         }
         return (captureMask, pushMask, pinningRays); 
     }
