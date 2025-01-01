@@ -38,9 +38,11 @@ class Engine
 
         
 
-        
-        int totalMoves = Perft.perft(board, 1);
-        Console.WriteLine("Total Nodes: " + totalMoves);
+        for(int maxDepth = 1; maxDepth<=5; maxDepth++) {
+            Console.WriteLine("MaxDepth: " + maxDepth); 
+            int totalMoves = Perft.perft(board, 1, maxDepth);
+            Console.WriteLine("Total Nodes: " + totalMoves);
+        }
 
 
 

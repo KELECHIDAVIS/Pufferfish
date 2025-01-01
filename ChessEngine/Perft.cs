@@ -1,9 +1,9 @@
 ﻿public class Perft {
 
-    static readonly int maxDepth =3 ; 
+    
 
     // return the number of legal moves that can be made from this board state
-    public static int perft(Board board, int depth){
+    public static int perft(Board board, int depth, int maxDepth){
         //To test that my move gen is working correctly we do this test recursively : 
         /*Generate all moves that side can make with current board 
          * Make move on temp board then see all the responses that can be made
@@ -25,7 +25,7 @@
         foreach (Move move in moves) {
             Board child = Board.initCopy(board); // creates an identical board based on sent board 
             child.makeMove(move); // SHOULD UPDATE ALL STATE RELATED TO MOVE MADE ; as well as switch the side 
-            int childResponses=  perft(child, depth+1);
+            int childResponses=  perft(child, depth+1, maxDepth);
 
             // only print out the moves if this is the first iteration 
             if (depth == 1)

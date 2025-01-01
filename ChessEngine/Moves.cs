@@ -192,8 +192,7 @@ class Moves {
         PAWN_MOVES &= pushMask;
 
 
-        Console.WriteLine("Pinning Rays");
-        Board.printBitBoard(pinningRays); 
+        
         while (PAWN_MOVES > 0) {
             currentIndex = BitOperations.TrailingZeroCount(PAWN_MOVES);
             origin = currentIndex - 8;  // for push 1
@@ -434,11 +433,7 @@ class Moves {
         // queen just combine both then and with queens on board 
         attackers |= ((rookMoves | bishopMoves) & piecesBB[(int)opp][(int)Piece.Queen]);
 
-        Console.WriteLine("RookMoves From King Perspective ");
-        Board.printBitBoard(rookMoves);
-
-        Console.WriteLine("BishopMoves From King Perspective ");
-        Board.printBitBoard(bishopMoves);
+        
 
         if (attackers > 0) // king is in check to a sliding piece
             return true; 
@@ -721,8 +716,7 @@ class Moves {
                 Move ep = new Move { origin = origin, destination = destination, promoPieceType = Piece.NONE, moveType = MoveType.ENPASSANT };
                 board.makeMove(ep);
 
-                Console.WriteLine("Board After Move Is Made");
-                Board.printBoard(board);
+                
                 //See if move put their king in check due to sliding pieces 
                 bool kingInCheck = isKingInCheckSliding(Side.Black, board.piecesBB, board.sideBB);
 
@@ -1317,8 +1311,7 @@ class Moves {
             slidingPcs |= getRookMoves(blockers, square);
             rooks ^= (1UL << square); 
         }
-        Console.WriteLine("Square that can be seen by " + (Side)opponent + " rooks");
-        Board.printBitBoard(slidingPcs); 
+        
 
         ulong bishops = piecesBB[(int)opponent][(int)Piece.Bishop];
         while (bishops > 0) {// for every rook 
@@ -1328,8 +1321,7 @@ class Moves {
             bishops ^= (1UL << square);
         }
 
-        Console.WriteLine("Square that can be seen by " + (Side)opponent + " rooks and bishops");
-        Board.printBitBoard(slidingPcs);
+        
 
         ulong queens = piecesBB[(int)opponent][(int)Piece.Queen];
         while (queens > 0) {// for every rook 
@@ -1340,15 +1332,13 @@ class Moves {
             queens ^= (1UL << square);
         }
 
-        Console.WriteLine("Square that can be seen by " + (Side)opponent + " rooks, bishops, and queens");
-        Board.printBitBoard(slidingPcs);
+        
         // get opponent sliding pieces from kings perspective oppslidingmoves from king 
 
         // if there is a piece from the king's side that is seen by a opp sliding piece and sliding piece from king's perspective that piece is a pinned candidate 
         ulong pinnedPieces = oppSlidingPiecesFromKing & slidingPcs& sideBB[(int)side];
 
-        Console.WriteLine("Opponent Sliding Pieces From " + (Side)side + " king perspective");
-        Board.printBitBoard(oppSlidingPiecesFromKing); 
+       
 
         // so now if there are any pinned pieces remove from board and develop pinning rays that that piece giving pin to king
         if (pinnedPieces != 0) {
