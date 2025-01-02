@@ -1550,6 +1550,29 @@ class Moves {
         return unsafeBB; 
     }
 
+    // to make move generation more efficient, pseudo legal knight moves are going to be looked up instead of calculated at runtime 
+    public static void generateKnightMoveTable() {
+        string result = "new ulong { ";
+        ulong moveBB, indexMask; 
+        // for each square 
+        for (int i = 0; i< 64; i++) {
+            // on every square make all the knight moves possible
+            indexMask = (1UL << i);
+            moveBB = northEastEast(indexMask) |
+                northNorthEast(indexMask) |
+                northWestWest(indexMask) |
+                northNorthWest(indexMask) |
+                southEastEast(indexMask) |
+                southSouthEast(indexMask) |
+                southWestWest(indexMask) |
+                southSouthWest(indexMask);
+            Board.printBitBoard(moveBB); 
+            result += moveBB+", ";
+        }
+        result += "};"; 
+        Console.WriteLine(result); 
+    }
+
    
 }
 

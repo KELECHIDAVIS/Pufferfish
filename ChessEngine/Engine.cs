@@ -38,14 +38,13 @@ class Engine
         board.initStandardChess();
 
 
-        int maxDepth = 4; 
+        int maxDepth = 5; 
         Console.WriteLine("MaxDepth: " + maxDepth);
-        var res = Perft.perft(board, 1, maxDepth);
-
-        Console.WriteLine("Total Nodes: " + res.totalNodes);
-        Console.WriteLine("Move Generation Time (ms) : " + res.moveGenTimeMS );
-        Console.WriteLine("Copy Board Time (ms) : " + res.copyTimeMS );
-        Console.WriteLine("Make Move Time (ms) : " + res.makeMoveTimeMS );
+        var timer = Stopwatch.StartNew();
+        int totalMoves = Perft.perft(board, 1, maxDepth);
+        timer.Stop();
+        Console.WriteLine("Total Nodes: " + totalMoves);
+        Console.WriteLine(timer.ElapsedMilliseconds / 1000f + " sec");
 
 
 
@@ -69,6 +68,9 @@ class Engine
         ulong rawBishopMoves = Moves.getBishopMoves(blockerBB, origin);
         Console.WriteLine("Raw Bishop Moves");
         Board.printBitBoard(rawBishopMoves); */
+
+
+
     }
 
 }
