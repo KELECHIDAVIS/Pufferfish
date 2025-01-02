@@ -44,5 +44,10 @@ public struct GameHistory // a list class that hold all the gamestates (kinda li
         list = new GameState[MAX_GAME_MOVES]; 
     }
 
-    
+    public GameHistory getCopy() {
+        GameHistory temp = new GameHistory();
+        temp.count = count;
+        Array.Copy(list, temp.list, list.Length);
+        return temp; 
+    }
 }

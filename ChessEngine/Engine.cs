@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Text;
@@ -37,13 +38,14 @@ class Engine
         board.initStandardChess();
 
 
+        int maxDepth = 4; 
+        Console.WriteLine("MaxDepth: " + maxDepth);
+        var res = Perft.perft(board, 1, maxDepth);
 
-        for (int maxDepth = 1; maxDepth <= 5; maxDepth++) {
-            Console.WriteLine("MaxDepth: " + maxDepth);
-            Dictionary<ulong, int> boardMemo = new Dictionary<ulong, int>();
-            int totalMoves = Perft.perft(board, 1, maxDepth, boardMemo);
-            Console.WriteLine("Total Nodes: " + totalMoves);
-        }
+        Console.WriteLine("Total Nodes: " + res.totalNodes);
+        Console.WriteLine("Move Generation Time (ms) : " + res.moveGenTimeMS );
+        Console.WriteLine("Copy Board Time (ms) : " + res.copyTimeMS );
+        Console.WriteLine("Make Move Time (ms) : " + res.makeMoveTimeMS );
 
 
 

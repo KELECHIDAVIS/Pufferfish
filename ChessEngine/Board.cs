@@ -30,9 +30,9 @@ public enum Side
 public class Board {
    
 
-    public const int NUM_PIECE_TYPES = 6;
-    public const int NUM_SIDES = 2;
-    public const int NUM_SQUARES = 64;
+    public static readonly int NUM_PIECE_TYPES = 6;
+    public static readonly int NUM_SIDES = 2;
+    public static readonly int NUM_SQUARES = 64;
 
     public ulong[][] piecesBB = initPiecesBitBoard(); // row is color, col is piece type Ex: [white][king]
     public ulong[] sideBB = new ulong[NUM_SIDES]; // hold all pieces from a certain color Ex: [white] 
@@ -45,7 +45,7 @@ public class Board {
     public GameHistory history = new(); // list of states; all the states taken so far 
 
     // need zobrist randoms 
-    ZobristRandoms zobristRandom= new();  // UNCOMMENT WHEN DONE DEBUGGING 
+    static readonly ZobristRandoms zobristRandom= new();  // UNCOMMENT WHEN DONE DEBUGGING 
     
 
     
@@ -267,22 +267,37 @@ public class Board {
      
     }
     public static Board initCopy(Board parent) {
-        // can't copy objects directly;
-        // Two ways to copy: go through every relevant primitve Variable and just copy and paste
-        // or just start with standard chess and make every move thats in the parent's history in order 
         Board newBoard = new Board();
-        newBoard.initStandardChess(); 
 
-        // for every parent move make same move on new board  
-        for(int i =0; i< parent.history.length(); i++) {
-            GameState currState = parent.history.getState(i);
-            newBoard.makeMove(currState.nextMove); 
-        }
+        // copy parent's content by value not reference
+        newBoard.piecesBB = CopyJagged(parent.piecesBB);
+        Array.Copy(parent.sideBB, newBoard.sideBB, NUM_SIDES);
+        Array.Copy(parent.pieceList, newBoard.pieceList, NUM_SQUARES); 
         
-        return newBoard;
+        //state 
+        newBoard.state.halfMoveClock = parent.state.halfMoveClock;
+        newBoard.state.fullMoveNum = parent.state.fullMoveNum;
+        newBoard.state.nextMove = new Move { origin= parent.state.nextMove.origin,
+            destination = parent.state.nextMove.destination,
+            promoPieceType = parent.state.nextMove.promoPieceType,
+            moveType = parent.state.nextMove.moveType,
+        }; 
+        newBoard.state.sideToMove = parent.state.sideToMove;
+        newBoard.state.castling = parent.state.castling;
+        newBoard.state.EP = parent.state.EP;
+        newBoard.state.zobristKey = parent.state.zobristKey;
+
+
+        // history
+        newBoard.history = parent.history.getCopy();    
+
+        return newBoard; 
     }
 
 
+    static ulong[][] CopyJagged(ulong[][] source) {
+        return source.Select(s => s.ToArray()).ToArray();
+    }
     // updates boards bbs and state to reflect move 
 
     public void makeMove(Move move ) {
