@@ -38,7 +38,7 @@ class Engine
         board.initStandardChess();
 
 
-        int maxDepth = 5; 
+        int maxDepth = 4;
         Console.WriteLine("MaxDepth: " + maxDepth);
         var timer = Stopwatch.StartNew();
         int totalMoves = Perft.perft(board, 1, maxDepth);
@@ -68,6 +68,7 @@ class Engine
         ulong rawBishopMoves = Moves.getBishopMoves(blockerBB, origin);
         Console.WriteLine("Raw Bishop Moves");
         Board.printBitBoard(rawBishopMoves); */
+
 
 
 
