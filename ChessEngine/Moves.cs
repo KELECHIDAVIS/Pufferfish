@@ -59,13 +59,13 @@ class Moves {
     static int bQSideCastleDest = (int)Square.C8;
 
     public static ulong PAWN_MOVES;  // to save on memory we just reassign this variable 
-    public static ulong KING_MOVES;
     public static ulong ROOK_MOVES;
     public static ulong BISHOP_MOVES; 
     public static ulong QUEEN_MOVES;
 
 
     private static ulong[] KNIGHT_MOVES= new ulong[] { 132096, 329728, 659712, 1319424, 2638848, 5277696, 10489856, 4202496, 33816580, 84410376, 168886289, 337772578, 675545156, 1351090312, 2685403152, 1075839008, 8657044482, 21609056261, 43234889994, 86469779988, 172939559976, 345879119952, 687463207072, 275414786112, 2216203387392, 5531918402816, 11068131838464, 22136263676928, 44272527353856, 88545054707712, 175990581010432, 70506185244672, 567348067172352, 1416171111120896, 2833441750646784, 5666883501293568, 11333767002587136, 22667534005174272, 45053588738670592, 18049583422636032, 145241105196122112, 362539804446949376, 725361088165576704, 1450722176331153408, 2901444352662306816, 5802888705324613632, 11533718717099671552, 4620693356194824192, 288234782788157440, 576469569871282176, 1224997833292120064, 2449995666584240128, 4899991333168480256, 9799982666336960512, 1152939783987658752, 2305878468463689728, 1128098930098176, 2257297371824128, 4796069720358912, 9592139440717824, 19184278881435648, 38368557762871296, 4679521487814656, 9077567998918656, };
+    private static ulong[] KING_MOVES = new ulong[] { 770, 1797, 3594, 7188, 14376, 28752, 57504, 49216, 197123, 460039, 920078, 1840156, 3680312, 7360624, 14721248, 12599488, 50463488, 117769984, 235539968, 471079936, 942159872, 1884319744, 3768639488, 3225468928, 12918652928, 30149115904, 60298231808, 120596463616, 241192927232, 482385854464, 964771708928, 825720045568, 3307175149568, 7718173671424, 15436347342848, 30872694685696, 61745389371392, 123490778742784, 246981557485568, 211384331665408, 846636838289408, 1975852459884544, 3951704919769088, 7903409839538176, 15806819679076352, 31613639358152704, 63227278716305408, 54114388906344448, 216739030602088448, 505818229730443264, 1011636459460886528, 2023272918921773056, 4046545837843546112, 8093091675687092224, 16186183351374184448, 13853283560024178688, 144959613005987840, 362258295026614272, 724516590053228544, 1449033180106457088, 2898066360212914176, 5796132720425828352, 11592265440851656704, 4665729213955833856, };
     /// <summary>
     /// Returns all possible moves for that side 
 
@@ -887,19 +887,19 @@ class Moves {
 
     //KNIGHT MOVES 
     static ulong northWestWest(ulong bb) {
-        return (bb << 6) & ~(FILES[6]|FILES[7]);  //shift left 6 and make sure result isn't on file g or h (wrap around) 
+        return (bb << 6) & ~(FILES[6] | FILES[7]);  //shift left 6 and make sure result isn't on file g or h (wrap around) 
     }
     static ulong northEastEast(ulong bb) {
         return (bb << 10) & ~(FILES[0] | FILES[1]); // make sure result not on a or b 
     }
     static ulong northNorthWest(ulong bb) {
-        return (bb << 15) & ~(FILES[7] ); // make sure result not on h
+        return (bb << 15) & ~(FILES[7]); // make sure result not on h
     }
     static ulong northNorthEast(ulong bb) {
         return (bb << 17) & ~(FILES[0]); // make sure result not on h
     }
-    static ulong southEastEast (ulong bb) {
-        return (bb >> 6) & ~(FILES[0] | FILES[1]);  
+    static ulong southEastEast(ulong bb) {
+        return (bb >> 6) & ~(FILES[0] | FILES[1]);
     }
     static ulong southWestWest(ulong bb) {
         return (bb >> 10) & ~(FILES[6] | FILES[7]);
@@ -959,29 +959,18 @@ class Moves {
         // find the kings reg attack pattern
         ulong currentKing = piecesBB[(int)side][(int)Piece.King];
         int originOfKing= BitOperations.TrailingZeroCount(currentKing); // get current square of king; we know there's only ever one 
-
-        // left moves; the result can't be on file h 
-        // left, left up , left down ; check they aren't on file h 
-        KING_MOVES |= (currentKing >> 1 | (currentKing<<7) | (currentKing >>9 )) & ~FILES[7];
-
-        //right , right up , right down; can't be on file a 
-        KING_MOVES |= (currentKing << 1 | (currentKing << 9) | (currentKing >> 7)) & ~FILES[0];
-
-        // up and down ( check not neccessary because bits don't rollover 
-        KING_MOVES|= (currentKing <<8 ) | (currentKing >>8 );
-
-        
+        ulong currentMoves = KING_MOVES[originOfKing]; // psuedo legal moves of the king at this square 
 
         // now we have to check that these moves are on empty or capturable squares
-        KING_MOVES &= (emptyBB | captureBB);
+        currentMoves &= (emptyBB | captureBB);
 
         
         // a bb that holds all the square that are in sight of black pieces 
         ulong unsafeBB = getUnsafeSquares(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, side, originOfKing);
-        
+
 
         // then check that these moves don't put the king in check; king can only move where is safe for the king 
-        KING_MOVES &= ~unsafeBB;
+        currentMoves &= ~unsafeBB;
 
 
         // We have all the king's safe moves 
@@ -1043,11 +1032,11 @@ class Moves {
 
             pushMask = 0;
             captureMask = 0;
-            while (KING_MOVES > 0) {
-                int index = BitOperations.TrailingZeroCount(KING_MOVES);
+            while (currentMoves > 0) {
+                int index = BitOperations.TrailingZeroCount(currentMoves);
                 indexMask = (1UL << index);
                 moveList.Add(new Move { origin = originOfKing, destination = index, moveType = MoveType.EVASION, promoPieceType = Piece.NONE });
-                KING_MOVES &= ~indexMask;
+                currentMoves &= ~indexMask;
             }
 
         } else if(numCheckers ==1 ) {        // or single checker 
@@ -1099,17 +1088,17 @@ class Moves {
 
             }
             // only valid king moves would also only be evasions 
-            while (KING_MOVES > 0) {
-                int index = BitOperations.TrailingZeroCount(KING_MOVES);
+            while (currentMoves > 0) {
+                int index = BitOperations.TrailingZeroCount(currentMoves);
                 indexMask = (1UL << index);
                 moveList.Add(new Move { origin = originOfKing, destination = index, moveType = MoveType.EVASION, promoPieceType = Piece.NONE });
-                KING_MOVES &= ~indexMask;
+                currentMoves &= ~indexMask;
             }
 
         } else { // no checkers 
 
-            while (KING_MOVES > 0) {
-                int index = BitOperations.TrailingZeroCount(KING_MOVES);
+            while (currentMoves > 0) {
+                int index = BitOperations.TrailingZeroCount(currentMoves);
                 indexMask = (1UL << index);
 
                 if ((indexMask & captureBB) > 0) {// something was captured 
@@ -1119,7 +1108,7 @@ class Moves {
                 }
 
                 moveList.Add(new Move { origin = originOfKing, destination = index, moveType = captureOrNot, promoPieceType = Piece.NONE });
-                KING_MOVES &= ~indexMask;
+                currentMoves &= ~indexMask;
             }
 
             //CASTLING can only castle when not in check; 0000 no castling, 0001 white kingside ,0010 white queenside, 0100 black king, 1000 black queen 
@@ -1311,7 +1300,7 @@ class Moves {
         return setBits; 
     }
 
-    private static ulong getMovesAtSquareKnight(Square currSquare, Side  side) {
+    private static ulong getMovesAtSquareKnight(Square currSquare, Side side) {
         ulong knightBB = (1UL << (int)currSquare);
         return northEastEast(knightBB)
             | northNorthEast(knightBB)
@@ -1320,7 +1309,7 @@ class Moves {
             | southEastEast(knightBB)
             | southSouthEast(knightBB)
             | southWestWest(knightBB)
-            | southSouthWest(knightBB); 
+            | southSouthWest(knightBB);
 
     }
 

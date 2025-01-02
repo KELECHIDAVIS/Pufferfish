@@ -38,7 +38,7 @@ class Engine
         board.initStandardChess();
 
 
-        int maxDepth = 4;
+        int maxDepth = 5;
         Console.WriteLine("MaxDepth: " + maxDepth);
         var timer = Stopwatch.StartNew();
         int totalMoves = Perft.perft(board, 1, maxDepth);
