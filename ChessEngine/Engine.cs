@@ -38,13 +38,16 @@ class Engine
         board.initStandardChess();
 
 
-        int maxDepth = 5;
-        Console.WriteLine("MaxDepth: " + maxDepth);
-        var timer = Stopwatch.StartNew();
-        int totalMoves = Perft.perft(board, 1, maxDepth);
-        timer.Stop();
-        Console.WriteLine("Total Nodes: " + totalMoves);
-        Console.WriteLine(timer.ElapsedMilliseconds / 1000f + " sec");
+        for(int maxDepth = 1; maxDepth <=6; maxDepth++) {
+            Console.WriteLine("MaxDepth: " + maxDepth);
+            var timer = Stopwatch.StartNew();
+            int totalMoves = Perft.perft(board, 1, maxDepth);
+            timer.Stop();
+            Console.WriteLine("Total Nodes: " + totalMoves);
+            Console.WriteLine(timer.ElapsedMilliseconds / 1000f + " sec");
+            Console.WriteLine("NPS: "+totalMoves / (timer.ElapsedMilliseconds / 1000f)); 
+        }
+        
 
 
 

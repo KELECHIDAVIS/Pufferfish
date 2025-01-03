@@ -42,7 +42,7 @@ public class Board {
 
 
     public GameState state;
-    public GameHistory history = new(); // list of states; all the states taken so far 
+    public List<GameState> gameHistory= new(); // list of states; all the states taken so far 
 
     // need zobrist randoms 
     static readonly ZobristRandoms zobristRandom= new();  // UNCOMMENT WHEN DONE DEBUGGING 
@@ -289,7 +289,22 @@ public class Board {
 
 
         // history
-        newBoard.history = parent.history.getCopy();    
+        foreach(GameState currState in parent.gameHistory) {
+            GameState newState;
+            newState.halfMoveClock = currState.halfMoveClock;
+            newState.fullMoveNum = currState.fullMoveNum;
+            newState.nextMove = new Move {
+                origin = currState.nextMove.origin,
+                destination = currState.nextMove.destination,
+                promoPieceType = currState.nextMove.promoPieceType,
+                moveType = currState.nextMove.moveType,
+            };
+            newState.sideToMove = currState.sideToMove;
+            newState.castling = currState.castling;
+            newState.EP = currState.EP;
+            newState.zobristKey = currState.zobristKey;
+            newBoard.gameHistory.Add(newState);
+        }
 
         return newBoard; 
     }
@@ -307,7 +322,7 @@ public class Board {
         ulong destMask = (1UL << (move.destination)), origMask = (1UL << (move.origin));
         // save the state into the history to prepare for other moves 
         state.nextMove = move; 
-        history.push (state);
+        gameHistory.Add (state);
         state.sideToMove = opp; // opponents turn next
 
         // based on move the zobrist key should be updated accordingly 
