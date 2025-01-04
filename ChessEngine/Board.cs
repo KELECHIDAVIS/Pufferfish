@@ -325,6 +325,10 @@ public class Board {
         gameHistory.Add (state);
         state.sideToMove = opp; // opponents turn next
 
+
+        // if the was an ep available last move it should be turned off now 
+        this.state.EP = 0;
+        this.state.zobristKey ^= zobristRandom.epRandoms[BitOperations.TrailingZeroCount(this.state.EP)]; // update zob
         // based on move the zobrist key should be updated accordingly 
         switch (move.moveType) {
             case MoveType.ENPASSANT:
@@ -360,7 +364,7 @@ public class Board {
 
 
                 // since EP was made have to turn off this EP in the state ;  piece to remove is at the same pos 
-                this.state.EP ^= (1UL << (move.destination + add));
+                
                 state.zobristKey ^= zobristRandom.epRandoms[move.destination + add]; // toggle ep zobrist 
                 break;
             case MoveType.CASTLE:
@@ -444,8 +448,8 @@ public class Board {
                 this.sideBB[(int)side] |= destMask;
                 state.zobristKey ^= zobristRandom.pieceRandoms[(int)side][piece][move.destination];
 
-                // if a pawn is pushed two spaces light up their destination in the ep
-                if (piece == (int) Piece.Pawn && ((move.origin+2 == move.destination)||(move.origin-2== move.destination))) {
+                // if a pawn is pushed two spaces (16 bits up or down )light up their destination in the ep
+                if (piece == (int) Piece.Pawn && (Math.Abs(move.destination-move.origin)==16)) {
                     int epIndx = BitOperations.TrailingZeroCount(state.EP);
                     state.zobristKey ^= zobristRandom.epRandoms[epIndx]; // toggle original ep 
                     state.EP = destMask; //can only ever be one ep position at a time 

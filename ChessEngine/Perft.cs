@@ -2,7 +2,7 @@
 
 
     // return the number of legal moves that can be made from this board state
-    public static int perft(Board board, int depth, int maxDepth) {
+    public static int perft(Board board, int depth, int maxDepth, Dictionary<string, int> map ) {
         //To test that my move gen is working correctly we do this test recursively : 
         /*Generate all moves that side can make with current board 
          * Make move on temp board then see all the responses that can be made
@@ -24,12 +24,15 @@
         foreach (Move move in moves) {
             Board child = Board.initCopy(board); // creates an identical board based on sent board 
             child.makeMove(move); // SHOULD UPDATE ALL STATE RELATED TO MOVE MADE ; as well as switch the side 
-            int childResponses=  perft(child, depth+1, maxDepth);
+            int childResponses=  perft(child, depth+1, maxDepth, map);
 
             // only print out the moves if this is the first iteration 
-            if (depth == 1)
-                Console.WriteLine((Square)move.origin + "" + (Square)move.destination + ": " + childResponses);
-
+            if (depth == 1) {
+                string moveString = (Square)move.origin + "" + (Square)move.destination + " " + childResponses; 
+                
+                Console.WriteLine(moveString);
+                map.Add((Square)move.origin + "" + (Square)move.destination , childResponses); 
+            }
             totalMoves += childResponses; 
         }
 
