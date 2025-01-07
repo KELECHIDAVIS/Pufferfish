@@ -7,3 +7,5 @@ Chess Programming Wiki
 Logic Crazy Chess
 https://stackoverflow.com/questions/30680559/how-to-find-magic-bitboards
 Analog hors: https://analog-hors.github.io/site/magic-bitboards/
+https://peterellisjones.com/
+https://chess.stackexchange.com/
