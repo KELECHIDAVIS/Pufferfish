@@ -424,7 +424,7 @@ public class Board {
                 break;
             default:  // capture, evasion, or quiet 
                  
-                if(MoveType.CAPTURE == move.moveType) {
+                if(MoveType.CAPTURE == move.moveType && pieceList[move.destination] != (int) Piece.NONE) {
                     int capturedPiece = pieceList[move.destination];
                     // update captured piece 
                     this.piecesBB[(int)opp][capturedPiece] ^= destMask;

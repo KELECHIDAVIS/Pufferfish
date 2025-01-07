@@ -49,7 +49,7 @@ class Engine
             Console.Write((Square) state.nextMove.origin+""+(Square)state.nextMove.destination+" ");
         }Console.WriteLine(); 
 
-        int maxDepth = 5;
+        int maxDepth = 6;
 
         Dictionary<string , int> map = new Dictionary<string , int>();
         Console.WriteLine("MaxDepth: " + maxDepth);
@@ -61,7 +61,7 @@ class Engine
         
 
         Console.WriteLine("\nSharper comparisons:"); 
-        string[] sharperResult = "b1c3 234656\r\nb1a3 198572\r\ng1h3 198502\r\ng1f3 233491\r\na2a3 181046\r\na2a4 217832\r\nb2b3 215255\r\nb2b4 216145\r\nc2c3 222861\r\nc2c4 240082\r\nd2d3 328511\r\nd2d4 361790\r\ne2e3 402988\r\ne2e4 405385\r\nf2f3 178889\r\nf2f4 198473\r\ng2g3 217210\r\ng2g4 214048\r\nh2h3 181044\r\nh2h4 218829".ToUpper().Split("\n"); 
+        string[] sharperResult = "b1c3 5708064\r\nb1a3 4856835\r\ng1h3 4877234\r\ng1f3 5723523\r\na2a3 4463267\r\na2a4 5363555\r\nb2b3 5310358\r\nb2b4 5293555\r\nc2c3 5417640\r\nc2c4 5866666\r\nd2d3 8073082\r\nd2d4 8879566\r\ne2e3 9726018\r\ne2e4 9771632\r\nf2f3 4404141\r\nf2f4 4890429\r\ng2g3 5346260\r\ng2g4 5239875\r\nh2h3 4463070\r\nh2h4 5385554".ToUpper().Split("\n"); 
 
         foreach(string move in sharperResult) {
             string[] pair = move.Split(" ");
