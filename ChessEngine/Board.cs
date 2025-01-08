@@ -325,7 +325,8 @@ public class Board {
         gameHistory.Add (state);
         state.sideToMove = opp; // opponents turn next
 
-
+        
+        this.state.zobristKey ^= zobristRandom.epRandoms[BitOperations.TrailingZeroCount(this.state.EP)]; // update zob: toggle original ep rights 
         // if the was an ep available last move it should be turned off now 
         this.state.EP = 0;
         this.state.zobristKey ^= zobristRandom.epRandoms[BitOperations.TrailingZeroCount(this.state.EP)]; // update zob
@@ -341,8 +342,8 @@ public class Board {
                     add = 8;
                 }
                 // remove captured pawn 
-                this.piecesBB[(int)opp][(int)Piece.Pawn] ^= (1UL << (move.destination + add));
-                this.sideBB[(int)opp] ^= (1UL << (move.destination + add));
+                this.piecesBB[(int)opp][(int)Piece.Pawn] &= ~(1UL << (move.destination + add));
+                this.sideBB[(int)opp] &= ~(1UL << (move.destination + add));
                 this.pieceList[move.destination + add] = (int)Piece.NONE;
                 // remove captured pawn from zobrist
                 state.zobristKey ^= zobristRandom.pieceRandoms[(int)opp][(int)Piece.Pawn][move.destination + add]; 
@@ -432,8 +433,20 @@ public class Board {
                     state.zobristKey ^= zobristRandom.pieceRandoms[(int)opp][capturedPiece][move.destination];
 
                 }
+                int piece = pieceList[move.origin];  // moving piece 
+                if (piece == (int) Piece.NONE)
+                {
+                    Console.WriteLine("Error When Making This Move: "+ (Square)move.origin +""+ (Square)move.destination+"-"+move.moveType+"-"+move.promoPieceType);
+                    Console.WriteLine("Board State before move : ");
+                    Board.printBoard(this);
 
-                int piece =pieceList[move.origin];  // moving piece 
+                    Console.WriteLine("Move History:"); 
+                    foreach (GameState gamestate in gameHistory)
+                    {
+                        Console.WriteLine((Square)gamestate.nextMove.origin + "" + (Square)gamestate.nextMove.destination + "-" + gamestate.nextMove.moveType + "-" + gamestate.nextMove.promoPieceType);
+                    }
+                    
+                }
 
                 // update piece list 
                 pieceList[move.origin] = (int) Piece.NONE;
