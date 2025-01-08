@@ -1457,5 +1457,28 @@ class Moves {
     }
 
 
+    // using hyperbola quitenssence can get the moves of a single sliding piece using the index, all pieces , and mask of the movement allowed (have to do per line : vertical and horizontal etc ) 
+    static ulong hypQuint (int sq , ulong occ, ulong mask)
+    {
+        return (((mask & occ) - (1UL<<sq) * 2) ^
+        reverseUlong(reverseUlong(mask & occ) - reverseUlong((1UL << sq)) * 2)) & mask;
+    }
+
+    public static ulong reverseUlong(ulong n)
+    {
+        n = (n >> 1) & 0x5555555555555555UL | (n & 0x5555555555555555UL) << 1;
+        n = (n >> 2) & 0x3333333333333333UL | (n & 0x3333333333333333UL) << 2;
+        n = (n >> 4) & 0x0F0F0F0F0F0F0F0FUL | (n & 0x0F0F0F0F0F0F0F0FUL) << 4;
+        n = (n >> 8) & 0x00FF00FF00FF00FFUL | (n & 0x00FF00FF00FF00FFUL) << 8;
+        n = (n >> 16) & 0x0000FFFF0000FFFFUL | (n & 0x0000FFFF0000FFFFUL) << 16;
+        n = (n >> 32) | (n << 32);
+        return n;
+    }
+
+    public static ulong getSingleRookMoves(int sq , ulong occ)
+    {
+        return hypQuint(sq, occ, RANKS[(sq/8)]) | hypQuint(sq, occ, FILES[(sq % 8)]) ;
+    }
+
 }
 
