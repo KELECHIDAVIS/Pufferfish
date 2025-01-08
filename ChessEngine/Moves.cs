@@ -48,6 +48,9 @@ class Moves {
                 0b10000000_10000000_10000000_10000000_10000000_10000000_10000000_10000000,
     };
 
+    public static readonly ulong[] DiagMasks = new ulong[] { 1, 258, 66052, 16909320, 4328785936, 1108169199648, 283691315109952, 72624976668147840, 145249953336295424, 290499906672525312, 580999813328273408, 1161999622361579520, 2323998145211531264, 4647714815446351872, 9223372036854775808, };
+    public static readonly ulong[] AntiDiagMasks= new ulong[] { 128, 32832, 8405024, 2151686160, 550831656968, 141012904183812, 36099303471055874, 9241421688590303745, 4620710844295151872, 2310355422147575808, 1155177711073755136, 577588855528488960, 288794425616760832, 144396663052566528, 72057594037927936, };
+
     //The squares that need to be vacant in order to castle on that side 
     static ulong wKInBetween = 0b00000000_00000000_00000000_00000000_00000000_00000000_00000000_01100000; 
     static ulong wQInBetween = 0b00000000_00000000_00000000_00000000_00000000_00000000_00000000_00001110;
@@ -1412,7 +1415,7 @@ class Moves {
         return unsafeBB; 
     }
 
-    // to make move generation more efficient, pseudo legal knight moves are going to be looked up instead of calculated at runtime 
+    /*// to make move generation more efficient, pseudo legal knight moves are going to be looked up instead of calculated at runtime 
     public static void generateKnightMoveTable() {
         string result = "new ulong { ";
         ulong moveBB, indexMask; 
@@ -1456,7 +1459,7 @@ class Moves {
         Console.WriteLine(result);
     }
 
-
+*/
     // using hyperbola quitenssence can get the moves of a single sliding piece using the index, all pieces , and mask of the movement allowed (have to do per line : vertical and horizontal etc ) 
     static ulong hypQuint (int sq , ulong occ, ulong mask)
     {
@@ -1479,6 +1482,46 @@ class Moves {
     {
         return hypQuint(sq, occ, RANKS[(sq/8)]) | hypQuint(sq, occ, FILES[(sq % 8)]) ;
     }
+    public static ulong getSingleBishopMoves(int sq, ulong occ)
+    {
+        return hypQuint(sq, occ, DiagMasks[sq/8 +sq%8]) | hypQuint(sq, occ, AntiDiagMasks[sq/8 +7 -(sq%8)]);
+    }
+    public static void generateDiag()
+    {
+        string result = "new ulong[]{";
+        ulong start; 
+        // start from bot left 
+        for (int i = 7; i >=0; i--)
+        {
+            ulong ray = 1UL << i;
 
+            
+            while ((ray & FILES[7]) == 0)
+            {
+                ray = ray | (ray << 9);
+
+            }
+            Board.printBitBoard(ray); 
+            result += ray + ", ";
+            
+
+        }
+        //now start from h2
+        for (int i = 1; i < 8; i++)
+        {
+            // start at h2 then do same 
+            ulong ray = 1UL<< ((8*i));
+            
+            while ((ray & RANKS[7])==0)
+            {
+                ray = ray | (ray << 9);
+            }
+            Board.printBitBoard(ray);
+            result += ray + ", ";
+        }
+        result += "}; "; 
+        Console.WriteLine(result);
+    }
+    
 }
 

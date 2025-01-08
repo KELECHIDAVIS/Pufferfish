@@ -111,18 +111,20 @@ class Engine
         {
             Random random = new Random();
             ulong x = (ulong)random.NextInt64();
-            int index = random.Next(0,63);
-            Console.WriteLine("Rook Square: " +(Square) index);
-            Console.WriteLine("Blockers: "); 
-            x |= 1UL << index; 
+            int index = random.Next(0, 63);
+            Console.WriteLine("Bishop Square: " + (Square)index);
+            Console.WriteLine("Blockers: ");
+            x |= 1UL << index;
             Board.printBitBoard(x);
 
             //make sure index is on 
 
-            Console.WriteLine("Rook attack pattern");
-            Board.printBitBoard(Moves.getSingleRookMoves(index, x)); 
+            Console.WriteLine("Bishop attack pattern");
+            Board.printBitBoard(Moves.getSingleBishopMoves(index, x));
 
         }
+
+
 
 
     }
