@@ -336,7 +336,7 @@ public class Board {
         state.EP = 0; // clear ep ; if ep wasn't made this move not able to make next move 
         state.nextMove = move; // confirm move at state 
         gameHistory.Add(state); // add state to game history 
-
+        state.sideToMove = (Side) opp; // side to move changes 
 
         // remove piece from origin
         pieceList[move.origin] = (int)Piece.NONE;

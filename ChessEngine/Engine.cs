@@ -37,12 +37,12 @@ class Engine
         Board board = new Board();
         board.initStandardChess();
 
-        /*board.makeMove(new Move { origin = (int)Square.A2, destination = (int)Square.A4, moveType = MoveType.QUIET, promoPieceType = Piece.NONE });
+        board.makeMove(new Move { origin = (int)Square.A2, destination = (int)Square.A4, moveType = MoveType.QUIET, promoPieceType = Piece.NONE });
         board.makeMove(new Move { origin = (int)Square.B7, destination = (int)Square.B5, moveType = MoveType.QUIET, promoPieceType = Piece.NONE });
         board.makeMove(new Move { origin = (int)Square.A4, destination = (int)Square.B5, moveType = MoveType.CAPTURE, promoPieceType = Piece.NONE });
         board.makeMove(new Move { origin = (int)Square.C7, destination = (int)Square.C5, moveType = MoveType.QUIET, promoPieceType = Piece.NONE });
-        board.makeMove(new Move { origin = (int)Square.B2, destination = (int)Square.B4, moveType = MoveType.QUIET, promoPieceType = Piece.NONE });
-*/
+        //board.makeMove(new Move { origin = (int)Square.B2, destination = (int)Square.B3, moveType = MoveType.QUIET, promoPieceType = Piece.NONE });
+
 
         Board.printBoard(board);
         Console.Write("Made Moves: ");
@@ -63,8 +63,8 @@ class Engine
         Console.WriteLine(timer.ElapsedMilliseconds / 1000f + " sec");
 
 
-        /*Console.WriteLine("\nSharper comparisons:");
-        string[] sharperResult = "c5c4 1\r\nc5b4 1\r\nd7d6 1\r\nd7d5 1\r\ne7e6 1\r\ne7e5 1\r\nf7f6 1\r\nf7f5 1\r\ng7g6 1\r\ng7g5 1\r\nh7h6 1\r\nh7h5 1\r\nb8c6 1\r\nb8a6 1\r\nc8b7 1\r\nc8a6 1\r\nd8c7 1\r\nd8b6 1\r\nd8a5 1\r\na7a6 1\r\na7a5 1\r\ng8h6 1\r\ng8f6 1".ToUpper().Split("\n");
+        Console.WriteLine("\nSharper comparisons:");
+        string[] sharperResult = "c5c4 1\r\nd7d6 1\r\nd7d5 1\r\ne7e6 1\r\ne7e5 1\r\nf7f6 1\r\nf7f5 1\r\ng7g6 1\r\ng7g5 1\r\nh7h6 1\r\nh7h5 1\r\nb8c6 1\r\nb8a6 1\r\nc8b7 1\r\nc8a6 1\r\nd8c7 1\r\nd8b6 1\r\nd8a5 1\r\na7a6 1\r\na7a5 1\r\ng8h6 1\r\ng8f6 1".ToUpper().Split("\n");
 
         foreach (string move in sharperResult)
         {
@@ -72,7 +72,7 @@ class Engine
 
             if (!map.ContainsKey(pair[0]))
             {// my engine didn't find this move 
-                Console.WriteLine("MY ENGINE DIDN'T FIND THE MOVE {} in this posistion"); continue;
+                Console.WriteLine($"MY ENGINE DIDN'T FIND THE MOVE {pair[0]} in this posistion"); continue;
             }
 
             int myResult = map[pair[0]];
@@ -90,7 +90,7 @@ class Engine
             {
                 Console.WriteLine(pair.Key);
             }
-        }*/
+        }
         /*char[][] chessBoard = new char[][]{
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
