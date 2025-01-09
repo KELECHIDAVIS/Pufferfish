@@ -2,7 +2,7 @@
 
 
     // return the number of legal moves that can be made from this board state
-    public static int perft(Board board, int depth, int maxDepth, Dictionary<string, int> map ) {
+    public static int perft(Board board, int depth,  Dictionary<string, int> map ) {
         //To test that my move gen is working correctly we do this test recursively : 
         /*Generate all moves that side can make with current board 
          * Make move on temp board then see all the responses that can be made
@@ -14,7 +14,7 @@
          */
 
         // if maxdepth has been reached count the move 
-        if (depth > maxDepth) return 1;
+        if (depth ==0 ) return 1;
 
         // Depending on side to move generate all moves 
         List<Move> moves = Moves.possibleMoves(board.state.sideToMove, board, board.state.EP, board.state.castling);
@@ -24,7 +24,7 @@
         foreach (Move move in moves) {
             Board child = Board.initCopy(board); // creates an identical board based on sent board 
             child.makeMove(move); // SHOULD UPDATE ALL STATE RELATED TO MOVE MADE ; as well as switch the side 
-            int childResponses=  perft(child, depth+1, maxDepth, map);
+            int childResponses=  perft(child, depth+1, map);
 
             // only print out the moves if this is the first iteration 
             if (depth == 1) {
