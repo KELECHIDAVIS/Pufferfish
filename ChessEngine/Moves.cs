@@ -1267,99 +1267,39 @@ class Moves {
         // so now if there are any pinned pieces remove from board and develop pinning rays that that piece giving pin to king
         if (pinnedPieces != 0) {
             ulong removed = (~emptyBB) ^ pinnedPieces;
-            // now if the king can see a sliding piece from it's position then it is pinned by that 
-            ulong lineSliding = (piecesBB[opponent][(int)Piece.Rook] | piecesBB[opponent][(int)Piece.Queen]) & removed;
-            ulong diagSliding = (piecesBB[opponent][(int)Piece.Bishop] | piecesBB[opponent][(int)Piece.Queen]) & removed;
             
-            // to make sure we are not going through pieces 
-            ulong nonSlidingBlockers = removed & (~lineSliding) & (~diagSliding); 
-            ulong north = currentKing<<8, south = currentKing>>8, east = currentKing<<1, west = currentKing>>1, nwest = currentKing<<7, swest = currentKing>>9, neast = currentKing<<9, seast = currentKing>>7;
-            int counter = 0; // to keep track of the directions; max it should go is 6; if 7 stop
-            
-            // only check cardinal directions if there are line sliding pieces
-            if(lineSliding!= 0) {
-                // should only go max of 7 times and if it wraps around stop
-                // should also stop if you run into a nonsliding piece 
-                while (counter < 7 && (north & RANKS[0]) == 0 && (north & nonSlidingBlockers) == 0) {
-                    if ((north & lineSliding) != 0) { // ran into a valid sliding piece
-                        pinningRays |= north; // add ray 
-                        break;
-                    }
-                    north = (north << 8) | north; //iterate ray 
-                    counter++;
-                }
-                counter = 0; // reset counter 
-                while (counter < 7 && (south & RANKS[7]) == 0 && (south & nonSlidingBlockers) == 0) {
-                    if ((south & lineSliding) != 0) { // ran into a valid sliding piece
-                        pinningRays |= south; // add ray 
-                        break;
-                    }
-                    south = (south >> 8) | south; //iterate ray 
-                    counter++;
-                }
-                counter = 0; // reset counter 
-                while (counter < 7 && (east & FILES[0]) == 0 && (east & nonSlidingBlockers) == 0) {
-                    if ((east & lineSliding) != 0) { // ran into a valid sliding piece
-                        pinningRays |= east; // add ray 
-                        break;
-                    }
-                    east = (east << 1) | east; //iterate ray 
-                    counter++;
-                }
-                counter = 0; // reset counter 
-                while (counter < 7 && (west & FILES[7]) == 0 && (west & nonSlidingBlockers) == 0) {
-                    if ((west & lineSliding) != 0) { // ran into a valid sliding piece
-                        pinningRays |= west; // add ray 
-                        break;
-                    }
-                    west = (west >> 1) | west; //iterate ray 
-                    counter++;
-                }
-                counter = 0; // reset counter 
+            // kings pov seeing through pinned pieces 
+            kingRookPov = getRookMoves(removed & ~currentKing, originOfKing); 
+            kingBishPov = getBishopMoves(removed & ~currentKing, originOfKing);
 
-            }
-            // only check cardinal directions if there are line sliding pieces
-            if (diagSliding != 0) {
-                // should only go max of 7 times and if it wraps around stop
-                // should also stop if you run into a nonsliding piece 
-                while (counter < 7 && (neast & (RANKS[0] | FILES[0])) == 0 && (neast & nonSlidingBlockers) == 0) {
-                    if ((neast & diagSliding) != 0) { // ran into a valid sliding piece
-                        pinningRays |= neast; // add ray 
-                        break;
-                    }
-                    neast = (neast << 9) | neast; //iterate ray 
-                    counter++;
-                }
-                counter = 0; // reset counter 
-                while (counter < 7 && (nwest & (RANKS[0] | FILES[7])) == 0 && (nwest & nonSlidingBlockers) == 0) {
-                    if ((nwest & diagSliding) != 0) { // ran into a valid sliding piece
-                        pinningRays |= nwest; // add ray 
-                        break;
-                    }
-                    nwest = (nwest << 7) | nwest; //iterate ray 
-                    counter++;
-                }
-                counter = 0; // reset counter 
-                while (counter < 7 && (seast & (RANKS[7] | FILES[0])) == 0 && (seast & nonSlidingBlockers) == 0) {
-                    if ((seast & diagSliding) != 0) { // ran into a valid sliding piece
-                        pinningRays |= seast; // add ray 
-                        break;
-                    }
-                    seast = (seast >> 7) | seast; //iterate ray 
-                    counter++;
-                }
-                counter = 0; // reset counter 
-                while (counter < 7 && (swest & (RANKS[7] | FILES[7])) == 0 && (swest & nonSlidingBlockers) == 0) {
-                    if ((swest & diagSliding) != 0) { // ran into a valid sliding piece
-                        pinningRays |= swest; // add ray 
-                        break;
-                    }
-                    swest = (swest >> 9) | swest; //iterate ray 
-                    counter++;
-                }
-                counter = 0; // reset counter 
+            while (pinnedPieces > 0)
+            {
+                int pinnedPieceSquare = BitOperations.TrailingZeroCount(pinnedPieces);
+                ulong pinnedPieceMask = (1UL << pinnedPieceSquare);
 
+                // if pinned piece can see king from rook pov; that means opp piece making the pin is a rook or a queen so the overlap between kingrookpov and pinned rook pov and taking out the king pos is the pinray
+                ulong pndRookPov = getRookMoves(~emptyBB & ~pinnedPieceMask, pinnedPieceSquare); //pinned piece already removed 
+                ulong pndBishPov = getBishopMoves(~emptyBB & ~pinnedPieceMask, pinnedPieceSquare); //pinned piece already removed 
+
+                ulong lineSliding = piecesBB[opponent][(int)Piece.Rook] | piecesBB[opponent][(int)Piece.Queen]; 
+                ulong diagSliding = piecesBB[opponent][(int)Piece.Bishop] | piecesBB[opponent][(int)Piece.Queen];
+                if ((pndRookPov & currentKing) != 0)
+                {
+                    ulong ray = pndRookPov & kingRookPov & ~currentKing | pinnedPieceMask; // or piece mask so that that piece can detect if it's pinned or not
+                    // if a correct type of opp piece is found on this ray then the piece is actually pinned 
+                    if ((ray&lineSliding) != 0)
+                        pinningRays |= ray;  
+                }else if ((pndBishPov & currentKing) != 0) // meaning the piece is pinned on the diag 
+                {
+                    ulong ray = pndBishPov & kingBishPov & ~currentKing | pinnedPieceMask;
+                    if ((ray & diagSliding) != 0)
+                        pinningRays |= ray;
+                }
+                /*Console.WriteLine("Pinning Rays "); 
+                Board.printBitBoard(pinningRays);*/
+                pinnedPieces &= ~pinnedPieceMask; 
             }
+
         }
         return (captureMask, pushMask, pinningRays, moveCount); 
     }

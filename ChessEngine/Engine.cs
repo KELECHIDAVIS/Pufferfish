@@ -22,50 +22,58 @@ class Engine
         }*/
 
         /*char[][] chessBoard = new char[][]{
+            new char[] { ' ', 'k', ' ', ' ', 'b', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', 'R', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+            new char[] { 'K', ' ', ' ', 'Q', ' ', ' ', ' ', 'r' },
+            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', 'P', ' ' },
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
             new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
-            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
-            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
-            new char[] { 'k', ' ', ' ', 'P', 'p', ' ', ' ', 'Q' },
-            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
-            new char[] { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
-            new char[] { ' ', ' ', ' ', 'K', ' ', ' ', ' ', ' ' },
         };
         Board board = Board.charArrayToBoard(chessBoard);
-        Moves.printMoves(board); */
+        Move[] moves = new Move[Moves.MAX_POSSIBLE_MOVES];
 
+        Board.printBoard(board);
+        int moveCount = Moves.possibleMoves(board, moves);
+        for(int i = 0; i < moveCount; i++)
+        {
+            Console.WriteLine((Square)moves[i].origin + "" + (Square)moves[i].destination); 
+        }*/
         Board board = new Board();
         board.initStandardChess();
 
-        /*
-         Board.printBoard(board);
-            Console.Write("Made Moves: ");
-            foreach (GameState state in board.gameHistory)
-            {
-                Console.Write((Square)state.nextMove.origin + "" + (Square)state.nextMove.destination + " ");
-            }
-            Console.WriteLine();
 
-         */
-        //board.makeMove(new Move { origin = (int)Square.A2, destination = (int)Square.A4, moveType = MoveType.QUIET, promoPieceType = Piece.NONE });
-        //board.makeMove(new Move { origin = (int)Square.B7, destination = (int)Square.B5, moveType = MoveType.QUIET, promoPieceType = Piece.NONE });
-        //board.makeMove(new Move { origin = (int)Square.A4, destination = (int)Square.B5, moveType = MoveType.CAPTURE, promoPieceType = Piece.NONE });
+        
+
+
+        /*board.makeMove(new Move { origin = (int)Square.G2, destination = (int)Square.G3, moveType = MoveType.QUIET, promoPieceType = Piece.NONE });
+        board.makeMove(new Move { origin = (int)Square.B7, destination = (int)Square.B6, moveType = MoveType.QUIET, promoPieceType = Piece.NONE });
+        board.makeMove(new Move { origin = (int)Square.F1, destination = (int)Square.H3, moveType = MoveType.QUIET, promoPieceType = Piece.NONE });
         //board.makeMove(new Move { origin = (int)Square.C7, destination = (int)Square.C5, moveType = MoveType.QUIET, promoPieceType = Piece.NONE });
-        //board.makeMove(new Move { origin = (int)Square.B2, destination = (int)Square.B3, moveType = MoveType.QUIET, promoPieceType = Piece.NONE });
+        //board.makeMove(new Move { origin = (int)Square.B2, destination = (int)Square.B3, moveType = MoveType.QUIET, promoPieceType = Piece.NONE });*/
+
+        Board.printBoard(board);
+        Console.Write("Made Moves: ");
+        foreach (GameState state in board.gameHistory)
+        {
+            Console.Write((Square)state.nextMove.origin + "" + (Square)state.nextMove.destination + " ");
+        }
+        Console.WriteLine();
 
         long start = Stopwatch.GetTimestamp();
-        long tot = 0; 
-        for (int i = 1; i <=6; i++)
+        long tot = 0;
+        for (int i = 6; i <= 6; i++)
         {
             var result = Perft.perft(board, i, true);
-            tot += result.nodes; 
+            tot += result.nodes;
             Console.WriteLine("Total Nodes: " + result.nodes);
             Console.WriteLine("Total Moves: " + result.moves);
         }
 
-        TimeSpan time = Stopwatch.GetElapsedTime(start); 
+        TimeSpan time = Stopwatch.GetElapsedTime(start);
 
-        Console.WriteLine("NPS: "+ (long)(tot/(time.TotalSeconds)));
+        Console.WriteLine("NPS: " + (long)(tot / (time.TotalSeconds)));
 
     }
 
