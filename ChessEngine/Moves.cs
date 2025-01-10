@@ -1,7 +1,9 @@
 ﻿
 using System;
 using System.ComponentModel;
+using System.Drawing;
 using System.Numerics;
+using System.Reflection;
 using System.Security;
 using System.Text.RegularExpressions;
 using System.Xml.Serialization;
@@ -24,6 +26,7 @@ public struct Move
 class Moves {
 
     public static string fileNames = "abcdefgh" ;
+    public static int MAX_POSSIBLE_MOVES = 256; // actually 218 but doesn't rlly matter 
     // ranks go from 0-7 : 1-8
     public static readonly ulong[] RANKS = {
                 0b00000000_00000000_00000000_00000000_00000000_00000000_00000000_11111111,
@@ -71,66 +74,69 @@ class Moves {
     private static ulong[] KNIGHT_MOVES= new ulong[] { 132096, 329728, 659712, 1319424, 2638848, 5277696, 10489856, 4202496, 33816580, 84410376, 168886289, 337772578, 675545156, 1351090312, 2685403152, 1075839008, 8657044482, 21609056261, 43234889994, 86469779988, 172939559976, 345879119952, 687463207072, 275414786112, 2216203387392, 5531918402816, 11068131838464, 22136263676928, 44272527353856, 88545054707712, 175990581010432, 70506185244672, 567348067172352, 1416171111120896, 2833441750646784, 5666883501293568, 11333767002587136, 22667534005174272, 45053588738670592, 18049583422636032, 145241105196122112, 362539804446949376, 725361088165576704, 1450722176331153408, 2901444352662306816, 5802888705324613632, 11533718717099671552, 4620693356194824192, 288234782788157440, 576469569871282176, 1224997833292120064, 2449995666584240128, 4899991333168480256, 9799982666336960512, 1152939783987658752, 2305878468463689728, 1128098930098176, 2257297371824128, 4796069720358912, 9592139440717824, 19184278881435648, 38368557762871296, 4679521487814656, 9077567998918656, };
     private static ulong[] KING_MOVES = new ulong[] { 770, 1797, 3594, 7188, 14376, 28752, 57504, 49216, 197123, 460039, 920078, 1840156, 3680312, 7360624, 14721248, 12599488, 50463488, 117769984, 235539968, 471079936, 942159872, 1884319744, 3768639488, 3225468928, 12918652928, 30149115904, 60298231808, 120596463616, 241192927232, 482385854464, 964771708928, 825720045568, 3307175149568, 7718173671424, 15436347342848, 30872694685696, 61745389371392, 123490778742784, 246981557485568, 211384331665408, 846636838289408, 1975852459884544, 3951704919769088, 7903409839538176, 15806819679076352, 31613639358152704, 63227278716305408, 54114388906344448, 216739030602088448, 505818229730443264, 1011636459460886528, 2023272918921773056, 4046545837843546112, 8093091675687092224, 16186183351374184448, 13853283560024178688, 144959613005987840, 362258295026614272, 724516590053228544, 1449033180106457088, 2898066360212914176, 5796132720425828352, 11592265440851656704, 4665729213955833856, };
     /// <summary>
-    /// Returns all possible moves for that side 
+    /// Returns all possible moves for that side by taking in an array initialized to the max amount of moves possible 
 
-    public static List<Move>  possibleMoves(Side side, ulong[][] piecesBB, ulong[] sideBB, ulong EP, int castling) {
-        if (side == Side.White) return possibleMovesWhite(piecesBB, sideBB, EP, castling);
+    // max amount of moves possible in a position is 218
+    public static int possibleMoves(Side side, ulong[][] piecesBB, ulong[] sideBB, ulong EP, int castling , Move[] moveList) {
+        if (side == Side.White) return possibleMovesWhite(piecesBB, sideBB, EP, castling, moveList);
         else {
-            return possibleMovesBlack( piecesBB, sideBB, EP, castling);
+            return possibleMovesBlack( piecesBB, sideBB, EP, castling,  moveList);
         }
     }
 
-    public static List<Move> possibleMoves ( Side side, Board board, ulong EP, int castling) {
-        return possibleMoves(side , board.piecesBB, board.sideBB, EP,castling);
+    public static int possibleMoves ( Board board, Move[] moveList) {
+        return possibleMoves(board.state.sideToMove , board.piecesBB, board.sideBB, board.state.EP,board.state.castling, moveList);
     }
 
 
-    private static List<Move> possibleMovesBlack( ulong[][] piecesBB, ulong[] sideBB, ulong EP, int castling)
+    private static int possibleMovesBlack( ulong[][] piecesBB, ulong[] sideBB, ulong EP, int castling, Move[] moveList)
     {
         ulong nonCaptureBB = sideBB[(int)Side.Black] | piecesBB[(int) Side.White][(int) Piece.King];
         ulong captureBB = sideBB[(int)Side.White] ^ piecesBB[(int) Side.White] [(int) Piece.King];
 
         ulong emptyBB = ~(sideBB[(int)Side.Black] | sideBB[(int) Side.White]);
 
-        List<Move> moveList = new List<Move>();
+        int moveCount = 0; // keep track of what move we are on 
+        
         // initially max val because when not in check pieces can capture or push to whereever they want 
         ulong captureMask, pushMask;  // for pieces that are checking our king these masks represent that paths that can be blocked and the checkers that should be captured 
         ulong pinningRays; // if a piece is pinned it can only move along the pinning rays
         
-        var result = possibleKing(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black,castling);
-        captureMask = result.captureMask; pushMask = result.pushMask; pinningRays = result.pinningRays; 
+        var result = possibleKing(moveCount, moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black,castling);
+        captureMask = result.captureMask; pushMask = result.pushMask; pinningRays = result.pinningRays; moveCount += result.moveCount; 
 
-        possiblePawnBlack(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, EP, captureMask, pushMask, pinningRays);
-        possibleRook(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black, captureMask , pushMask, pinningRays);
-        possibleBishop(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black, captureMask, pushMask, pinningRays);
-        possibleQueen(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black, captureMask, pushMask, pinningRays); 
-        possibleKnight(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black, captureMask, pushMask, pinningRays);
+        moveCount= possiblePawnBlack(moveCount, moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, EP, captureMask, pushMask, pinningRays);
+        moveCount = possibleRook(moveCount, moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black, captureMask , pushMask, pinningRays);
+        moveCount = possibleBishop(moveCount, moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black, captureMask, pushMask, pinningRays);
+        moveCount = possibleQueen(moveCount, moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black, captureMask, pushMask, pinningRays);
+        moveCount = possibleKnight(moveCount, moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.Black, captureMask, pushMask, pinningRays);
 
-        return moveList; 
+        return moveCount; 
     }
 
-    private static List<Move> possibleMovesWhite( ulong[][] piecesBB, ulong[] sideBB, ulong EP,int castling) {
+    private static int possibleMovesWhite( ulong[][] piecesBB, ulong[] sideBB, ulong EP,int castling, Move[] moveList) {
         // Get all pieces white can and cannot capture 
         ulong nonCaptureBB = sideBB[(int)Side.White] | piecesBB[(int)Side.Black][(int)Piece.King]; // a bb that holds all white pieces and black king, because the player should never be able to cap. other king (illegal) 
         ulong captureBB = sideBB[(int)(Side.Black)] ^ piecesBB[(int)Side.Black][(int)Piece.King]; // every black piece except black king 
 
         // get all empty squares as well 
         ulong emptyBB = ~(sideBB[(int)(Side.White)] | sideBB[(int)Side.Black]); // bb of squares with no pieces on them 
+        int moveCount = 0; // keep track of what move we are on 
 
-        // get all the moves from each piece on this side 
-        List<Move> moveList = new List<Move>();
+        
         ulong captureMask, pushMask; // for pieces that are checking our king these masks represent that paths that can be blocked and the checkers that should be captured 
         ulong pinningRays; 
 
-        var result = possibleKing(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White, castling);
-        captureMask = result.captureMask; pushMask = result.pushMask; pinningRays = result.pinningRays; 
-        possiblePawnWhite(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, EP , captureMask, pushMask, pinningRays);
-        possibleRook(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White, captureMask, pushMask, pinningRays);
-        possibleBishop(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White, captureMask, pushMask, pinningRays);
-        possibleQueen(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White, captureMask, pushMask, pinningRays);
-        possibleKnight(moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White, captureMask, pushMask, pinningRays);
+        var result = possibleKing(moveCount, moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White, castling);
+        captureMask = result.captureMask; pushMask = result.pushMask; pinningRays = result.pinningRays; moveCount += result.moveCount;
 
-        return moveList;
+        moveCount = possiblePawnWhite(moveCount, moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, EP, captureMask, pushMask, pinningRays);
+        moveCount = possibleRook(moveCount, moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White, captureMask, pushMask, pinningRays);
+        moveCount = possibleBishop(moveCount, moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White, captureMask, pushMask, pinningRays);
+        moveCount = possibleQueen(moveCount, moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White, captureMask, pushMask, pinningRays);
+        moveCount = possibleKnight(moveCount, moveList, piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, Side.White, captureMask, pushMask, pinningRays);
+
+        return moveCount;
 
 
 
@@ -150,7 +156,7 @@ class Moves {
     /// <param name="emptyBB"> places that are empty</param>
     /// <param name="EP"> En passant bb that can be used to find if en passants are possible </param>
     /// <returns></returns>
-    private static void possiblePawnWhite(List<Move> moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, ulong EP, ulong captureMask , ulong pushMask, ulong pinningRays) {
+    private static int possiblePawnWhite(int moveCount , Move[] moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, ulong EP, ulong captureMask , ulong pushMask, ulong pinningRays) {
         
         // capture right ;white pawn can't be on rank 7 because that'd be a promotion;  shift bits 9 to left ; make sure there is a caputarable piece there and make sure that piece is not on a file (left column wrap around)
         PAWN_MOVES = ((piecesBB[(int)Side.White][(int)Piece.Pawn] & ~RANKS[6]) << 9) & (captureBB & ~FILES[0]);
@@ -166,10 +172,12 @@ class Moves {
             origin = currentIndex - 9;  // for capture right 
             if ((pinningRays & (1UL << origin)) != 0) { // piece is pinned ; only add move if it adheres to pin
                 if ((pinningRays & (1UL << currentIndex)) != 0) { // if destination adheres to the pin ray then you can add the move 
-                    moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.CAPTURE });
+                    moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.CAPTURE });
+                    moveCount++; 
                 }
             } else { // piece is not pinned 
-                moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.CAPTURE });
+                moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.CAPTURE });
+                moveCount++;
             }
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
@@ -185,10 +193,12 @@ class Moves {
             origin = currentIndex -7;  // for capture left 
             if ((pinningRays & (1UL << origin)) != 0) { // piece is pinned ; only add move if it adheres to pin
                 if ((pinningRays & (1UL << currentIndex)) != 0) { // if destination adheres to the pin ray then you can add the move 
-                    moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.CAPTURE });
+                    moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.CAPTURE });
+                    moveCount++;
                 }
             } else { // piece is not pinned 
-                moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.CAPTURE });
+                moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.CAPTURE });
+                moveCount++;
             }
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
@@ -205,10 +215,12 @@ class Moves {
             origin = currentIndex - 8;  // for push 1
             if ((pinningRays & (1UL << origin)) != 0) { // piece is pinned ; only add move if it adheres to pin
                 if ((pinningRays & (1UL << currentIndex)) != 0) { // if destination adheres to the pin ray then you can add the move 
-                    moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.QUIET });
+                    moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.QUIET });
+                    moveCount++;
                 }
             } else { // piece is not pinned 
-                moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.QUIET });
+                moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.QUIET });
+                moveCount++;
             }
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
@@ -223,10 +235,12 @@ class Moves {
             origin = currentIndex - 16;  // for push 2
             if ((pinningRays & (1UL << origin)) != 0) { // piece is pinned ; only add move if it adheres to pin
                 if ((pinningRays & (1UL << currentIndex)) != 0) { // if destination adheres to the pin ray then you can add the move 
-                    moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.QUIET });
+                    moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.QUIET });
+                    moveCount++;
                 }
             } else { // piece is not pinned 
-                moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.QUIET });
+                moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.QUIET });
+                moveCount++;
             }
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
@@ -248,16 +262,25 @@ class Moves {
             origin = currentIndex - 9;  // for push 1
             if ((pinningRays & (1UL << origin)) != 0) { // piece is pinned ; only add move if it adheres to pin
                 if ((pinningRays & (1UL << currentIndex)) != 0) { // if destination adheres to the pin ray then you can add the move 
-                    moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Queen, moveType = MoveType.CAPTURE });
-                    moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Rook, moveType = MoveType.CAPTURE });
-                    moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Bishop, moveType = MoveType.CAPTURE });
-                    moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Knight, moveType = MoveType.CAPTURE });
+                    moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Queen, moveType = MoveType.CAPTURE });
+                    moveCount++;
+                    moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Rook, moveType = MoveType.CAPTURE });
+                    moveCount++;
+                    moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Bishop, moveType = MoveType.CAPTURE });
+                    moveCount++;
+                    moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Knight, moveType = MoveType.CAPTURE });
+                    moveCount++;
+
                 }
             } else { // piece is not pinned 
-                moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Queen, moveType = MoveType.CAPTURE });
-                moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Rook, moveType = MoveType.CAPTURE });
-                moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Bishop, moveType = MoveType.CAPTURE });
-                moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Knight, moveType = MoveType.CAPTURE });
+                moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Queen, moveType = MoveType.CAPTURE });
+                moveCount++;
+                moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Rook, moveType = MoveType.CAPTURE });
+                moveCount++;
+                moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Bishop, moveType = MoveType.CAPTURE });
+                moveCount++;
+                moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Knight, moveType = MoveType.CAPTURE });
+                moveCount++;
             }
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
@@ -273,16 +296,25 @@ class Moves {
             origin = currentIndex - 7;  // for push 1
             if ((pinningRays & (1UL << origin)) != 0) { // piece is pinned ; only add move if it adheres to pin
                 if ((pinningRays & (1UL << currentIndex)) != 0) { // if destination adheres to the pin ray then you can add the move 
-                    moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Queen, moveType = MoveType.CAPTURE });
-                    moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Rook, moveType = MoveType.CAPTURE });
-                    moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Bishop, moveType = MoveType.CAPTURE });
-                    moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Knight, moveType = MoveType.CAPTURE });
+                    moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Queen, moveType = MoveType.CAPTURE });
+                    moveCount++;
+                    moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Rook, moveType = MoveType.CAPTURE });
+                    moveCount++;
+                    moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Bishop, moveType = MoveType.CAPTURE });
+                    moveCount++;
+                    moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Knight, moveType = MoveType.CAPTURE });
+                    moveCount++;
+
                 }
             } else { // piece is not pinned 
-                moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Queen, moveType = MoveType.CAPTURE });
-                moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Rook, moveType = MoveType.CAPTURE });
-                moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Bishop, moveType = MoveType.CAPTURE });
-                moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Knight, moveType = MoveType.CAPTURE });
+                moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Queen, moveType = MoveType.CAPTURE });
+                moveCount++;
+                moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Rook, moveType = MoveType.CAPTURE });
+                moveCount++;
+                moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Bishop, moveType = MoveType.CAPTURE });
+                moveCount++;
+                moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Knight, moveType = MoveType.CAPTURE });
+                moveCount++;
             }
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
@@ -299,16 +331,25 @@ class Moves {
             origin = currentIndex - 9;  // for push 1
             if ((pinningRays & (1UL << origin)) != 0) { // piece is pinned ; only add move if it adheres to pin
                 if ((pinningRays & (1UL << currentIndex)) != 0) { // if destination adheres to the pin ray then you can add the move 
-                    moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Queen, moveType = MoveType.QUIET });
-                    moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Rook, moveType = MoveType.QUIET });
-                    moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Bishop, moveType = MoveType.QUIET });
-                    moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Knight, moveType = MoveType.QUIET });
+                    moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Queen, moveType = MoveType.QUIET });
+                    moveCount++; 
+                    moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Rook, moveType = MoveType.QUIET });
+                    moveCount++;
+                    moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Bishop, moveType = MoveType.QUIET });
+                    moveCount++;
+                    moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Knight, moveType = MoveType.QUIET });
+                    moveCount++;
+
                 }
             } else { // piece is not pinned 
-                moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Queen, moveType = MoveType.QUIET });
-                moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Rook, moveType = MoveType.QUIET });
-                moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Bishop, moveType = MoveType.QUIET });
-                moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Knight, moveType = MoveType.QUIET });
+                moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Queen, moveType = MoveType.QUIET });
+                moveCount++;
+                moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Rook, moveType = MoveType.QUIET });
+                moveCount++;
+                moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Bishop, moveType = MoveType.QUIET });
+                moveCount++;
+                moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Knight, moveType = MoveType.QUIET });
+                moveCount++;
             }
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
@@ -347,7 +388,10 @@ class Moves {
 
                     // if not move is valid 
                     if (!kingInCheck)
-                        moveList.Add(ep);
+                    {
+                        moveList[moveCount] = (ep);
+                        moveCount++; 
+                    }
                 }
             } else { // piece is not pinned 
                 // now have to make sure this en passant move doesn't expose king to a discovered check 
@@ -363,7 +407,10 @@ class Moves {
 
                 // if not move is valid 
                 if (!kingInCheck)
-                    moveList.Add(ep);
+                {
+                    moveList[moveCount] = (ep);
+                    moveCount++;
+                }
             }
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
@@ -395,7 +442,10 @@ class Moves {
 
                     // if not move is valid 
                     if (!kingInCheck)
-                        moveList.Add(ep);
+                    {
+                        moveList[moveCount] = (ep);
+                        moveCount++;
+                    }
                 }
             } else { // piece is not pinned 
                 // now have to make sure this en passant move doesn't expose king to a discovered check 
@@ -411,11 +461,16 @@ class Moves {
 
                 // if not move is valid 
                 if (!kingInCheck)
-                    moveList.Add(ep);
+                {
+                    moveList[moveCount] = (ep);
+                    moveCount++;
+                }
             }
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
         }
+
+        return moveCount; 
         
     }
 
@@ -448,7 +503,7 @@ class Moves {
     }
 
     // captures have to be valid in the capture mask, all pushes have to be valid in the push mask 
-    private static void possiblePawnBlack(List<Move> moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, ulong EP, ulong captureMask , ulong pushMask, ulong pinningRays)
+    private static int possiblePawnBlack(int moveCount , Move[] moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, ulong EP, ulong captureMask , ulong pushMask, ulong pinningRays)
     {
         
         // capture right ; current pawn can't be on rank 2 cus that just promo and result must be capturable and can't be on file a 
@@ -468,10 +523,12 @@ class Moves {
             // check if pinned 
             if((pinningRays & (1UL<<origin) )!=0) { // piece is pinned ; only add move if it adheres to pin
                 if((pinningRays & (1UL << currentIndex)) != 0) { // if destination adheres to the pin ray then you can add the move 
-                    moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.CAPTURE });
+                    moveList [moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.CAPTURE });
+                    moveCount++; 
                 }
             } else { // piece is not pinned 
-                moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.CAPTURE });
+                moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.CAPTURE });
+                moveCount++; 
             }
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
@@ -488,10 +545,12 @@ class Moves {
             // check if pinned 
             if ((pinningRays & (1UL << origin)) != 0) { // piece is pinned ; only add move if it adheres to pin
                 if ((pinningRays & (1UL << currentIndex)) != 0) { // if destination adheres to the pin ray then you can add the move 
-                    moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.CAPTURE });
+                    moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.CAPTURE });
+                    moveCount++; 
                 }
             } else { // piece is not pinned 
-                moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.CAPTURE });
+                moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.CAPTURE });
+                moveCount++;  
             }
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
@@ -508,10 +567,12 @@ class Moves {
                                         // check if pinned 
             if ((pinningRays & (1UL << origin)) != 0) { // piece is pinned ; only add move if it adheres to pin
                 if ((pinningRays & (1UL << currentIndex)) != 0) { // if destination adheres to the pin ray then you can add the move 
-                    moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.QUIET });
+                    moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.QUIET });
+                    moveCount++; 
                 }
             } else { // piece is not pinned 
-                moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.QUIET });
+                moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.QUIET });
+                moveCount++; 
             }
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
@@ -531,10 +592,12 @@ class Moves {
             origin = currentIndex + 16;  //
             if ((pinningRays & (1UL << origin)) != 0) { // piece is pinned ; only add move if it adheres to pin
                 if ((pinningRays & (1UL << currentIndex)) != 0) { // if destination adheres to the pin ray then you can add the move 
-                    moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.QUIET });
+                    moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.QUIET });
+                    moveCount++; 
                 }
             } else { // piece is not pinned 
-                moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.QUIET });
+                moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.NONE, moveType = MoveType.QUIET });
+                moveCount++; 
             }
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
@@ -556,16 +619,24 @@ class Moves {
             origin = currentIndex +7;  // for push 1
             if ((pinningRays & (1UL << origin)) != 0) { // piece is pinned ; only add move if it adheres to pin
                 if ((pinningRays & (1UL << currentIndex)) != 0) { // if destination adheres to the pin ray then you can add the move 
-                    moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Queen, moveType = MoveType.CAPTURE });
-                    moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Rook, moveType = MoveType.CAPTURE });
-                    moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Bishop, moveType = MoveType.CAPTURE });
-                    moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Knight, moveType = MoveType.CAPTURE });
+                    moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Queen, moveType = MoveType.CAPTURE });
+                    moveCount++;
+                    moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Rook, moveType = MoveType.CAPTURE });
+                    moveCount++;
+                    moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Bishop, moveType = MoveType.CAPTURE });
+                    moveCount++;
+                    moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Knight, moveType = MoveType.CAPTURE });
+                    moveCount++; 
                 }
             } else { // piece is not pinned 
-                moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Queen, moveType = MoveType.CAPTURE });
-                moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Rook, moveType = MoveType.CAPTURE });
-                moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Bishop, moveType = MoveType.CAPTURE });
-                moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Knight, moveType = MoveType.CAPTURE });
+                moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Queen, moveType = MoveType.CAPTURE });
+                moveCount++;
+                moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Rook, moveType = MoveType.CAPTURE });
+                moveCount++;
+                moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Bishop, moveType = MoveType.CAPTURE });
+                moveCount++;
+                moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Knight, moveType = MoveType.CAPTURE });
+                moveCount++;
             }
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
@@ -582,16 +653,24 @@ class Moves {
             origin = currentIndex + 9;  // for push 1
             if ((pinningRays & (1UL << origin)) != 0) { // piece is pinned ; only add move if it adheres to pin
                 if ((pinningRays & (1UL << currentIndex)) != 0) { // if destination adheres to the pin ray then you can add the move 
-                    moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Queen, moveType = MoveType.CAPTURE });
-                    moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Rook, moveType = MoveType.CAPTURE });
-                    moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Bishop, moveType = MoveType.CAPTURE });
-                    moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Knight, moveType = MoveType.CAPTURE });
+                    moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Queen, moveType = MoveType.CAPTURE });
+                    moveCount++;
+                    moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Rook, moveType = MoveType.CAPTURE });
+                    moveCount++;
+                    moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Bishop, moveType = MoveType.CAPTURE });
+                    moveCount++;
+                    moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Knight, moveType = MoveType.CAPTURE });
+                    moveCount++;
                 }
             } else { // piece is not pinned 
-                moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Queen, moveType = MoveType.CAPTURE });
-                moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Rook, moveType = MoveType.CAPTURE });
-                moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Bishop, moveType = MoveType.CAPTURE });
-                moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Knight, moveType = MoveType.CAPTURE });
+                moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Queen, moveType = MoveType.CAPTURE });
+                moveCount++;
+                moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Rook, moveType = MoveType.CAPTURE });
+                moveCount++;
+                moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Bishop, moveType = MoveType.CAPTURE });
+                moveCount++;
+                moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Knight, moveType = MoveType.CAPTURE });
+                moveCount++;
             }
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
@@ -608,16 +687,24 @@ class Moves {
             origin = currentIndex + 8;  // for push 1
             if ((pinningRays & (1UL << origin)) != 0) { // piece is pinned ; only add move if it adheres to pin
                 if ((pinningRays & (1UL << currentIndex)) != 0) { // if destination adheres to the pin ray then you can add the move 
-                    moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Queen, moveType = MoveType.QUIET });
-                    moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Rook, moveType = MoveType.QUIET });
-                    moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Bishop, moveType = MoveType.QUIET });
-                    moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Knight, moveType = MoveType.QUIET });
+                    moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Queen, moveType = MoveType.CAPTURE });
+                    moveCount++;
+                    moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Rook, moveType = MoveType.CAPTURE });
+                    moveCount++;
+                    moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Bishop, moveType = MoveType.CAPTURE });
+                    moveCount++;
+                    moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Knight, moveType = MoveType.CAPTURE });
+                    moveCount++;
                 }
             } else { // piece is not pinned 
-                moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Queen, moveType = MoveType.QUIET });
-                moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Rook, moveType = MoveType.QUIET });
-                moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Bishop, moveType = MoveType.QUIET });
-                moveList.Add(new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Knight, moveType = MoveType.QUIET });
+                moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Queen, moveType = MoveType.CAPTURE });
+                moveCount++;
+                moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Rook, moveType = MoveType.CAPTURE });
+                moveCount++;
+                moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Bishop, moveType = MoveType.CAPTURE });
+                moveCount++;
+                moveList[moveCount] = (new Move { origin = origin, destination = currentIndex, promoPieceType = Piece.Knight, moveType = MoveType.CAPTURE });
+                moveCount++;
             }
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
@@ -663,7 +750,10 @@ class Moves {
 
                     // if not move is valid 
                     if (!kingInCheck)
-                        moveList.Add(ep);
+                    {
+                        moveList[moveCount] = (ep);
+                        moveCount++; 
+                    }
                 }
             } else { // piece is not pinned 
                 // now have to make sure this en passant move doesn't expose king to a discovered check 
@@ -679,7 +769,10 @@ class Moves {
 
                 // if not move is valid 
                 if (!kingInCheck)
-                    moveList.Add(ep);
+                {
+                    moveList[moveCount] = (ep);
+                    moveCount++;
+                }
             }
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
@@ -712,7 +805,10 @@ class Moves {
 
                     // if not move is valid 
                     if (!kingInCheck)
-                        moveList.Add(ep);
+                    {
+                        moveList[moveCount] = (ep);
+                        moveCount++;
+                    }
                 }
             } else { // piece is not pinned 
                 // now have to make sure this en passant move doesn't expose king to a discovered check 
@@ -729,17 +825,20 @@ class Moves {
 
                 // if not move is valid 
                 if (!kingInCheck)
-                    moveList.Add(ep);
+                {
+                    moveList[moveCount] = (ep);
+                    moveCount++;
+                }
             }
             mask = ~(1UL << currentIndex);
             PAWN_MOVES &= mask;
         }
 
 
-
+        return moveCount; 
 
     }
-    private static void possibleRook( List<Move> moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB , Side side, ulong captureMask, ulong pushMask, ulong pinningRays ) {
+    private static int possibleRook( int moveCount , Move[] moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB , Side side, ulong captureMask, ulong pushMask, ulong pinningRays ) {
    
         // iterate through all the rooks 
         ulong rookBB = piecesBB[(int)side][(int)Piece.Rook];
@@ -748,7 +847,7 @@ class Moves {
             int square = BitOperations.TrailingZeroCount(rookBB);
 
             // if this piece is pinned then it also has to adhere to the pinning rays 
-             pinAdherence= ulong.MaxValue; // if not pinned should be able to move anywhere
+            pinAdherence= ulong.MaxValue; // if not pinned should be able to move anywhere
             if((pinningRays & (1UL<<square)) != 0) { // piece is pinned 
                 pinAdherence = pinningRays; // piece is pinned so has to adhere
             }
@@ -765,18 +864,21 @@ class Moves {
             //for every capture 
             while(captures > 0) {
                 int index = BitOperations.TrailingZeroCount(captures);
-                moveList.Add(new Move { origin = square, destination = index, moveType = MoveType.CAPTURE, promoPieceType = Piece.NONE });
+                moveList[moveCount] = new Move { origin = square, destination = index, moveType = MoveType.CAPTURE, promoPieceType = Piece.NONE };
+                moveCount++; 
                 captures &= ~(1UL << index);
             }
             //for every push 
             while (pushes  > 0) {
                 int index = BitOperations.TrailingZeroCount(pushes);
-                moveList.Add(new Move { origin = square, destination = index, moveType = MoveType.QUIET, promoPieceType = Piece.NONE });
+                moveList[moveCount] = (new Move { origin = square, destination = index, moveType = MoveType.QUIET, promoPieceType = Piece.NONE });
+                moveCount++; 
                 pushes &= ~(1UL << index);
             }
             // turn off the current index
             rookBB &= ~(1UL<<square);
         }
+        return moveCount; 
     }
 
 
@@ -791,7 +893,7 @@ class Moves {
     }
 
 
-    private static void possibleBishop(List<Move> moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side,ulong captureMask, ulong pushMask, ulong pinningRays ) {
+    private static int possibleBishop(int moveCount, Move[]  moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side,ulong captureMask, ulong pushMask, ulong pinningRays ) {
         
 
         // iterate through all the bishops 
@@ -817,18 +919,21 @@ class Moves {
             //for every capture 
             while (captures > 0) {
                 int index = BitOperations.TrailingZeroCount(captures);
-                moveList.Add(new Move { origin = square, destination = index, moveType = MoveType.CAPTURE, promoPieceType = Piece.NONE });
+                moveList[moveCount] = new Move { origin = square, destination = index, moveType = MoveType.CAPTURE, promoPieceType = Piece.NONE };
+                moveCount++;
                 captures &= ~(1UL << index);
             }
             //for every push 
             while (pushes > 0) {
                 int index = BitOperations.TrailingZeroCount(pushes);
-                moveList.Add(new Move { origin = square, destination = index, moveType = MoveType.QUIET, promoPieceType = Piece.NONE });
+                moveList[moveCount] = new Move { origin = square, destination = index, moveType = MoveType.QUIET, promoPieceType = Piece.NONE };
+                moveCount++;
                 pushes &= ~(1UL << index);
             }
             // turn off the current index
             bishopBB &= ~(1UL << square);
         }
+        return moveCount; 
         
     }
 
@@ -849,7 +954,7 @@ class Moves {
     /// <param name="captureBB"></param>
     /// <param name="emptyBB"></param>
     /// <returns></returns>
-    private static void possibleQueen(List<Move> moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side, ulong captureMask , ulong pushMask, ulong pinningRays) {
+    private static int possibleQueen(int moveCount, Move[] moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side, ulong captureMask , ulong pushMask, ulong pinningRays) {
 
         // get all queen positions 
         ulong queenBB = piecesBB[(int)side][(int)Piece.Queen];
@@ -875,18 +980,21 @@ class Moves {
             //for every capture 
             while (captures > 0) {
                 int index = BitOperations.TrailingZeroCount(captures);
-                moveList.Add(new Move { origin = square, destination = index, moveType = MoveType.CAPTURE, promoPieceType = Piece.NONE });
+                moveList[moveCount] = new Move { origin = square, destination = index, moveType = MoveType.CAPTURE, promoPieceType = Piece.NONE };
+                moveCount++;
                 captures &= ~(1UL << index);
             }
             //for every push 
             while (pushes > 0) {
                 int index = BitOperations.TrailingZeroCount(pushes);
-                moveList.Add(new Move { origin = square, destination = index, moveType = MoveType.QUIET, promoPieceType = Piece.NONE });
+                moveList[moveCount] = new Move { origin = square, destination = index, moveType = MoveType.QUIET, promoPieceType = Piece.NONE };
+                moveCount++;
                 pushes &= ~(1UL << index);
             }
             // turn off the current index
             queenBB &= ~(1UL << square);
         }
+        return moveCount; 
     }
 
     //KNIGHT MOVES 
@@ -915,7 +1023,7 @@ class Moves {
         return (bb >> 17) & ~(FILES[7]);
     }
 
-    private static void possibleKnight(List<Move> moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side, ulong captureMask, ulong pushMask, ulong pinningRays) {
+    private static int possibleKnight(int moveCount, Move[] moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side, ulong captureMask, ulong pushMask, ulong pinningRays) {
         // for every knight 
         // if knight pinned skip (can't move at all)
         // get pseudo legal knight moves 
@@ -932,19 +1040,21 @@ class Moves {
 
                 while (captures > 0) {
                     int dest = BitOperations.TrailingZeroCount(captures);
-                    moveList.Add(new Move { origin = sq, destination = dest, moveType = MoveType.CAPTURE, promoPieceType = Piece.NONE });
+                    moveList[moveCount] = new Move { origin = sq, destination = dest, moveType = MoveType.CAPTURE, promoPieceType = Piece.NONE };
+                    moveCount++; 
                     captures ^= (1UL << dest); 
                 }
                 while (pushes > 0) {
                     int dest = BitOperations.TrailingZeroCount(pushes);
-                    moveList.Add(new Move { origin = sq, destination = dest, moveType = MoveType.QUIET, promoPieceType = Piece.NONE });
+                    moveList[moveCount] = new Move { origin = sq, destination = dest, moveType = MoveType.QUIET, promoPieceType = Piece.NONE };
+                    moveCount++;
                     pushes ^= (1UL << dest);
                 }
             }
 
             knights ^= indexMask; 
         }
-
+        return moveCount; 
     }
     //KNIGHT MOVES 
 
@@ -956,7 +1066,7 @@ class Moves {
     // push mask is the mask to push into to block check; both will be all squares initiall
     
     // since push mask and capture mask are primitives they could be returned as a tuple 
-    private static (ulong captureMask, ulong pushMask, ulong pinningRays) possibleKing(List<Move> moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side, int castling) {
+    private static (ulong captureMask, ulong pushMask, ulong pinningRays, int moveCount) possibleKing(int moveCount , Move[] moveList, ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side, int castling) {
 
         ulong captureMask = ulong.MaxValue, pushMask = ulong.MaxValue, pinningRays = 0; 
         
@@ -982,48 +1092,8 @@ class Moves {
 
         //Pretend the kings is every type of other pece on this square 
         // if king can see that piece type from it's sq then it is in check by that piece
-        int opponent; 
-        ulong attackers=0;
-        ulong oppSlidingPiecesFromKing = 0;
-
-        // add pawn moves from opponent perspective
-        // can only check king from two diff positions 
-        // if the king is white: if it can see a black pawn from up left or up right then a pawn is checking 
-        // if black: then if it can see a white pawn from bottom right or bot left then it is checking 
-        if (side == Side.White) {
-            opponent = (int)Side.Black; 
-            attackers |= (currentKing << 7) & piecesBB[opponent][(int)Piece.Pawn];   
-            attackers |= (currentKing << 9) & piecesBB[opponent][(int)Piece.Pawn];
-        } else {
-            opponent = (int)Side.White;
-            attackers |= (currentKing >> 7) & piecesBB[opponent][(int)Piece.Pawn];
-            attackers |= (currentKing >> 9) & piecesBB[opponent][(int)Piece.Pawn];
-        }
-        
-        // knight; and the knight moves bb from the king square and all the opponents knights to find which are checkin
-        attackers |= KNIGHT_MOVES[originOfKing] & piecesBB[opponent][(int)Piece.Knight];
-
-
-        // sliding pieces 
-        // blockers would be all pieces on the board removing the current square 
-        ulong blockers = (~emptyBB) & ~(1UL<<originOfKing);
-        
-
-        // bishop and rook 
-        // get possible sliding moves then make sure they are on capturable pieces then make sure the correct piece can be seen 
-        ulong rookMoves = (getRookMoves(blockers, originOfKing) );
-        oppSlidingPiecesFromKing |= rookMoves;
-        ulong bishopMoves = (getBishopMoves(blockers, originOfKing) );
-        oppSlidingPiecesFromKing|= bishopMoves; // of use later 
-        attackers |= (bishopMoves & piecesBB[opponent][(int) Piece.Bishop]); 
-        attackers |= (rookMoves & piecesBB[opponent][(int) Piece.Rook]);
-
-        // queen just combine both then and with queens on board 
-        attackers |= ((rookMoves | bishopMoves) & piecesBB[opponent][(int)Piece.Queen]); 
-
-
-
-
+        int opponent= (side == Side.White) ? (int) Side.Black: (int) Side.White;
+        ulong attackers = getKingCheckers(piecesBB, sideBB, nonCaptureBB, captureBB, emptyBB, side);
         // now we have all the possible attackers
 
         // two possibilities : 
@@ -1033,8 +1103,12 @@ class Moves {
         MoveType captureOrNot;
         ulong indexMask;
        
-        
-        if(numCheckers >1) {
+        ulong kingBlockers = ~(emptyBB) & ~(1UL << originOfKing); // for future sliding piece 
+        ulong kingRookPov = getRookMoves(kingBlockers, originOfKing);
+        ulong kingBishPov = getBishopMoves(kingBlockers, originOfKing);
+        ulong oppSlidingPiecesFromKing = kingRookPov | kingBishPov;
+
+        if (numCheckers >1) {
             // it is not possible to block or capture both attackers so just return the valid moves we already have 
             //set push and capture mask to 0 because the only thing that can save the king is a king move
 
@@ -1043,7 +1117,9 @@ class Moves {
             while (currentMoves > 0) {
                 int index = BitOperations.TrailingZeroCount(currentMoves);
                 indexMask = (1UL << index);
-                moveList.Add(new Move { origin = originOfKing, destination = index, moveType = MoveType.EVASION, promoPieceType = Piece.NONE });
+
+                moveList[moveCount]= new  Move { origin = originOfKing, destination = index, moveType = MoveType.EVASION, promoPieceType = Piece.NONE };
+                moveCount++; 
                 currentMoves &= ~indexMask;
             }
 
@@ -1054,54 +1130,34 @@ class Moves {
 
             pushMask = 0; // in case of a non sliding checker 
             
-            // THIS IS A SINGLE SLIDING CHECKER OPTIMIZE USING THE O^2R METHOD****
+            // if the attacker is a sliding piece it can be blocked by a friendly piece in the spots the push masks indicates 
             if(((attackers & piecesBB[opponent][(int) Piece.Rook])>0) || ((attackers & piecesBB[opponent][(int)Piece.Bishop]) > 0) || ((attackers & piecesBB[opponent][(int)Piece.Queen]) > 0)) {
-                // iteratively find the king; the max push length is 7 
-                ulong north = attackers, south = attackers, east = attackers, west = attackers, nwest = attackers, swest = attackers, neast = attackers, seast = attackers;
-                for (int i = 0; i < 7; i++) {
-                    if (((north << 8) & currentKing) > 0) { // this  is the correct path 
-                        pushMask = north ^ attackers; // attacker shouldn't be in 
-                        break;
-                    }
-                    if (((south >> 8) & currentKing) > 0) { // this  is the correct path 
-                        pushMask = south ^ attackers;
-                        break;
-                    }
-                    if (((east << 1) & currentKing) > 0) { // this  is the correct path 
-                        pushMask = east ^ attackers;
-                        break;
-                    }
-                    if (((west >> 1) & currentKing) > 0) { // this  is the correct path 
-                        pushMask = west ^ attackers;
-                        break;
-                    }
-                    if (((nwest << 7) & currentKing) > 0) { // this  is the correct path 
-                        pushMask = nwest ^ attackers;
-                        break;
-                    }
-                    if (((neast << 9) & currentKing) > 0) { // this  is the correct path 
-                        pushMask = neast ^ attackers;
-                        break;
-                    }
-                    if (((swest >> 9) & currentKing) > 0) { // this  is the correct path 
-                        pushMask = swest ^ attackers;
-                        break;
-                    }
-                    if (((seast >> 7) & currentKing) > 0) { // this  is the correct path 
-                        pushMask = seast ^ attackers;
-                        break;
-                    }
-                    north = (north << 8) | north; south = (south >> 8) | south; east = (east << 1) | east; west = (west >> 1) | west; nwest = (nwest << 7) | nwest; neast = (neast << 9) | neast; swest = (swest >> 9) | swest; seast = (seast >> 7) | seast;
+                
+                int originOfAttacker = BitOperations.TrailingZeroCount(attackers); 
+                ulong attackerBlockers = ~(emptyBB) & ~(1UL << originOfAttacker);
+
+                
+                
+                // if king can see attacker from rook perspective then attackers either a rook or quen 
+                if((kingRookPov & attackers) > 0)
+                {
+                    ulong attackerRookPOV = getRookMoves(attackerBlockers, originOfAttacker);
+                    pushMask = kingRookPov & attackerRookPOV;
                 }
-
-
+                else // either a queen or a bish 
+                {
+                    ulong attackerBishPOV = getBishopMoves(attackerBlockers, originOfAttacker);
+                    pushMask = kingBishPov & attackerBishPOV;
+                }
 
             }
             // only valid king moves would also only be evasions 
             while (currentMoves > 0) {
                 int index = BitOperations.TrailingZeroCount(currentMoves);
                 indexMask = (1UL << index);
-                moveList.Add(new Move { origin = originOfKing, destination = index, moveType = MoveType.EVASION, promoPieceType = Piece.NONE });
+                moveList[moveCount] = new Move { origin = originOfKing, destination = index, moveType = MoveType.EVASION, promoPieceType = Piece.NONE };
+                moveCount++; 
+
                 currentMoves &= ~indexMask;
             }
 
@@ -1117,7 +1173,8 @@ class Moves {
                     captureOrNot = MoveType.QUIET;
                 }
 
-                moveList.Add(new Move { origin = originOfKing, destination = index, moveType = captureOrNot, promoPieceType = Piece.NONE });
+                moveList[moveCount] = new Move { origin = originOfKing, destination = index, moveType = captureOrNot, promoPieceType = Piece.NONE };
+                moveCount++; 
                 currentMoves &= ~indexMask;
             }
 
@@ -1148,9 +1205,14 @@ class Moves {
                 }
                 // so now if the king has castling rights AND the spots are vacant AND they are all safe the king can castle on that side 
                 if (castleKingSide && kingSideIsVacant && kingSideSafe)
-                    moveList.Add(new Move { origin = originOfKing, destination = kingDest, moveType = MoveType.CASTLE, promoPieceType = Piece.NONE });
-                if (castleQueenSide && queenSideIsVacant && queenSideSafe)
-                    moveList.Add(new Move { origin = originOfKing, destination = queenDest, moveType = MoveType.CASTLE, promoPieceType = Piece.NONE });
+                {
+                    moveList[moveCount] = new Move { origin = originOfKing, destination = kingDest, moveType = MoveType.CASTLE, promoPieceType = Piece.NONE };
+                    moveCount++;
+                }
+                if (castleQueenSide && queenSideIsVacant && queenSideSafe) { 
+                    moveList[moveCount] = (new Move { origin = originOfKing, destination = queenDest, moveType = MoveType.CASTLE, promoPieceType = Piece.NONE });
+                    moveCount++; 
+                }
             }
 
         }
@@ -1163,7 +1225,9 @@ class Moves {
 
         // Moves from opposing sliding pieces 
         ulong slidingPcs = 0;
-        
+        // blockers would be all pieces on the board removing the current square 
+        ulong blockers = (~emptyBB) & ~(1UL << originOfKing);
+
         ulong rooks = piecesBB[(int)opponent][(int)Piece.Rook]; 
         while(rooks> 0) {// for every rook 
             int square = BitOperations.TrailingZeroCount(rooks);
@@ -1297,7 +1361,7 @@ class Moves {
 
             }
         }
-        return (captureMask, pushMask, pinningRays); 
+        return (captureMask, pushMask, pinningRays, moveCount); 
     }
 
     private static int popCount(ulong attackers) {
@@ -1522,6 +1586,58 @@ class Moves {
         result += "}; "; 
         Console.WriteLine(result);
     }
-    
+
+    // return if this sides king is in check 
+    internal static bool isInCheck(Board board)
+    {
+            throw new NotImplementedException();
+    }
+
+    static ulong getKingCheckers(ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side)
+    {
+        //Pretend the kings is every type of other pece on this square 
+        // if king can see that piece type from it's sq then it is in check by that piece
+        int opponent;
+        ulong attackers = 0;
+        ulong currentKing = piecesBB[(int)side][(int)Piece.King]; 
+        int originOfKing = BitOperations.TrailingZeroCount(currentKing);
+        // add pawn moves from opponent perspective
+        // can only check king from two diff positions 
+        // if the king is white: if it can see a black pawn from up left or up right then a pawn is checking 
+        // if black: then if it can see a white pawn from bottom right or bot left then it is checking 
+        if (side == Side.White)
+        {
+            opponent = (int)Side.Black;
+            attackers |= (currentKing << 7) & piecesBB[opponent][(int)Piece.Pawn];
+            attackers |= (currentKing << 9) & piecesBB[opponent][(int)Piece.Pawn];
+        }
+        else
+        {
+            opponent = (int)Side.White;
+            attackers |= (currentKing >> 7) & piecesBB[opponent][(int)Piece.Pawn];
+            attackers |= (currentKing >> 9) & piecesBB[opponent][(int)Piece.Pawn];
+        }
+
+        // knight; and the knight moves bb from the king square and all the opponents knights to find which are checkin
+        attackers |= KNIGHT_MOVES[originOfKing] & piecesBB[opponent][(int)Piece.Knight];
+
+
+        // sliding pieces 
+        // blockers would be all pieces on the board removing the current square 
+        ulong blockers = (~emptyBB) & ~(1UL << originOfKing);
+
+
+        // bishop and rook 
+        // get possible sliding moves then make sure they are on capturable pieces then make sure the correct piece can be seen 
+        ulong rookMoves = (getRookMoves(blockers, originOfKing));
+        ulong bishopMoves = (getBishopMoves(blockers, originOfKing));
+        attackers |= (bishopMoves & piecesBB[opponent][(int)Piece.Bishop]);
+        attackers |= (rookMoves & piecesBB[opponent][(int)Piece.Rook]);
+
+        // queen just combine both then and with queens on board 
+        attackers |= ((rookMoves | bishopMoves) & piecesBB[opponent][(int)Piece.Queen]);
+
+        return attackers; 
+    }
 }
 
