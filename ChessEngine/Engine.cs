@@ -55,7 +55,7 @@ class Engine
 
         long start = Stopwatch.GetTimestamp();
         long tot = 0; 
-        for (int i = 0; i < 5; i++)
+        for (int i = 1; i <=6; i++)
         {
             var result = Perft.perft(board, i, true);
             tot += result.nodes; 
