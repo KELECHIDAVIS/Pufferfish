@@ -41,6 +41,7 @@ public class Perft {
             {
                 case MoveType.CAPTURE:
                     captures++; break;
+
                 
             }
 
@@ -49,6 +50,11 @@ public class Perft {
 
             captures += result.captures; 
             checks += result.checks;
+            checkms += result.checkms; 
+            eps += result.eps;
+            castles += result.castles;
+            promos += result.promos;
+
 
             if (firstCall)
                 Console.WriteLine((Square)moves[i].origin + "" + (Square)moves[i].destination + " " + childResponses);
