@@ -1,68 +1,225 @@
-﻿using System.Runtime.CompilerServices;
+﻿using Microsoft.VisualBasic;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 public class Perft {
 
 
     // return the number of legal moves that can be made from this board state based on depth 
     // moves refers to the moves possible in current position 
-    public static (long nodes , long moves, long captures, long eps, long castles, long promos, long checks, long checkms)  perft(Board board, int depth,  bool firstCall , Dictionary<string,int> map) {
-        long tot = 0, captures = 0, eps = 0, castles = 0, promos = 0, checks = 0, checkms = 0;
-        
-        // if this current board is in check then add 1 to checks  and return 
-        // if in check and has no moves then add 1 to check mate and return 
-        bool inCheck = Moves.isInCheck(board);
-        Move[] moves = new Move[Moves.MAX_POSSIBLE_MOVES];
-        int moveCount =0 ; 
-        if (inCheck)
-        {
-            checks++;
-            moves = new Move[Moves.MAX_POSSIBLE_MOVES];
-
-            moveCount = Moves.possibleMoves(board, moves);
-
-            if (moveCount == 0) checkms++; // if in check and no moves it's checkmate
-        }
+    public static long  perft(Board board, int depth,  bool firstCall , Dictionary<string,long> map) {
+        long tot = 0;
         
 
         if (depth == 0)
-            return (1, 0, captures, eps, castles, promos, checks, checkms);
+            return 1; 
 
-        
-        
-        moveCount = Moves.possibleMoves(board, moves);
+       
+        Move[] moves = new Move[Moves.MAX_POSSIBLE_MOVES];
+        int moveCount = Moves.possibleMoves(board, moves);
 
         for (int i = 0; i < moveCount; i++)
         {
             Board child = Board.initCopy(board);
 
             child.makeMove(moves[i]);
-
-            switch (moves[i].moveType)
-            {
-                case MoveType.CAPTURE:
-                    captures++; break;
-
-                
-            }
-
-            var result = perft(child, depth - 1, false, map); 
-            long childResponses =result.nodes;
-
-            captures += result.captures; 
-            checks += result.checks;
-            checkms += result.checkms; 
-            eps += result.eps;
-            castles += result.castles;
-            promos += result.promos;
-
+            long childResponses = perft(child, depth - 1, false, map); 
+            
 
             if (firstCall)
-                Console.WriteLine((Square)moves[i].origin + "" + (Square)moves[i].destination + " " + childResponses);
+                map.Add(((Square)moves[i].origin + "" + (Square)moves[i].destination).ToLower() ,  childResponses);
 
             tot += childResponses; // account for child as well 
         }
-        return (tot, moveCount, captures, eps, castles, promos, checks, checkms);
+        return tot; 
 
+    }
+
+    internal static void runTest()
+    {
+        Board board = new Board();
+        board.initStandardChess(); 
+        string uciPath = "D:\\Downloads\\stockfish-windows-x86-64-avx2\\stockfish\\stockfish-windows-x86-64-avx2.exe";
+        // Start the Stockfish process
+
+
+        // Start the Stockfish process
+        var stockfish = new Process
+        {
+            StartInfo = new ProcessStartInfo
+            {
+                FileName = uciPath,
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            }
+        };
+
+        stockfish.Start();
+
+        // Access the input and output streams
+        using StreamWriter input = stockfish.StandardInput;
+        using StreamReader output = stockfish.StandardOutput;
+
+        // Ensure Stockfish is running
+        if (stockfish.HasExited)
+        {
+            Console.WriteLine("Failed to start Stockfish.");
+            return;
+        }
+
+        // Initialize Stockfish with the UCI protocol
+        input.WriteLine("uci");
+        input.Flush();
+        while (output.ReadLine() != "uciok") { } // Wait for uciok
+
+        // Call the command processing function
+        CommandLoop(input, output,board );
+
+        // Close Stockfish
+        stockfish.Close();
+    }
+
+    static void CommandLoop(StreamWriter input, StreamReader output, Board board )
+    {
+        Console.WriteLine("Enter commands ('stop' 'divide' 'newgame' 'move' 'clear'):");
+
+
+
+        string userInput;
+        while ((userInput = Console.ReadLine()) != null)
+        {
+            // Exit if the user enters "stop"
+            if (userInput.Trim().ToLower() == "stop")
+            {
+                Console.WriteLine("Stopping...");
+                break;
+            }
+            if(userInput == "clear")
+            {
+                Console.Clear(); 
+            }
+            if(userInput == "newgame")
+            {
+                Console.WriteLine("Starting new game... "); 
+                board.initStandardChess();
+                // restart stock as well 
+                input.WriteLine("ucinewgame");
+                input.Flush();
+                while (output.ReadLine() != "readyok") { } // wait for ready okay; 
+            }
+            if(userInput.StartsWith("move ", StringComparison.OrdinalIgnoreCase))
+            {
+                string move = userInput.ToLower().Split(" ")[1]; // get the move in string format 
+                // make move on board 
+                int startRank = move[0] - 'a', startFile = move[1]-'0', endRank = move[2] - 'a', endFile = move[3] - '0';
+                int origin = startRank * 8 + startFile; 
+                int dest = endRank* 8 + endFile;
+
+                // get possible moves 
+                Move[] moves = new Move[Moves.MAX_POSSIBLE_MOVES];
+                int moveCount = Moves.possibleMoves(board , moves);
+                Move? userMove = null;
+                
+                for(int i = 0; i < moveCount; i++)
+                {
+                    if(origin == moves[i].origin&& dest== moves[i].destination)
+                        userMove = moves[i];
+                }
+                if (userMove != null) // valid move 
+                {
+                    // make move on board 
+                    board.makeMove(userMove.Value);
+                    // translate board to fen string 
+                    string fen = board.toFEN(); 
+                    //set stock board to fen 
+                }
+            }
+            // Check for "divide x" commands
+            if (userInput.StartsWith("divide ", StringComparison.OrdinalIgnoreCase))
+            {
+                // Extract the value of x
+                string[] parts = userInput.Split(' ');
+                if (parts.Length == 2 && int.TryParse(parts[1], out int depth))
+                {
+                    string command = $"go perft {depth}";
+                    
+
+                    // Send the command to Stockfish
+                    input.WriteLine(command);
+                    input.Flush();
+
+                    // get my result 
+                    Dictionary<string, long> myResults = new Dictionary<string, long>();
+                    long myTotal = perft(board, depth, true, myResults) ;
+
+                    // get stockfish result 
+                    Dictionary<string, long> stockResults= new();
+                    long stockTotal=0; 
+                    // Read and display Stockfish output
+                    string line;
+                    while ((line = output.ReadLine()) != null)
+                    {
+                        if (line.Length>4 && line[4] == ':') // a move with result 
+                        {
+                            string[] move = line.Split(": ");
+                          
+                            long moveCount = long.Parse(move[1]);
+                            stockTotal += moveCount; 
+                            stockResults.Add(move[0], moveCount);
+                        }
+
+                        // Break if output indicates completion (example: bestmove or other end signal)
+                        if (line.StartsWith("Nodes searched"))
+                        {
+                            break;
+                        }
+                    }
+
+                    // for each move in stock : 
+                    foreach (var pair in stockResults)
+                    {
+                        // if move not found in mine move was not generated 
+                        if (!myResults.ContainsKey(pair.Key))
+                        {
+                            Console.WriteLine(pair.Key +" was not generated by my engine");
+                        }else 
+                        {
+                            // if move has a diff val : move generated wrong val 
+                            if(myResults[pair.Key] != stockResults[pair.Key])
+                            {
+                                Console.WriteLine(pair.Key +" generated wrong val.   Mine: "+myResults[pair.Key] +"  stock: " + stockResults[pair.Key]+ "   diff: "+ (myResults[pair.Key] - stockResults[pair.Key]) );
+                            }
+                            else
+                            {
+                                Console.WriteLine(pair.Key + " correct.   Mine: " + myResults[pair.Key] + "  stock: " + stockResults[pair.Key] );
+
+                            }
+                            // remove move from map 
+                            myResults.Remove(pair.Key);
+                        }
+
+                    }
+                    Console.WriteLine($"My total: {myTotal}  Stock Total: {stockTotal}"); 
+
+                    // if there are any moves left theyre were extra generated by my engine 
+                    foreach (var pair in myResults)
+                    {
+                        Console.WriteLine(pair.Key + " was an extra move"); 
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Invalid command. Use 'divide x' where x is a valid integer.");
+                }
+            }
+            else
+            {
+                Console.WriteLine("Unrecognized command. Use 'divide x' or 'stop'.");
+            }
+        }
     }
 
 

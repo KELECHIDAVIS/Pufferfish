@@ -84,6 +84,8 @@ public class Board {
         state.castling = 15; // 1111: all castling rights 
         state.EP = 0;
         state.zobristKey = initZobristKey(); 
+        state.fullMoveNum = 1;
+        state.halfMoveClock = 0;
     }
     
 
@@ -257,15 +259,7 @@ public class Board {
         Board.printBitBoard(sideBB[(int)Side.White] | sideBB[(int)Side.Black]); 
     }
 
-    /// <summary>
-    /// Translates fen string to our board representation
-    /// uppercase white, lowercase black, k king, q queen, b bishop, r rook, n knight, p pawn, / new line ,
-    /// fen is read right to left, top to bottom 
-    /// </summary>
-    /// <param name="fen"> </param>
-    public static void initFEN (string fen) {
-     
-    }
+    
     public static Board initCopy(Board parent) {
         Board newBoard = new Board();
 
@@ -335,6 +329,8 @@ public class Board {
 
         state.EP = 0; // clear ep ; if ep wasn't made this move not able to make next move 
         state.nextMove = move; // confirm move at state 
+        state.halfMoveClock++;
+        if (side == (int) Side.Black) state.fullMoveNum++; // 1 full round 
         gameHistory.Add(state); // add state to game history 
         state.sideToMove = (Side) opp; // side to move changes 
 
@@ -351,6 +347,7 @@ public class Board {
                 int capturedPiece = pieceList[move.destination]; 
                 piecesBB[opp][capturedPiece] &= ~destMask;
                 sideBB[opp] &= ~destMask;
+                state.halfMoveClock = 0; 
                 break;
 
             case MoveType.ENPASSANT:
@@ -358,6 +355,8 @@ public class Board {
                 capturedPiece = pieceList[move.destination+epRemoveDest];
                 piecesBB[opp][capturedPiece] &= ~(1UL<<(move.destination+epRemoveDest));
                 sideBB[opp] &= ~~(1UL << (move.destination + epRemoveDest));
+                state.halfMoveClock = 0;
+
                 break;
 
             case MoveType.CASTLE: // if castling kingside, rook is on the h file otherwise its on the first file 
@@ -388,6 +387,8 @@ public class Board {
         switch (pieceType)
         {
             case (int)Piece.Pawn:
+                state.halfMoveClock = 0;
+
                 // if move was a promo switch piece type to that promo piece 
                 if (move.promoPieceType != Piece.NONE)
                     pieceType = (int)move.promoPieceType;
@@ -444,5 +445,81 @@ public class Board {
         int epIndx = BitOperations.TrailingZeroCount(state.EP); 
         key ^= zobristRandom.epRandoms[epIndx]; // the sq ep is valid on 
         return key; 
+    }
+
+
+    internal string toFEN()
+    {
+        string fen="";
+
+        // for each rank 
+        for(int rank = 7; rank>=0; rank--)
+        {
+            int spaces = 0;
+            string rankStr = ""; 
+            for(int file = 0; file <8; file++)
+            {
+                int index = rank*8 + file;
+                if (pieceList[index] != (int) Piece.NONE)
+                {
+                    if (spaces >0) rankStr += spaces;
+                    string piece = ((Piece) pieceList[index]+"");
+                    
+                    switch (piece.ToLower())
+                    {
+                        case "king": piece = "K"; break; 
+                        case "queen": piece = "Q"; break; 
+                        case "rook": piece = "R"; break; 
+                        case "knight": piece = "N"; break; 
+                        case "bishop": piece = "B"; break; 
+                        case "pawn": piece = "P"; break;
+                    }
+
+                    if ((sideBB[(int)Side.Black] & (1UL << index)) != 0) piece = piece.ToLower(); 
+
+                    rankStr += piece;
+                    spaces = 0; 
+                }else spaces++;
+
+            }
+            if(spaces >0 ) rankStr+= spaces;
+            
+            if(rank!=0) rankStr+= "/";
+            fen += rankStr; 
+        }
+        fen += " ";
+        // side to move 
+        fen += ("" + state.sideToMove).ToLower()[0];
+
+        fen += " ";
+        // castle 
+        if ((state.castling & 0b0001) != 0) fen += "K"; 
+        if ((state.castling & 0b0010) != 0) fen += "Q";
+        // if white can't castle k or q side put '-'
+        if ((state.castling & 0b0010) == 0 && (state.castling & 0b0001) == 0) fen += '-'; 
+        if ((state.castling & 0b0100) != 0) fen += "k"; 
+        if ((state.castling & 0b1000) != 0) fen += "q";
+        if ((state.castling & 0b0100) == 0 && (state.castling & 0b1000) == 0) fen += '-';
+        fen += " ";
+
+        int ep = BitOperations.TrailingZeroCount(state.EP);
+
+        if (ep < 64)
+        {
+            //if white side has to be the square below (below the 5th rank )
+            if (ep < 4 * 8) ep -= 8;
+            else ep += 8;
+
+            Square sq = (Square)ep;
+            fen += ("" + sq).ToLower();
+        }
+        else fen += "-";
+
+        fen += " ";
+        fen += "" + state.halfMoveClock;
+        fen += " ";
+        fen += "" + state.fullMoveNum; 
+
+        return fen; 
     }
 }
