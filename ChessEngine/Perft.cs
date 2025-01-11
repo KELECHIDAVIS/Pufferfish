@@ -21,7 +21,8 @@ public class Perft {
         for (int i = 0; i < moveCount; i++)
         {
             Board child = Board.initCopy(board);
-
+            Console.WriteLine("Board Before Child Move is Made ");
+            Board.printBoard(board);
             child.makeMove(moves[i]);
             long childResponses = perft(child, depth - 1, false, map); 
             
@@ -78,6 +79,7 @@ public class Perft {
         // Call the command processing function
         CommandLoop(input, output,board );
 
+
         // Close Stockfish
         stockfish.Close();
     }
@@ -95,28 +97,42 @@ public class Perft {
             if (userInput.Trim().ToLower() == "stop")
             {
                 Console.WriteLine("Stopping...");
+                
                 break;
             }
-            if(userInput == "clear")
+            else if(userInput == "clear")
             {
-                Console.Clear(); 
+                Console.Clear();
+                Console.WriteLine("Enter commands ('stop' 'divide' 'newgame' 'move' 'clear'):");
+
             }
-            if(userInput == "newgame")
+            else if (userInput == "newgame")
             {
-                Console.WriteLine("Starting new game... "); 
+                Console.WriteLine("Starting new game... ");
+                board = new Board(); 
                 board.initStandardChess();
                 // restart stock as well 
                 input.WriteLine("ucinewgame");
                 input.Flush();
+
+                // Send isready to ensure Stockfish responds
+                input.WriteLine("isready");
+                input.Flush();
+
+                string line;
                 while (output.ReadLine() != "readyok") { } // wait for ready okay; 
+
+                Console.Clear();
+                Console.WriteLine("Enter commands ('stop' 'divide' 'newgame' 'move' 'clear'):");
+
             }
-            if(userInput.StartsWith("move ", StringComparison.OrdinalIgnoreCase))
+            else if (userInput.StartsWith("move ", StringComparison.OrdinalIgnoreCase))
             {
                 string move = userInput.ToLower().Split(" ")[1]; // get the move in string format 
                 // make move on board 
-                int startRank = move[0] - 'a', startFile = move[1]-'0', endRank = move[2] - 'a', endFile = move[3] - '0';
-                int origin = startRank * 8 + startFile; 
-                int dest = endRank* 8 + endFile;
+                int startRank = move[1] - '0', startFile = move[0]-'a', endRank = move[3] - '0', endFile = move[2] - 'a';
+                int origin = (startRank-1)* 8 + startFile; 
+                int dest = (endRank-1)* 8 + endFile;
 
                 // get possible moves 
                 Move[] moves = new Move[Moves.MAX_POSSIBLE_MOVES];
@@ -135,10 +151,19 @@ public class Perft {
                     // translate board to fen string 
                     string fen = board.toFEN(); 
                     //set stock board to fen 
+                    input.WriteLine("position fen "+fen);
+                    input.Flush();
+
+                    // print out current board 
+                    Board.printBoard(board);
+                }
+                else
+                {
+                    Console.WriteLine("Invalid Move Try Again"); 
                 }
             }
             // Check for "divide x" commands
-            if (userInput.StartsWith("divide ", StringComparison.OrdinalIgnoreCase))
+            else if (userInput.StartsWith("divide ", StringComparison.OrdinalIgnoreCase))
             {
                 // Extract the value of x
                 string[] parts = userInput.Split(' ');
@@ -217,8 +242,9 @@ public class Perft {
             }
             else
             {
-                Console.WriteLine("Unrecognized command. Use 'divide x' or 'stop'.");
+                Console.WriteLine("Invalid command try again"); 
             }
+            
         }
     }
 
