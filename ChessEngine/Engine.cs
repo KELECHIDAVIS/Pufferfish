@@ -63,11 +63,20 @@ class Engine
 
         long start = Stopwatch.GetTimestamp();
         long tot = 0;
-        for (int i = 6; i <= 6; i++)
+        int depth = 4;
+        int s = 1;
+
+        bool testingSharper = false;
+
+        s = testingSharper ? depth : 1; 
+
+        Dictionary<string , int > map = new Dictionary<string , int>();
+
+        for (int i = s ; i <= depth; i++)
         {
-            var result = Perft.perft(board, i, true);
+            var result = Perft.perft(board, i, true, map);
             tot += result.nodes;
-            Console.WriteLine("Total Nodes: " + result.nodes);
+            Console.WriteLine($"Nodes: {result.nodes} Captures: {result.captures} Ep: {result.eps} Castles: {result.castles} Promos: {result.promos} Checks: {result.checks} Checkms: {result.checkms} " + result.nodes);
             Console.WriteLine("Total Moves: " + result.moves);
         }
 

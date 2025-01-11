@@ -1530,7 +1530,19 @@ class Moves {
     // return if this sides king is in check 
     internal static bool isInCheck(Board board)
     {
-            throw new NotImplementedException();
+        int side = (int) board.state.sideToMove;
+        int opp = (side ==(int)  Side.White) ? (int)Side.Black : (int)Side.White; 
+
+        ulong nonCaptureBB = board.sideBB[side] | board.piecesBB[opp][(int)Piece.King];
+        ulong captureBB = board.sideBB[opp] ^ board.piecesBB[opp][(int)Piece.King];
+
+        ulong emptyBB = ~(board.sideBB[(int)Side.Black] | board.sideBB[(int)Side.White]);
+
+        ulong checkers = getKingCheckers(board.piecesBB, board.sideBB, nonCaptureBB, captureBB,emptyBB,(Side) side); 
+
+        int numCheckers = BitOperations.PopCount(checkers);
+        
+        return numCheckers>0; 
     }
 
     static ulong getKingCheckers(ulong[][] piecesBB, ulong[] sideBB, ulong nonCaptureBB, ulong captureBB, ulong emptyBB, Side side)
