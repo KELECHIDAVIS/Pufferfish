@@ -85,7 +85,8 @@ public class Perft {
 
     static void CommandLoop(StreamWriter input, StreamReader output, Board board )
     {
-        Console.WriteLine("Enter commands ('stop' 'divide' 'newgame' 'move' 'clear' 'printfen' 'fen'):");
+        string commands = "'stop' 'divide' 'newgame' 'move' 'clear' 'printfen' 'fen'"; 
+        Console.WriteLine($"Enter commands ({commands}):");
 
 
 
@@ -158,7 +159,7 @@ public class Perft {
 
 
                 Console.Clear();
-                Console.WriteLine("Enter commands ('stop' 'divide' 'newgame' 'move' 'clear'):");
+                Console.WriteLine($"Enter commands ({commands}):");
 
             }
             else if (userInput.StartsWith("move ", StringComparison.OrdinalIgnoreCase))
