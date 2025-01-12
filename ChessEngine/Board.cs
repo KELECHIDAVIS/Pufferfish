@@ -473,7 +473,8 @@ public class Board {
                 {
                     if (spaces >0) rankStr += spaces;
                     string piece = ((Piece) pieceList[index]+"");
-                    
+                    Side side = (sideBB[(int)Side.White] & (1UL << index)) > 0 ? Side.White : Side.Black; 
+
                     switch (piece.ToLower())
                     {
                         case "king": piece = "K"; break; 
@@ -484,7 +485,7 @@ public class Board {
                         case "pawn": piece = "P"; break;
                     }
 
-                    if ((sideBB[(int)Side.Black] & (1UL << index)) != 0) piece = piece.ToLower(); 
+                    if (side == Side.Black) piece = piece.ToLower();  
 
                     rankStr += piece;
                     spaces = 0; 

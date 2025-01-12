@@ -377,14 +377,12 @@ class Moves {
                 if ((pinningRays & (1UL << destination)) != 0) { // if destination adheres to the pin ray then you can add the move
                     // now have to make sure this en passant move doesn't expose king to a discovered check 
                     //Make EP move on copy board 
-                    Board board = new Board();
-                    board.piecesBB = piecesBB;
-                    board.sideBB = sideBB;
+                    
                     Move ep = new Move { origin = origin, destination = destination, promoPieceType = Piece.NONE, moveType = MoveType.ENPASSANT };
-                    board.makeMove(ep);
+
 
                     //See if move put their king in check due to sliding pieces 
-                    bool kingInCheck = isKingInCheckSliding(Side.White, board.piecesBB, board.sideBB);
+                    bool kingInCheck = isKingInCheckAfterEP(piecesBB,sideBB, Side.White, ep); 
 
                     // if not move is valid 
                     if (!kingInCheck)
@@ -394,16 +392,13 @@ class Moves {
                     }
                 }
             } else { // piece is not pinned 
-                // now have to make sure this en passant move doesn't expose king to a discovered check 
-                //Make EP move on copy board 
-                Board board = new Board();
-                board.piecesBB = piecesBB;
-                board.sideBB = sideBB;
+                     // now have to make sure this en passant move doesn't expose king to a discovered check 
+                     //Make EP move on copy board 
                 Move ep = new Move { origin = origin, destination = destination, promoPieceType = Piece.NONE, moveType = MoveType.ENPASSANT };
-                board.makeMove(ep);
+
 
                 //See if move put their king in check due to sliding pieces 
-                bool kingInCheck = isKingInCheckSliding(Side.White, board.piecesBB, board.sideBB);
+                bool kingInCheck = isKingInCheckAfterEP(piecesBB, sideBB, Side.White, ep);
 
                 // if not move is valid 
                 if (!kingInCheck)
@@ -431,14 +426,11 @@ class Moves {
                 if ((pinningRays & (1UL << destination)) != 0) { // if destination adheres to the pin ray then you can add the move
                     // now have to make sure this en passant move doesn't expose king to a discovered check 
                     //Make EP move on copy board 
-                    Board board = new Board();
-                    board.piecesBB = piecesBB;
-                    board.sideBB = sideBB;
                     Move ep = new Move { origin = origin, destination = destination, promoPieceType = Piece.NONE, moveType = MoveType.ENPASSANT };
-                    board.makeMove(ep);
+
 
                     //See if move put their king in check due to sliding pieces 
-                    bool kingInCheck = isKingInCheckSliding(Side.White, board.piecesBB, board.sideBB);
+                    bool kingInCheck = isKingInCheckAfterEP(piecesBB, sideBB, Side.White, ep);
 
                     // if not move is valid 
                     if (!kingInCheck)
@@ -448,16 +440,13 @@ class Moves {
                     }
                 }
             } else { // piece is not pinned 
-                // now have to make sure this en passant move doesn't expose king to a discovered check 
-                //Make EP move on copy board 
-                Board board = new Board();
-                board.piecesBB = piecesBB;
-                board.sideBB = sideBB;
+                     // now have to make sure this en passant move doesn't expose king to a discovered check 
+                     //Make EP move on copy board 
                 Move ep = new Move { origin = origin, destination = destination, promoPieceType = Piece.NONE, moveType = MoveType.ENPASSANT };
-                board.makeMove(ep);
+
 
                 //See if move put their king in check due to sliding pieces 
-                bool kingInCheck = isKingInCheckSliding(Side.White, board.piecesBB, board.sideBB);
+                bool kingInCheck = isKingInCheckAfterEP(piecesBB, sideBB, Side.White, ep);
 
                 // if not move is valid 
                 if (!kingInCheck)
@@ -475,20 +464,31 @@ class Moves {
     }
 
     // see if king is in check due to sliding pieces 
-    private static bool isKingInCheckSliding(Side side, ulong[][] piecesBB, ulong[] sideBB) {
+    private static bool isKingInCheckAfterEP( ulong[][] piecesBB, ulong[] sideBB, Side side , Move ep) {
         // have the king pretend to be every other type of sliding piece, if it can see the same type from its perspective then it is in check due to sliding pieces 
         Side opp = (side == Side.White) ? Side.Black : Side.White;
         int originOfKing = BitOperations.TrailingZeroCount(piecesBB[(int)side][(int)Piece.King]);
+        ulong originMask = (1UL << ep.origin), destMask = (1UL << ep.destination), capturedPawn = (side == Side.White) ? destMask >> 8 : destMask << 8 ;
+
+        // first virtually make ep move ; // really only need to know if the disappearence of the captured pawn allows for a king check 
+        ulong ourSide = (sideBB[(int)side] & ~(originMask)) | destMask; // remove our pawn from its origin then place at destination  
+        ulong enemySide = (sideBB[(int)opp] & ~(capturedPawn));  // remove captured pawn; below dest (shift left 8) if our side is white and above if black ; 
+
+        // see if king is checked in new board 
         ulong attackers =0 ; 
 
         // sliding pieces 
         // blockers would be all pieces on the board removing the current square 
-        ulong blockers = (sideBB[(int)side] | sideBB[(int)opp]) & ~(1UL << originOfKing);
+        ulong blockers = (ourSide | enemySide) & ~(1UL << originOfKing);
 
         // bishop and rook 
        
         ulong rookMoves = (getRookMoves(blockers, originOfKing));
+
+
         ulong bishopMoves = (getBishopMoves(blockers, originOfKing));
+
+        
         attackers |= (bishopMoves & piecesBB[(int)opp][(int)Piece.Bishop]);
         attackers |= (rookMoves & piecesBB[(int)opp][(int)Piece.Rook]);
 
@@ -720,8 +720,7 @@ class Moves {
         // if check is present 
         // the piece to remove should be in capture mask if it is giving check since that piece is being captured 
         // or the destination can be in the push mask to block a check 
-
-
+        
         PAWN_MOVES = (piecesBB[(int)Side.Black][(int)Piece.Pawn] << 1) & piecesBB[(int)Side.White][(int)Piece.Pawn] &  RANKS[3] & ~FILES[0] &EP;
 
 
@@ -739,14 +738,11 @@ class Moves {
                 if ((pinningRays & (1UL << destination)) != 0) { // if destination adheres to the pin ray then you can add the move
                     // now have to make sure this en passant move doesn't expose king to a discovered check 
                     //Make EP move on copy board 
-                    Board board = new Board();
-                    board.piecesBB = piecesBB;
-                    board.sideBB = sideBB;
                     Move ep = new Move { origin = origin, destination = destination, promoPieceType = Piece.NONE, moveType = MoveType.ENPASSANT };
-                    board.makeMove(ep);
+
 
                     //See if move put their king in check due to sliding pieces 
-                    bool kingInCheck = isKingInCheckSliding(Side.Black, board.piecesBB, board.sideBB);
+                    bool kingInCheck = isKingInCheckAfterEP(piecesBB, sideBB, Side.Black, ep);
 
                     // if not move is valid 
                     if (!kingInCheck)
@@ -756,17 +752,13 @@ class Moves {
                     }
                 }
             } else { // piece is not pinned 
-                // now have to make sure this en passant move doesn't expose king to a discovered check 
-                //Make EP move on copy board 
-                Board board = new Board();
-                board.piecesBB = piecesBB;
-                board.sideBB = sideBB;
+                     // now have to make sure this en passant move doesn't expose king to a discovered check 
+                     //Make EP move on copy board 
                 Move ep = new Move { origin = origin, destination = destination, promoPieceType = Piece.NONE, moveType = MoveType.ENPASSANT };
-                board.makeMove(ep);
+
 
                 //See if move put their king in check due to sliding pieces 
-                bool kingInCheck = isKingInCheckSliding(Side.Black, board.piecesBB, board.sideBB);
-
+                bool kingInCheck = isKingInCheckAfterEP(piecesBB, sideBB, Side.Black, ep);
                 // if not move is valid 
                 if (!kingInCheck)
                 {
@@ -779,7 +771,7 @@ class Moves {
         }
 
         //left capture 
-
+        
         PAWN_MOVES = (piecesBB[(int)Side.Black][(int)Piece.Pawn] >> 1) & piecesBB[(int)Side.White][(int)Piece.Pawn] & RANKS[3] & ~FILES[7] & EP;
 
         PAWN_MOVES = (PAWN_MOVES & captureMask) | (((PAWN_MOVES >> 8) & pushMask) << 8); 
@@ -793,15 +785,11 @@ class Moves {
                 if ((pinningRays & (1UL << destination)) != 0) { // if destination adheres to the pin ray then you can add the move
                     // now have to make sure this en passant move doesn't expose king to a discovered check 
                     //Make EP move on copy board 
-                    Board board = new Board();
-                    board.piecesBB = piecesBB;
-                    board.sideBB = sideBB;
                     Move ep = new Move { origin = origin, destination = destination, promoPieceType = Piece.NONE, moveType = MoveType.ENPASSANT };
-                    board.makeMove(ep);
 
-                    
+
                     //See if move put their king in check due to sliding pieces 
-                    bool kingInCheck = isKingInCheckSliding(Side.Black, board.piecesBB, board.sideBB);
+                    bool kingInCheck = isKingInCheckAfterEP(piecesBB, sideBB, Side.Black, ep);
 
                     // if not move is valid 
                     if (!kingInCheck)
@@ -811,17 +799,13 @@ class Moves {
                     }
                 }
             } else { // piece is not pinned 
-                // now have to make sure this en passant move doesn't expose king to a discovered check 
-                //Make EP move on copy board 
-                Board board = new Board();
-                board.piecesBB = piecesBB;
-                board.sideBB = sideBB;
+                     // now have to make sure this en passant move doesn't expose king to a discovered check 
+                     //Make EP move on copy board 
                 Move ep = new Move { origin = origin, destination = destination, promoPieceType = Piece.NONE, moveType = MoveType.ENPASSANT };
-                board.makeMove(ep);
 
-                
+
                 //See if move put their king in check due to sliding pieces 
-                bool kingInCheck = isKingInCheckSliding(Side.Black, board.piecesBB, board.sideBB);
+                bool kingInCheck = isKingInCheckAfterEP(piecesBB, sideBB, Side.Black, ep);
 
                 // if not move is valid 
                 if (!kingInCheck)
