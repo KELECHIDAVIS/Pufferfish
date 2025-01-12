@@ -21,8 +21,7 @@ public class Perft {
         for (int i = 0; i < moveCount; i++)
         {
             Board child = Board.initCopy(board);
-            Console.WriteLine("Board Before Child Move is Made ");
-            Board.printBoard(board);
+            
             child.makeMove(moves[i]);
             long childResponses = perft(child, depth - 1, false, map); 
             
@@ -86,7 +85,7 @@ public class Perft {
 
     static void CommandLoop(StreamWriter input, StreamReader output, Board board )
     {
-        Console.WriteLine("Enter commands ('stop' 'divide' 'newgame' 'move' 'clear'):");
+        Console.WriteLine("Enter commands ('stop' 'divide' 'newgame' 'move' 'clear' 'printfen' 'fen'):");
 
 
 
@@ -100,13 +99,48 @@ public class Perft {
                 
                 break;
             }
-            else if(userInput == "clear")
+            else if(userInput.Trim().ToLower() == "clear")
             {
                 Console.Clear();
                 Console.WriteLine("Enter commands ('stop' 'divide' 'newgame' 'move' 'clear'):");
 
             }
-            else if (userInput == "newgame")
+            else if(userInput.Trim().ToLower() == "printfen")
+            {
+                Console.WriteLine(board.toFEN()); 
+            }
+            else if (userInput.Trim().ToLower() == "fen")
+            {
+                Console.WriteLine("Enter fen string: "); 
+                string fen = Console.ReadLine().Trim();
+
+                board = new Board();
+                try
+                {
+                    board.fromFEN(fen);
+                }
+                catch(Exception e )
+                {
+                    Console.WriteLine("Invalid fen string: " + e.Message); 
+                }
+
+                // restart stock as well 
+                input.WriteLine("ucinewgame");
+                input.Flush();
+
+                // Send isready to ensure Stockfish responds
+                input.WriteLine("isready");
+                input.Flush();
+
+                string line;
+                while (output.ReadLine() != "readyok") { } // wait for ready okay; 
+
+                input.WriteLine("position fen " + fen);
+                input.Flush();
+
+                Board.printBoard(board);
+            }
+            else if (userInput.Trim().ToLower() == "newgame")
             {
                 Console.WriteLine("Starting new game... ");
                 board = new Board(); 
@@ -121,6 +155,7 @@ public class Perft {
 
                 string line;
                 while (output.ReadLine() != "readyok") { } // wait for ready okay; 
+
 
                 Console.Clear();
                 Console.WriteLine("Enter commands ('stop' 'divide' 'newgame' 'move' 'clear'):");

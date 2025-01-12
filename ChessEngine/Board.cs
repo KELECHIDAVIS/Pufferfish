@@ -123,15 +123,21 @@ public class Board {
     }
     public static void printBoard(Board board)
     {
-        printPieceList(board.pieceList, board.sideBB); 
+        printPieceList(board.pieceList, board.sideBB, board); 
     }
     /// <summary>
     /// Prints out piecelist that has all piece values into an 8x8 chess board form
     /// </summary>
     /// <param name="list"></param>
-    public static void printPieceList(int[] list, ulong[] sideBB) {
+    public static void printPieceList(int[] list, ulong[] sideBB, Board board) {
         const int LAST_BIT = 63; // helps with calcs 
         string rankString = "";
+
+        
+        int epIndex= BitOperations.TrailingZeroCount(board.state.EP);
+
+        if (epIndex > 32) epIndex += 8;  // if black mark the space above 
+        else epIndex -= 8; 
 
         for (int rank = 0; rank <= 7; rank++) {
             rankString = (8 - rank) + " | ";
@@ -152,7 +158,10 @@ public class Board {
                     if (side == Side.White)
                         c = char.ToUpper(c); 
                     rankString += c+" ";
-                } else { rankString += ". "; }
+                } else {
+                    if (epIndex != 64 && epIndex == currentBit) rankString += "* "; 
+                    else rankString += ". ";
+                }
 
             }
             Console.WriteLine(rankString);
@@ -495,15 +504,13 @@ public class Board {
         // castle 
         if ((state.castling & 0b0001) != 0) fen += "K"; 
         if ((state.castling & 0b0010) != 0) fen += "Q";
-        // if white can't castle k or q side put '-'
-        if ((state.castling & 0b0010) == 0 && (state.castling & 0b0001) == 0) fen += '-'; 
         if ((state.castling & 0b0100) != 0) fen += "k"; 
         if ((state.castling & 0b1000) != 0) fen += "q";
-        if ((state.castling & 0b0100) == 0 && (state.castling & 0b1000) == 0) fen += '-';
+        if (state.castling == 0 ) fen += '-'; // no side can castle 
         fen += " ";
 
         int ep = BitOperations.TrailingZeroCount(state.EP);
-
+        
         if (ep < 64)
         {
             //if white side has to be the square below (below the 5th rank )
@@ -521,5 +528,89 @@ public class Board {
         fen += "" + state.fullMoveNum; 
 
         return fen; 
+    }
+
+    internal void fromFEN(string fen )
+    {
+        string[] stateInfo = fen.Split(" ");
+        int start = 56; // we start at top left for reading fen 
+
+        foreach (char c in stateInfo[0])
+        {
+            if (char.IsAsciiLetter(c))
+            {
+                Side side = char.IsUpper(c) ? Side.White : Side.Black;
+                Piece piece = Piece.NONE;
+                switch (char.ToLower(c))
+                {
+                    case 'k': piece = Piece.King; break;
+                    case 'q': piece = Piece.Queen; break;
+                    case 'r': piece = Piece.Rook; break;
+                    case 'b': piece = Piece.Bishop; break;
+                    case 'n': piece = Piece.Knight; break;
+                    case 'p': piece = Piece.Pawn; break;
+                }
+                // place piece at current square
+                // update pieceBB, sideBB, and pieceList to pieceVal
+                ulong indexMask = (1UL << start);
+
+                piecesBB[(int)side][(int)piece] |= (indexMask);
+                sideBB[(int)side] |= (indexMask);
+                pieceList[start] = (int)piece;
+
+                start++;
+            }
+            if (c == '/')
+            {
+                start -= 16;
+            }
+            else if (char.IsDigit(c))
+            {
+                for (int i = 0; i < c - '0'; i++)
+                {
+                    pieceList[start + i] = (int)Piece.NONE;
+                }
+                start += c - '0';
+            }
+
+
+
+            // state info 
+
+            // side to move 
+            state.sideToMove = (stateInfo[1] == "w") ? Side.White : Side.Black;
+
+            // castling 
+            if (stateInfo[2] == "-") state.castling = 0;
+            else
+            {
+                if (stateInfo[2].Contains("K")) state.castling |= 0b0001;
+                if (stateInfo[2].Contains("Q")) state.castling |= 0b0010;
+                if (stateInfo[2].Contains("k")) state.castling |= 0b0100;
+                if (stateInfo[2].Contains("q")) state.castling |= 0b1000;
+            }
+
+            // ep 
+            if (stateInfo[3] == "-") state.EP = 0;
+            else
+            {
+                int rank = stateInfo[3][1] - '0' - 1;
+                int file = stateInfo[3][0] - 'a';
+                int index = rank * 8 + file;
+                
+                state.EP = (1UL << index);
+
+                // if black shift down white shift up 
+                if (rank < 4) state.EP <<= 8;
+                else state.EP >>= 8; 
+            }
+
+            // half move 
+            state.halfMoveClock = int.Parse(stateInfo[4]);
+
+            //full 
+            state.fullMoveNum = int.Parse(stateInfo[5]);
+        }
+
     }
 }
