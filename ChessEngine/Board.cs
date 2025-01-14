@@ -342,7 +342,7 @@ public class Board {
         if (side == (int) Side.Black) state.fullMoveNum++; // 1 full round 
         gameHistory.Add(state); // add state to game history 
         state.sideToMove = (Side) opp; // side to move changes 
-
+        state.nextMove = new Move(); 
         // remove piece from origin
         pieceList[move.origin] = (int)Piece.NONE;
         piecesBB[side][pieceType] &= ~origMask;
@@ -363,7 +363,7 @@ public class Board {
                 // remove captured pawn 
                 capturedPiece = pieceList[move.destination+epRemoveDest];
                 piecesBB[opp][capturedPiece] &= ~(1UL<<(move.destination+epRemoveDest));
-                sideBB[opp] &= ~~(1UL << (move.destination + epRemoveDest));
+                sideBB[opp] &= ~(1UL << (move.destination + epRemoveDest));
                 state.halfMoveClock = 0;
 
                 break;

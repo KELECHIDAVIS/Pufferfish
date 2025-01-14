@@ -6,6 +6,7 @@ using System.Numerics;
 using System.Reflection;
 using System.Security;
 using System.Text.RegularExpressions;
+using System.Xml.Linq;
 using System.Xml.Serialization;
 
 public enum MoveType
@@ -21,7 +22,13 @@ public struct Move
     public int origin;
     public int destination;
     public Piece promoPieceType; // can only be queen, knight, bishop, or rook, or none 
-    public MoveType moveType; 
+    public MoveType moveType;
+
+
+    public override string ToString()
+    {
+        return $"{(Square) origin}{(Square)destination} {moveType} {promoPieceType}";
+    }
 }
 class Moves {
 
