@@ -357,6 +357,34 @@ public class Board {
                 piecesBB[opp][capturedPiece] &= ~destMask;
                 sideBB[opp] &= ~destMask;
                 state.halfMoveClock = 0; 
+
+                // if captured piece was a rook, make sure to turn off castling rights on that side for that opponent 
+                if(capturedPiece == (int)Piece.Rook)
+                {
+                    // if destination is on file h then turn off king side otherwise turn of queen side 
+                    int turnOffMask =0b0011 ;  // 0011 initially turning off white castle rights 
+                    int rank = 0; // first rank if opp is white 8th 8 if balck 
+                    if(opp ==(int)Side.Black)
+                    {
+                        rank = 7;
+                        turnOffMask <<= 2; // turning off black 
+                    }
+                    if ((destMask & Moves.FILES[7] & Moves.RANKS[rank]) > 0) // king side 
+                    {
+                        turnOffMask &= 0b0101; // only keep king bits on 
+                    }
+                    else if ((destMask & Moves.FILES[rank] & Moves.RANKS[rank]) > 0) // queen side 
+                    {
+                        turnOffMask &= 0b1010;
+                    }
+                    else // rook was captured in a place that shouldn't affect this sides castle rights 
+                    {
+                        turnOffMask = 0; // shouldn't affect the castling 
+                    }
+
+                    state.castling &= ~turnOffMask; 
+
+                }
                 break;
 
             case MoveType.ENPASSANT:
@@ -410,10 +438,10 @@ public class Board {
             case (int)Piece.Rook:
                 // if origin is on kingside make sure rights are off 
                 if ((move.origin== 7 || move.origin == 63)){
-                    state.castling &= ~(0b0101);
+                    state.castling &= ~(0b0101&castleMask);
                 }
                 else if(move.origin==0||move.origin==56){ 
-                    state.castling &= ~(0b1010);
+                    state.castling &= ~(0b1010&castleMask);
                 }
                 break; 
         }

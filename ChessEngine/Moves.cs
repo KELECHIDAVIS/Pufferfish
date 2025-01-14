@@ -63,9 +63,9 @@ class Moves {
 
     //The squares that need to be vacant in order to castle on that side 
     static ulong wKInBetween = 0b00000000_00000000_00000000_00000000_00000000_00000000_00000000_01100000; 
-    static ulong wQInBetween = 0b00000000_00000000_00000000_00000000_00000000_00000000_00000000_00001110;
+    static ulong wQInBetween = 0b00000000_00000000_00000000_00000000_00000000_00000000_00000000_00001100;
     static ulong bkInBetween = 0b01100000_00000000_00000000_00000000_00000000_00000000_00000000_00000000;
-    static ulong bQInBetween = 0b00001110_00000000_00000000_00000000_00000000_00000000_00000000_00000000;
+    static ulong bQInBetween = 0b00001100_00000000_00000000_00000000_00000000_00000000_00000000_00000000;
 
     static int wKSideCastleDest = (int)Square.G1; 
     static int wQSideCastleDest = (int)Square.C1;
@@ -1179,7 +1179,7 @@ class Moves {
 
                 // and the in between squares with all pieces, if returns 0 there are no pieces in there
                 bool kingSideIsVacant = (kingInBetween & ~emptyBB) == 0;
-                bool queenSideIsVacant = (queenInBetween & ~emptyBB) == 0;
+                bool queenSideIsVacant = ((queenInBetween|(queenInBetween>>1) )& ~emptyBB) == 0; // have to make sure all queen side sqs r empty not just the kings leap
 
                 // now all in between squares and the king squares have to be safe 
                 // so and a combination of inbetween squares nd king bb with unsafe; if == 0 theres no overlap so the castle is safe 

@@ -193,29 +193,6 @@ public class Perft {
                     // print out current board 
                     Board.printBoard(board);
 
-                    // debug 
-                    Console.WriteLine(board.toFEN());
-
-                    // print out all board pieces 
-                    for (int i = 0; i < 2; i++)
-                    {
-                        for(int j =0; j<Board.NUM_PIECE_TYPES; j++)
-                        {
-                            Console.WriteLine($"{(Side)i} {(Piece)j}s");
-                            Board.printBitBoard(board.piecesBB[i][j]);
-                        }
-                    }
-
-                    // print out all board states 
-                    Console.WriteLine($"side to move: {board.state.sideToMove}");
-                    Console.WriteLine("castling: "+Convert.ToString(board.state.castling,2));
-                    Console.WriteLine("EP: ");
-                    Board.printBitBoard(board.state.EP);
-                    Console.WriteLine("halfMove: "+board.state.halfMoveClock);
-                    Console.WriteLine("fullMove: "+board.state.fullMoveNum);
-                    Console.WriteLine("NextMove: " + board.state.nextMove); 
-                    Console.WriteLine("Zobrist: " + board.state.zobristKey);
-
 
 
 
