@@ -10,8 +10,8 @@ class Engine
 { 
     public static void Main(string[] args)
     {
-         Perft.runTest(); 
-        
+        Perft.runTest(); 
+
     }
 
 }

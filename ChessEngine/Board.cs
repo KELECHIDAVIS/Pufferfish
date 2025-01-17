@@ -361,28 +361,22 @@ public class Board {
                 // if captured piece was a rook, make sure to turn off castling rights on that side for that opponent 
                 if(capturedPiece == (int)Piece.Rook)
                 {
-                    // if destination is on file h then turn off king side otherwise turn of queen side 
-                    int turnOffMask =0b0011 ;  // 0011 initially turning off white castle rights 
-                    int rank = 0; // first rank if opp is white 8th 8 if balck 
-                    if(opp ==(int)Side.Black)
+                    //if destination is on a rook starting destination make sure that right is off 
+                    switch (move.destination)
                     {
-                        rank = 7;
-                        turnOffMask <<= 2; // turning off black 
+                        case 63: // top right 
+                            state.castling &= 0b1011; // black king is off 
+                            break;
+                        case 56: // top left 
+                            state.castling &= 0b0111; // black queen is off 
+                            break;
+                        case 7: // bot right 
+                            state.castling &= 0b1110; // white king is off 
+                            break;
+                        case 0: // bot left  
+                            state.castling &= 0b1101; // white queen is off 
+                            break;
                     }
-                    if ((destMask & Moves.FILES[7] & Moves.RANKS[rank]) > 0) // king side 
-                    {
-                        turnOffMask &= 0b0101; // only keep king bits on 
-                    }
-                    else if ((destMask & Moves.FILES[rank] & Moves.RANKS[rank]) > 0) // queen side 
-                    {
-                        turnOffMask &= 0b1010;
-                    }
-                    else // rook was captured in a place that shouldn't affect this sides castle rights 
-                    {
-                        turnOffMask = 0; // shouldn't affect the castling 
-                    }
-
-                    state.castling &= ~turnOffMask; 
 
                 }
                 break;
